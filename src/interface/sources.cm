@@ -1,0 +1,17 @@
+Library
+ functor MakeTyp
+ signature TYP
+ signature TYP_FULL
+
+ functor MakeMTyp
+ signature MTYP
+ signature MTYP_FULL
+
+ functor MakeTyp2
+ signature TYP2
+ signature TYP2_FULL
+ signature TYP2_FULLA
+ signature TYP2_FULLB
+is 
+ interface-sig.sml
+ interface.sml

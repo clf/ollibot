@@ -1,0 +1,11 @@
+Group is
+ $/basis.cm
+ $/smlnj-lib.cm
+ util/stream.cm
+ unicode-sig.sml
+ unicode.sml
+
+(* ∀
+(setq coding-system-for-read 'utf-8)
+(start-process "a" "unicode-eval" "/Users/rjsimmon/Projects/aeolus/branches/linlog/src/util/unicode")
+*)

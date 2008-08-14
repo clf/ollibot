@@ -1,0 +1,42 @@
+% This represents why type inference in Twelf 
+% needs to be *unification* and not something else.
+
+a : type.
+c : type.
+
+v : c -> c -> c.
+w : c.
+z : c -> c.
+
+%abbrev
+_ = [x] x z z : (c -> c) -> (c -> c) -> c.
+
+% The declared type of v gives x the type something -> c, 
+% which means that, without type inference, we know that
+% y and z are classified by the same "something" type. 
+% However, not knowing that type, a declaration such as
+% this one: 
+% abbrev _ = [x][y][z] v (x y) (x z).
+% will not load. If *either* branch allows us to learn what
+% the type "something" is we're good, however.
+
+%abbrev _ = [x: a -> _][y][z] v (x y) (x z).
+%abbrev _ = [x][y: a][z] v (x y) (x z).
+%abbrev _ = [x][y: _][z: a] v (x y) (x z).
+%abbrev _ = [x][y] v (x w) (x y).
+%abbrev _ = [x][y] v (x y) (x w).
+
+%abbrev _ = [x: _ -> _][y:a][z] v (x y) (x z).
+
+plus : c -> c -> c -> type.
+pz : plus w C C.
+ps : plus A B C -> plus (z A) B (z C).
+
+_ : plus (z (z w)) w (z w) = ps _.
+pw : ((plus w w : c -> type) w).
+
+_ : plus _ _ _ = ps pz.
+%abbrev _ : c -> c = [x: c] _ x x w. 
+
+
+% _ : _ _ = c.

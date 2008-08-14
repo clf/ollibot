@@ -1,0 +1,132 @@
+%{ Specification/approximation of a language with speculative parallelsim
+and futures. It is necessary to invoke the extra machinery of speculative
+parallelsim in order to precisely capture the defined behavior of 0CFA
+analysis. }%
+
+%{ == Language definition == }%
+
+%{ === Expressions === }%
+
+num : type.            % Integers (finite domain)
+exp : type.            % Expressions (syntax trees)
+var : type.            % Variables (abstract)
+
+v : var → exp.
+lam : (var → exp) → exp.
+n : num → exp.
+app : exp → exp → exp.
+
+
+%{ === Values === }%
+
+value : type.
+
+nv : num → value.
+
+fn_ptr : type.         % Function pointers (abstract)
+fv : fn_ptr → value.
+
+%{ Rather than passing around functions themselves as values, we instead
+pass around immutable "function pointers," storing the expressions themselves
+in a functions relation. }%
+
+functions : fn_ptr → (var → exp) → pers+.
+
+
+%{ === Frames === }%
+
+dest : type.           % Destinations (abstract)
+frame : type.          % Frames (syntax trees)
+
+fvar  : var → frame.           % fvar(X)      - wait on value @ variable X
+fapp : dest → dest → frame.   % fapp(D1,D2)  - wait on lambda @ D1, value @ D2
+fdest : dest → frame.          % fdest(D)     - wait on value @ D1
+
+
+
+%{ == Dynamic semantics == }%
+
+%{
+Three propositions are rather common to the specification of functional
+languages:
+
+* <tt>eval</tt> is an eager proposition that traces out the structure of a term that will eventually be evaluated to a destination. 
+* <tt>comp</tt> is an delaying proposition that waits for computation to be delivered so that it can be returned to a destination.
+* <tt>return</tt> is a passive proposition that passes a value back to a destination.
+}%
+
+eval   : exp   → dest → %( lin+ )% %[ pers+ ]% .
+comp   : frame → dest → %( lin+ )% %[ pers+ ]% .
+return : value → dest → %( lin+ )% %[ pers+ ]% .
+
+%{
+Two are somewhat unique to the futures/speculative parallelism-style 
+presentation:
+
+* <tt>vcomp</tt> is like <tt>comp</tt>, but it waits for a computation so that a value can be returned to a variable, not a destination.
+* <tt>vreturn</tt> is like <tt>return</tt>, but it passes a value back to a variable, not a destiantion. This predicate therefore must be persistent because, unless the underlying language is linear, variables may need to have values passed to them at multiple occurrences.
+}%
+
+vcomp  : frame → var  → %( lin+ )% %[ pers+ ]% .
+vreturn: value → var  → pers+. 
+
+
+%{ === Eager evaluation === }%
+
+%{ In the approximation, destinations become skolemized constants - when we
+eval(E, D), D represents a path through the original syntax tree to that 
+term - in other words, it is a term label. }%
+
+eval(v X, Dest)
+------------------->
+comp(fvar(X), Dest).
+
+%{ If we replaced Dest in the approximation's skolem constant with (\x E x),
+the only other apparent option, we would equate all syntatically identical
+functions instead of all functions from the same position in the program,
+which is actually less precise than a typical 0-CFA analysis. }% 
+
+eval(lam E, Dest)
+-------------------> ∃fp.
+functions(fp, E),
+return(fv(fp), Dest)
+%[, fp = sk_lambda(Dest) ]% .
+
+eval(n N, Dest)
+------------------->
+return(nv(N), Dest).
+
+eval(app(E1,E2), Dest)
+-------------------> ∃d1. ∃d2.
+comp(fapp(d1,d2), Dest),
+eval(E1, d1),
+eval(E2, d2)
+%[, d1 = sk_fun(Dest), d2 = sk_arg(Dest) ]% .
+
+
+%{ === Delayed evaluation === }%
+
+%{ If we replaced FP in the approximation's skolem constant with any
+combination of Dest1, Dest2, or Dest, we would get the effect of recursively
+"inlining" functions; this move would obviously brings with it a danger of 
+nontermination. }%
+
+comp(fapp(Dest1,Dest2), Dest),
+return(fv(FP), Dest1),
+functions(FP, E)
+-------------------> ∃d0. ∃x.
+eval(E x, d0),
+comp(fdest(d0), Dest),
+vcomp(fdest(Dest2), x)
+%[, d0 = sk_fn_body(FP), x = sk_fn_var(FP) ]% .
+
+comp(fdest(Dest0), Dest),
+return(Val, Dest0)
+------------------->
+return(Val, Dest).
+
+vcomp(fdest(Dest2), X),
+return(Val, Dest2)
+------------------->
+vreturn(Val, X).
+

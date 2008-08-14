@@ -1,0 +1,76 @@
+(* Greek *)
+(* 0wx391 - Α - CAPITAL ALPHA
+ * 0wx392 - Β - CAPITAL BETA
+ * 0wx393 - Γ - CAPITAL GAMMA (0wx213E double-struck gamma)
+ * 0wx394 - Δ - CAPITAL DELTA (0wx2206 increment)
+ * 0wx395 - Ε - CAPTIAL EPSILON
+ * 0wx396 - Ζ - CAPTIAL ZETA
+ * 0wx397 - Η - CAPTIAL ETA
+ * 0wx398 - Θ - CAPTIAL THETA
+ * 0wx399 - Ι - CAPTIAL IOTA
+ * 0wx39A - Κ - CAPITAL KAPPA
+ * 0wx39B - Λ - CAPITAL LAMBDA
+ * 0wx39C - Μ - CAPITAL MU
+ * 0wx39D - Ν - CAPITAL NU
+ * 0wx39E - Ξ - CAPTIAL XI
+ * 0wx39F - Ο - CAPITAL OMICRON
+ * 0wx3A0 - Π - CAPITAL PI (0wx213F double-struck pi, 0wx220F n-ary product)
+ * 0wx3A1 - Ρ - CAPITAL RHO
+ * 0wx3A3 - Σ - CAPITAL SIGMA (0wx1A9 latin esh, 0wx2211 n-ary sum)
+ * 0wx3A4 - Τ - CAPITAL TAU
+ * 0wx3A5 - Υ - CAPITAL UPSILON
+ * 0wx3A6 - Φ - CAPITAL PHI
+ * 0wx3A7 - Χ - CAPITAL CHI
+ * 0wx3A8 - Ψ - CAPITAL PSI
+ * 0wx3A9 - Ω - CAPITAL OMEGA (0wx2126 ohm, 0wx2127 inverted ohm)
+ * 0wx3B1 - α - SMALL ALPHA (0wx0251 latin alpha, 0wx221D proportional to)
+ * 0wx3B2 - β - SMALL BETA (0wxDF latin sharp s)
+ * 0wx3B3 - γ - SMALL GAMMA (0wx263 latin gamma, 0wx213D double-struck gamma)
+ * 0wx3B4 - δ - SMALL DELTA
+ * 0wx3B5 - ε - SMALL EPSILON (0wx26B latin open e)
+ * 0wx3B6 - ζ - SMALL ZETA
+ * 0wx3B7 - η - SMALL ETA
+ * 0wx3B8 - θ - SMALL THETA (0wx275 latin barred o, 0wx473 cyrillic fita)
+ * 0wx3B9 - ι - SMALL IOTA (0wx269 latin iota, 0wx2129 turned greek iota)
+ * 0wx3BA - κ - SMALL KAPPA
+ * 0wx3BB - λ - SMALL LAMBDA
+ * 0wx3BC - μ - SMALL MU (0wxB5 micro symbol)
+ * 0wx3BD - ν - SMALL NU
+ * 0wx3BE - ξ - SMALL XI
+ * 0wx3BF - ο - SMALL OMICRON
+ * 0wx3C0 - π - SMALL PI
+ * 0wx3C1 - ρ - SMALL RHO
+ * 0wx3C2 - ς - SMALL FINAL SIGMA (0wx3DB greek stigma)
+ * 0wx3C3 - σ - SMALL SIGMA
+ * 0wx3C4 - τ - SMALL TAU
+ * 0wx3C5 - υ - SMALL UPSILON (0wx28A latin upsilon, 0wx28B latin v with hook)
+ * 0wx3C6 - φ - SMALL PHI (0wx36C6 latin phi, 0wx3D5 greek phi symbol)
+ * 0wx3C7 - χ - SMALL CHI 
+ * 0wx3C8 - ψ - SMALL PSI
+ * 0wx3C9 - ω - SMALL OMEGA *)
+
+(* Punctuation *)
+(* 0wx2022 - • - BULLET *)
+
+(* Arrows *)
+(* 0wx2190 - ← - LEFT ARROW 
+ * 0wx2191 - ↑ - UP ARROW
+ * 0wx2192 - → - RIGHT ARROW
+ * 0wx2193 - ↓ - DOWN ARROW
+ * 0wx2194 - ↔ - LEFTRIGHT ARROW 
+ * 0wx21A4 - ↤ - LEFTWARDS ARROW FROM BAR 
+ * 0wx21A5 - ↥ - UPWARDS ARROW FROM BAR
+ * 0wx21A6 - ↦ - RIGHTRWARDS ARROW FROM BAR 
+ * 0wx21A7 - ↧ - DOWNWARDS ARROW FROM BAR *)
+
+(* Mathematical symbols *)
+(* 0wx2200 - ∀ - For ALL 
+ * 0wx2202 - ∂ - PARTIAL DIFFERENTIAL
+ * 0wx2203 - ∃ - THERE EXISTS
+ * 0wx2205 - ∅ - EMPTY SET
+ * 0wx2206 - ∆ - INCREMENT (0wx394 Delta)
+ * 0wx2207 - ∇ - NABLA
+ * 0wx2208 - ∈ - ELEMENT OF
+ * 0wx2212 - − - MINUS (0wx2D, Hyphen-minus)
+ * 0wx2213 - ∓ - MINUS-OR-PLUS
+ *)
