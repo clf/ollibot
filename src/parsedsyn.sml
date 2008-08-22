@@ -64,7 +64,7 @@ val Pair'   = fn (e1 as Fix (_,pos1), e2 as Fix (_,pos2)) =>
 val UCid'   = fn (s,pos) => Fix(UCid s, pos)
 val LCid'   = fn (s,pos) => Fix(LCid s, pos)
 val Eq'     = fn (e1 as Fix (_,pos1), e2 as Fix (_,pos2)) => 
-                 Fix(App(e1,e2), union(pos1,pos2))
+                 Fix(Eq(e1,e2), union(pos1,pos2))
 val Type'   = fn (ppm,pos) => Fix(Type ppm, pos)
 
 end

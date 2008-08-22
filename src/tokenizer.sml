@@ -144,8 +144,9 @@ val backarrow = (satchar #"<" && repeat1 (satchar #"-")) return BACKARROW
 val dot = (satchar #"." && ignore_pos(satisfy isSpace)) return DOT
 
 val tokenizer = 
-    ignore_pos skipspace >>
-       alt [directive,escape,separator,ident,arrow,backarrow,dot]
+    (ignore_pos skipspace >>
+                alt [directive,escape,separator,ident,arrow,backarrow,dot])
+    
 
 val parsefile = fn f => transform (!!tokenizer) (Comment.filter (openstream f))
 

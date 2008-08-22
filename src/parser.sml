@@ -51,10 +51,10 @@ val exp =
                          wth Atm o Exists'),
                       (!!(is LAMBDA >> var_decl exp << is DOT) && exp
                          wth Atm o Lam'),
-                      (is ARROW) return Opr(Infix(Right,3,Arrow')),
-                      (is BACKARROW) return Opr(Infix(Right,3,Arrow' o swap)),
-                      (is COMMA) return Opr(Infix(Right,4,Pair')),
-                      (is EQ) return Opr(Infix(Right,5,Eq')),
+                      (is ARROW) return Opr(Infix(Right,1,Arrow')),
+                      (is BACKARROW) return Opr(Infix(Right,1,Arrow' o swap)),
+                      (is COMMA) return Opr(Infix(Right,2,Pair')),
+                      (is EQ) return Opr(Infix(Non,3,Eq')),
                       (typ) wth Atm o Type',
                       (is LPAREN >> exp << is RPAREN) wth Atm])
                 Left App')

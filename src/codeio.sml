@@ -72,9 +72,9 @@ val load_file =
           case decl of 
             NONE => print ("Done loading " ^ filename ^ "\n")
           | SOME decl =>
-            (parse_decl decl; load(ParseParen.parseonce stream))
-      val tokenstream = ParseParen.tokenize filename
-    in load(ParseParen.parseonce tokenstream) 
+            (parse_decl decl; load(ParseBracket.parseonce stream))
+      val tokenstream = ParseBracket.tokenize filename
+    in load(ParseBracket.parseonce tokenstream) 
            handle Global.Error(msg,pos) =>
                   print ("Error : " ^ Pos.toString pos ^ "\n" ^ msg ^ "\n") 
     end
