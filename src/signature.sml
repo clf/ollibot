@@ -25,6 +25,7 @@ fun install dec =
       signat := newsig;
       cid
     end
+fun reset() = (map_forward := MapS.empty; map_backward := MapC.empty; signat := I.sgnEmpty)
 end (* local *)
 
 end

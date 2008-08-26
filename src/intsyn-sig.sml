@@ -46,10 +46,12 @@ datatype ('p, 'n) neg_view =
   | NPos of 'p
 
 datatype dec = 
-    ConDec  of {id: string, def: typ} (* c : At : type   *)
-  | TypDec  of {id: string, def: knd} (* a : Kr : kind   *)
-  | PosDec  of {id: string, def: pos} (* _ : A+ : p/e+   *)
-  | NegDec  of {id: string, def: neg} (* _ : A- : p/e-   *)
+    ConDec    of {id: string, typ: typ}            (* c : At : type     *)
+  | ConAbbrev of {id: string, trm: trm, typ: typ}  (* d : At = M : kind *)
+  | TypDec    of {id: string, knd: knd}            (* a : Kr : kind     *)
+  | TypAbbrev of {id: string, typ: typ, knd: knd}  (* a : Kr = A : kind *)
+  | PosDec    of {id: string, pos: pos}            (* _ : A+ : p/e+     *)
+  | NegDec    of {id: string, neg: neg}            (* _ : A- : p/e-     *)
 
 val dec_id : dec -> string
 

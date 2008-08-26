@@ -38,13 +38,17 @@ datatype pos = FixPos of (pos, neg) pos_view
      and neg = FixNeg of (pos, neg) neg_view
 
 datatype dec = 
-    ConDec  of {id: string, def: typ} (* c : At : type   *)
-  | TypDec  of {id: string, def: knd} (* p : Kr : kind   *)
-  | PosDec  of {id: string, def: pos} (* _ : A+ : p/e+   *)
-  | NegDec  of {id: string, def: neg} (* _ : A- : p/e-   *)
+    ConDec    of {id: string, typ: typ}            (* c : At : type     *)
+  | ConAbbrev of {id: string, typ: typ, trm: trm}  (* d : At = M : type *)
+  | TypDec    of {id: string, knd: knd}            (* a : Kr : kind     *)
+  | TypAbbrev of {id: string, knd: knd, typ: typ}  (* a : Kr = A : kind *)
+  | PosDec    of {id: string, pos: pos}            (* _ : A+ : p/e+     *)
+  | NegDec    of {id: string, neg: neg}            (* _ : A- : p/e-     *)
 val dec_id = 
  fn ConDec {id,...} => id
+  | ConAbbrev {id,...} => id
   | TypDec {id,...} => id
+  | TypAbbrev {id,...} => id
   | PosDec {id,...} => id
   | NegDec {id,...} => id
 

@@ -1,0 +1,141 @@
+%{ == Language definition == }%
+
+%{ === Objects === }%
+
+ty : type.    % Type labels (finite domain)
+field : type. % Field labels (finite domain)
+
+%{ A type is associated with a list of fields using the fields relation }%
+list : type.
+nil : list.
+cons : field -> list -> list.
+
+fields : ty → list → pers+. 
+
+
+%{ === Tagged data === }%
+data : type.  
+
+loc : type.   % Memory locations (abstract)
+l : loc → data.
+
+num : type.   % Integers (finite domain)
+n : num → data.
+
+null : data.  % Uninitalized data
+
+
+%{ === Expressions === }%
+var %[ = loc ]% : type.   % Variables (abstract)
+exp : type.   % Expressions (syntax trees)
+func : type.  % Function labels (finite domain)
+
+new : ty, (var → exp) → exp.           % x   := new T
+set : (var, var, exp) → exp.            % x   := y
+setcon : (var, data, exp) → exp.        % x   := c
+setfld : (var, var, field, exp) → exp.  % x   := y.f
+fldset : (var, field, var, exp) → exp.  % x.f := y 
+ret : exp.
+
+%{ A function label is associated with a monadic expression with a free
+variable using the funcs relation. }%
+funcs : func → (var → exp) → pers+.   % fun f = x.e
+call : func -> var -> exp -> exp.       % f(x)
+
+
+%{ == Dynamic semantics == }%
+dest %[ = loc ]% : type.  % Destinations (abstract)
+
+eval : exp → dest → %( lin+ )% %[ pers+ ]% .
+return : dest -> %( lin+ )% %[ pers+ ]% .
+
+pts : var → data → %( lin+ )% %[ pers+ ]% .
+hpts : loc → field → data → %( lin+ )% %[ pers+ ]% .
+newfields : loc → list → %( lin+ )% %[ pers+ ]% .
+wait : dest → exp → dest → %( lin+ )% %[ pers+ ]% .
+
+%[ sk_var : (var -> exp) -> var. ]%
+
+%{ === Object creation === }%
+
+eval(new(Ty, λx. M x), Dest), 
+fields(Ty,Fields)
+-------------------> ∃y. ∃loc. 
+pts(y, l loc), 
+eval(M y, Dest), 
+newfields(loc, Fields)
+%[, y == sk_var M, loc == sk_var M ]% .
+
+true : pers+. true.
+newfields(L,nil) → (true).
+
+a :
+newfields(L, cons(F, Fields))
+------------------->
+newfields(L,Fields), 
+hpts(L,F,null).
+
+
+%{ === Pointer update === }%
+
+b :
+eval(set(X,Y,M), Dest),
+pts(X, ValX),
+pts(Y, ValY)
+------------------->
+eval(M, Dest),
+pts(X, ValY)
+%(, pts(Y, ValY) )%.                    % Re-assertion unnecessary in approx.
+
+c :
+eval(setcon(X,Val,M), Dest),
+pts(X, ValX)
+------------------->
+eval(M, Dest),
+pts(X, Val).
+
+d : 
+eval(setfld(X,Y,F,M), Dest),
+%( pts(X, ValX), )%                     % Invariant in approximation
+pts(Y, l L),
+hpts(L, F, ValF)
+------------------->
+eval(M, Dest),
+pts(X, ValF)
+%(, pts(Y, l L), hpts(L, F, ValF) )% .  % Re-assertion unnecessary in approx.
+
+e :
+eval(fldset(X,F,Y,M), Dest),
+pts(X, l L),
+pts(Y, ValY)
+%(, hpts(L, F, ValF) )%                 % Invariant in approximation
+------------------->
+eval(M, Dest),
+%( pts(X, l L), pts(Y, ValY), )%        % Re-assertion unnecessary in approx.
+hpts(L, F, ValY).
+
+
+%{ === Function call/return === }%
+
+f :
+eval(call(Proc, Y, M), Dest),
+pts(Y, ValY),
+funcs(Proc, \lambda z. MBody z)
+-------------------> ∃z. ∃dest. 
+eval(MBody z, dest),
+pts(z, ValY),
+wait(dest, M, Dest)
+%[, z == sk_var MBody, dest == sk_var MBody ]% .
+
+
+wait(Dest', M, Dest),
+return(Dest')
+------------------->
+eval(M, Dest).
+
+ret : 
+eval(ret, Dest)
+------------------->
+return(Dest).
+
+

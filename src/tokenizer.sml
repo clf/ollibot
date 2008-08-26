@@ -8,8 +8,7 @@ datatype tok =
   | LPAREN | RPAREN
   | ARROW | BACKARROW
   | COMMA | DOT | COLON
-  | UNDERSCORE 
-  | EQ
+  | UNDERSCORE | QUESTIONMARK | AS | EQ | UNIFY
   | LAMBDA | EXISTS | FORALL | PI
   | ID of string
   | DIRECTIVE of string
@@ -66,8 +65,7 @@ datatype tok =
   | LPAREN | RPAREN
   | ARROW | BACKARROW
   | COMMA | DOT | COLON
-  | UNDERSCORE
-  | EQ
+  | UNDERSCORE | QUESTIONMARK | AS | EQ | UNIFY
   | LAMBDA | EXISTS | FORALL | PI
   | ID of string
   | DIRECTIVE of string
@@ -88,7 +86,6 @@ fun readSep c =
     | Char1 #"}" => SOME RCURLY
     | Char1 #"," => SOME COMMA
     | Char1 #":" => SOME COLON
-    | Char1 #"=" => SOME EQ
     | CharM 0wx2203 => SOME EXISTS
     | CharM 0wx2200 => SOME FORALL
     | CharM 0wx3BB  => SOME LAMBDA
@@ -121,6 +118,10 @@ fun decodeLaTeX s =
 fun token(c,cs) = 
     case concat (map toString (c :: cs)) of 
       "_" => UNDERSCORE
+    | "?" => QUESTIONMARK
+    | "as" => AS
+    | "=" => EQ
+    | "==" => UNIFY
     | "type" => TYPE NONE
     | "lin+" => TYPE (SOME(Pos,Linear))
     | "eph+" => TYPE (SOME(Pos,Linear))

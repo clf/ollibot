@@ -16,11 +16,16 @@ datatype 'e exp_view =
   | LCid of string
   | Eq of 'e * 'e
   | Type of (polarity * permeability) option
+  | HasType of 'e * 'e
+  | UnknownTerm 
+  | UnknownType
 
 datatype 'a exp = Fix of ('a exp) exp_view * 'a
 
 type pexp = pos exp
-type decl =  (string option * pexp option * pexp option) * Pos.pos
+datatype decl = 
+    Decl of string option * pexp 
+  | Defn of string * pexp 
 
 structure E = 
 MakeMTyp(struct
@@ -46,6 +51,9 @@ MakeMTyp(struct
            | LCid s                 => LCid s
            | Eq(e1,e2)              => Eq(f e1, f e2)
            | Type s                 => Type s
+           | HasType(e1,e2)         => HasType(f e1, f e2) 
+           | UnknownType            => UnknownType
+           | UnknownTerm            => UnknownTerm
          end)
 open E
 
@@ -66,5 +74,9 @@ val LCid'   = fn (s,pos) => Fix(LCid s, pos)
 val Eq'     = fn (e1 as Fix (_,pos1), e2 as Fix (_,pos2)) => 
                  Fix(Eq(e1,e2), union(pos1,pos2))
 val Type'   = fn (ppm,pos) => Fix(Type ppm, pos)
+val HasType'   = fn (e1 as Fix (_,pos1), e2 as Fix (_,pos2)) => 
+                 Fix(HasType(e1,e2), union(pos1,pos2))
+val UnknownTerm' = fn pos => Fix(UnknownTerm, pos)
+val UnknownType' = fn pos => Fix(UnknownType, pos)
 
 end

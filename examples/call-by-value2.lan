@@ -8,55 +8,62 @@ tm  : type.            % Terms (apply tags here...)
 var : type.            % Variables (abstract)
 tag : type.            % Tags (abstract)
 
-t : tag → tm → exp.
+t : tag -> tm -> exp.
 
-v : var → tm.
-lam :  (var → exp) → tm.
-n : num → tm.
-app : exp → exp → tm.
+v : var -> exp.
+lam :  (var -> exp) -> exp.
+n : num -> exp.
+app : exp -> exp -> exp.
 
 
 %{ === Frames === }%
 
-dest : type.           % Destinations (abstract)
-frame : type.          % Frames (syntax trees)
+dest %[ = exp ]% : type.         % Destinations (abstract) 
 
-fapp1 : dest → exp → frame.    % fapp1(D1,E2) - wait on lambda @ D1
-fapp2 : exp → dest → frame.    % fapp2(FP,D2) - wait on value @ D2
-fdest : dest → frame.           % fdest(D)     - wait on value @ D
+frame : type.                    % Frames (syntax trees)
+
+fapp1 : dest -> exp -> frame.    % fapp1(D1,E2) - wait on lambda @ D1
+fapp2 : exp -> dest -> frame.    % fapp2(FP,D2) - wait on value @ D2
+fdest : exp -> frame.            % fdest(D)     - wait on value @ D
 
 
 %{ == Dynamic semantics == }%
 
-eval   : exp   → dest → %( lin+ )% %[ pers+ ]% .
-comp   : frame → dest → %( lin+ )% %[ pers+ ]% .
-return : exp   → dest → %( lin+ )% %[ pers+ ]% .
+eval   : exp   -> dest -> %( lin+ )% %[ pers+ ]% .
+comp   : frame -> dest -> %( lin+ )% %[ pers+ ]% .
+return : exp   -> dest -> %( lin+ )% %[ pers+ ]% .
 
-vreturn : exp → var → pers+. 
+vreturn : exp -> var -> pers+. 
+
+%[ sk_var : (var -> exp) -> var. ]%
+
 
 %{ === Eager evaluation === }%
 
 eval(v X, Dest), vreturn(Val, X) -> return(Val, Dest).
-eval(lam L (λx. E x), Dest) -> return(lam L (λx. E x), Dest).
+eval(lam (λx. E x), Dest) -> return(lam (λx. E x), Dest).
 eval(n N, Dest) -> return (n N, Dest).
 
-eval(app L E1 E2, Dest)
+eval(app E1 E2, Dest)
 -------------------> ∃d1. 
 comp(fapp1 d1 E2, Dest),
-eval(E1, d1).
+eval(E1, d1)
+%[, d1 == E1 ]%.
 
 comp(fapp1 Dest1 E2, Dest),
 return(V, Dest1)
 -------------------> ∃d2.
 comp(fapp2 V d2, Dest),
-eval(E2, d2).
+eval(E2, d2) 
+%[, d2 == E2 ]%.
 
-comp(fapp2 (λx. E x) Dest2, Dest)
+comp(fapp2 (lam λx. E x) Dest2, Dest),
 return(V, Dest2)
 -------------------> ∃x. ∃d0.
-vreturn(V, x),
 comp(fdest d0, Dest),
-eval(E x, d0).
+eval(E x, d0),
+vreturn(V, x)
+%[x == sk_var E, d0 == lam λx. E x. ]%
 
 comp(fdest Dest0, Dest),
 return(V, Dest0)

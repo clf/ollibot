@@ -81,7 +81,7 @@ fun tag_into ctx exp : mark E.exp =
  * alternative would be to do a lot more list appends. *)
 datatype exp = 
     (* Partial instantiated type constants : (c M1 .. Mn : M1 -> ... -> type *)
-    AtomicTy of IntSyn.cid * trm list * A.typ list * Global.kind 
+    AtomicTy of thead * trm list * A.typ list * Global.kind 
   | Rule of rule                                (* R : {eph+, eph-, ...} *)
   | Type of typ list                            (* A : type *)
   | Kind of knd                                 (* K : kind *)
@@ -119,12 +119,16 @@ val normal_exps_str : normal_exps -> string =
 
 val normal_exps : Pos.pos -> exp -> normal_exps = 
  fn pos =>
- fn AtomicTy(cid, t, [], NONE) => ExpsType [TBase' cid] (* XXX discard args! *)
-  | AtomicTy(cid, t, _, NONE) =>
-    raise Error("Type not fully instantiated", pos)
-  | AtomicTy(cid, t, [], SOME k) => ExpsRule (RAtom'(cid, rev t))
-  | AtomicTy(cid, t, _, SOME k) => 
-    raise Error("Predicate not fully instantiated",pos)
+ fn AtomicTy(h as TConst _, t, [], NONE) => ExpsType [TBase'(h, rev t)] 
+  | AtomicTy(h as TConst _, t, [], SOME k) => ExpsRule (RAtom'(h, rev t))
+  | AtomicTy(h, t, t', NONE) =>
+    raise Error("Type not fully instantiated, expects " ^
+                Int.toString (length t + length t') ^ " arguments but found " ^
+                Int.toString (length t), pos)
+  | AtomicTy(h, t, t', SOME k) => 
+    raise Error("Predicate not fully instantiated, expects " ^
+                Int.toString (length t + length t') ^ " arguments but found " ^
+                Int.toString (length t), pos)
   | Rule rule => ExpsRule rule
   | Type typs => ExpsType typs
   | Kind knd => ExpsKind knd
@@ -234,17 +238,24 @@ val lookup_const =
     case Sig.string_to_cid var of 
       NONE => raise Error("Undefined variable " ^ var, pos)
     | SOME cid => 
-      let val dec = Sig.lookup cid in
+      let val dec = Sig.lookup cid
+        fun list_knd knd tys = 
+            case IntSyn.K.prj knd of
+              IntSyn.KType k => (rev tys, k)
+            | IntSyn.KArrow(ty,knd) => 
+              list_knd knd (A.from_exact ty :: tys)
+      in
         case dec of 
-          IntSyn.ConDec{def, ...} => AtomicTm(Const cid, [], A.from_exact def)
-        | IntSyn.TypDec{def, ...} => 
-          let fun list_knd knd tys = 
-                  case IntSyn.K.prj knd of
-                    IntSyn.KType k => (rev tys, k)
-                  | IntSyn.KArrow(ty,knd) => 
-                    list_knd knd (A.from_exact ty :: tys)
-            val (tys,knd) = list_knd def []
-          in AtomicTy(cid, [], tys, knd) end
+          IntSyn.ConDec{typ, ...} => 
+          AtomicTm(Const cid, [], A.from_exact typ)
+        | IntSyn.ConAbbrev{typ, ...} => 
+          AtomicTm(Abbrev cid, [], A.from_exact typ)
+        | IntSyn.TypDec{knd, ...} => 
+          let val (tys,knd) = list_knd knd []
+          in AtomicTy(TConst cid, [], tys, knd) end
+        | IntSyn.TypAbbrev{typ, knd, ...} => 
+          let val (tys,knd) = list_knd knd []
+          in AtomicTy(TAbbrev cid, [], tys, knd) end
         | _ => raise Error("Expected type or kind constant", pos)
       end
 
@@ -254,23 +265,31 @@ val lookup_const =
 datatype folder = 
     F of {exp: exp, freevars: A.typ MapS.map}
 
+(* unify_typ : typ * A.typ -> unit - unify a type and an approximate type *)
+fun unify_typ(typ, apx) = 
+    case T.prj typ of 
+      TBase(TConst cid, _) => A.unify(A.Const' cid, apx)
+    (* The Abbrev module checks to expand the type abbreviation anyway. *)
+    | TBase(TAbbrev cid, _) => A.unify(A.Const' cid, apx) 
+    | TArrow(typ1,typ2) => 
+      let val (apx1, apx2) = A.force_arrow apx 
+      in unify_typ(typ1, apx1); unify_typ(typ2, apx2) end
+    | TPi(typ1, typ2) =>
+      let val (apx1, apx2) = A.force_arrow apx
+      in unify_typ(typ1, apx1); unify_typ(typ2, apx2) end
+    | TApprox apx' => A.unify(apx, apx')
+                      
+
 val fold_decl : A.typ -> folder E.var_decl -> typ =
  fn arg_ty =>
  fn E.Var(s,pos) => TApprox' arg_ty
   | E.VarTy((s, pos), F{exp,freevars}) => 
     let 
-      fun unify_typ typ apx = 
-          case T.prj typ of 
-            TBase cid => A.unify(A.Const' cid, apx)
-          | TArrow(typ1,typ2) => 
-            let val (apx1, apx2) = A.force_arrow apx 
-            in unify_typ typ1 apx1; unify_typ typ2 apx2 end
-          | TApprox apx' => A.unify(apx, apx')
       val typ = get_type pos exp
     in 
       if MapS.isEmpty freevars then () 
       else raise Error("Free vars in typ?", pos);
-      unify_typ typ arg_ty
+      unify_typ(typ, arg_ty)
       handle Unify =>
            raise Error("Inferred type does not match specification", pos); typ 
     end
@@ -308,7 +327,10 @@ val fold : folder E.exp_view * mark -> folder =
             | ((tm,apx) :: new_tms, apx' :: tys) =>
               (A.unify(apx, apx') 
                handle Unify => 
-                    raise Error("Type of argument did not match", pos); 
+                    raise Error("Type of argument did not match\n" ^
+                                "Expected type: " ^ A.to_string apx' ^ "\n" ^
+                                "Inferred type: " ^ A.to_string apx,
+                                pos); 
                ty_args (tm :: current_tms, new_tms, tys))
               
         (* tm_args: trm list * trm list * A.typ -> trm list * A.typ *)
@@ -381,7 +403,7 @@ val fold : folder E.exp_view * mark -> folder =
         val ty = A.newTVar() 
       in
         case bound str ctx of
-          NONE => F{exp = AtomicTm(EVar str, [], ty), 
+          NONE => F{exp = AtomicTm(FVar str, [], ty), 
                     freevars = MapS.singleton(str, ty)}
         | SOME(i,apx) => F{exp = AtomicTm(BVar i, [], apx),
                            freevars = MapS.empty}
@@ -402,13 +424,43 @@ val fold : folder E.exp_view * mark -> folder =
       in
         A.unify(apx1, apx2)
         handle Unify =>
-               raise Error("Types of equated terms do not match", pos);
+               raise Error("Types of equated terms do not match\n" ^
+                           "Left hand side: " ^ A.to_string apx1 ^ "\n" ^
+                           "Right hand side: " ^ A.to_string apx2, pos);
         F{exp = Rule(REq'(m1, m2)),
           freevars = freevars}
       end
       
     | E.Type knd => F{exp = Kind(KType' knd), freevars = MapS.empty} 
-                      
+
+    | E.HasType(F{exp = e1, freevars = fv1}, F{exp = e2, freevars = fv2}) =>
+      let val freevars = merge_freevars pos (fv1, fv2) in
+        case (normal_exp pos e1, normal_exp pos e2) of
+          (ExpType t, ExpKind k) =>
+          let in
+            case K.prj k of 
+              KType NONE => F{exp = Type [t], freevars = freevars}
+            | _ => raise Error("Bad type definition ascrption", pos)
+          end
+        | (ExpTerm (m, apx), ExpType ty) =>
+          let in 
+            unify_typ(ty, apx); 
+            F{exp = RedexTm((m,ty), [], apx), freevars = freevars}
+          end
+        | (e1,e2) =>
+          raise Error("Expected object (term or type) and classifier " ^ 
+                      "(type or type definition).\nFound " ^
+                      normal_exp_str e1 ^ " and " ^ normal_exp_str e2,
+                      pos)
+      end          
+
+    | E.UnknownType => 
+      F{exp = Type [TApprox'(A.newTVar ())], freevars = MapS.empty}
+
+    | E.UnknownTerm => 
+      let val omit_ty = A.newTVar() in
+        F{exp = AtomicTm(Omitted omit_ty, [], omit_ty), freevars = MapS.empty}
+      end
 
 val parsedsyn_to_extsyn = 
  fn e =>

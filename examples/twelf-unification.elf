@@ -38,5 +38,15 @@ pw : ((plus w w : c -> type) w).
 _ : plus _ _ _ = ps pz.
 %abbrev _ : c -> c = [x: c] _ x x w. 
 
+%abbrev a : c -> type = [x] plus w x w.
+%abbrev a : c -> type = [x]{y} plus w x y.
+%abbrev a : c -> type = [X] plus w X Y.
+%abbrev lt : c -> c -> type = [x][y] plus x A y -> plus x B y.
+a : plus W X Y.
+%abbrev pbogus : plus A A A -> c -> c -> c -> type = [w][x][y][z] plus x y z.
+_ : pbogus pz w w w = pz.
+_ : pbogus _ w w w = pz.
+% _ : pbogus (ps pz) w w w = pz. % Checks ACTUAL type, not just simple type!
+
 
 % _ : _ _ = c.

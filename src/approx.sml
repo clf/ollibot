@@ -11,10 +11,12 @@ signature APPROX = sig
    where type T.t = typ
      and type 't T.view = 't typ_view
  
+  exception NotAType of string
   exception Unify
 
   val unify : typ * typ -> unit
   val from_exact : IntSyn.typ -> typ
+  val to_string : typ -> string
 
   (* force_arrow asserts that the argument type is an arrow, and returns 
    * the subterms. *)
@@ -40,12 +42,27 @@ and tvar = TV of typ option ref
 
 and typ = FixTyp of typ typ_view
 
+
+exception NotAType of string
+fun inj (Const cid) = 
+    let in
+      case Sig.lookup cid of
+        IntSyn.TypDec _ => FixTyp(Const cid)
+      | IntSyn.TypAbbrev {typ, ...} => from_exact typ
+      | _ => raise NotAType (Sig.cid_to_string cid)
+    end
+  | inj obj = FixTyp obj
+              
+and from_exact obj = 
+    IntSyn.T.fold 
+        (inj o (fn TBase cid => Const cid | TArrow(t1,t2) => Arrow(t1,t2))) obj
+
 (* Unification is dumb - make better union-find! *)
 structure A = 
 MakeTyp(struct
         type t = typ
         type 't view = 't typ_view
-        fun inj obj = FixTyp(obj) 
+        val inj = inj
         fun prj (FixTyp obj) = 
             case obj of 
               Unknown(TV(r as ref(SOME typ))) => 
@@ -69,9 +86,6 @@ fun unify (a,b) =
     | (Arrow(a1,a2), Arrow(b1,b2)) => (unify(a1,b1); unify(a2,b2))
     | (Const c1, Const c2) => if Cid.equal(c1,c2) then () else raise Unify
     | _ => raise Unify
-val from_exact = 
-    IntSyn.T.fold 
-        (A.inj o (fn TBase cid => Const cid | TArrow(t1,t2) => Arrow(t1,t2)))
 fun force_arrow a = 
     case A.prj a of
       Arrow(a,b) => (a,b)
@@ -83,5 +97,9 @@ fun force_arrow a =
 val Unknown' = inj o Unknown
 val Const' = inj o Const
 val Arrow' = inj o Arrow
+val to_string = 
+    fold (fn Unknown _ => "?" 
+           | Const cid => Sig.cid_to_string cid
+           | Arrow(s1,s2) => s1 ^ " -> " ^ s2)
 
 end
