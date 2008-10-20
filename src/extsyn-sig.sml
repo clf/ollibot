@@ -14,13 +14,12 @@ datatype thead =
 type typ 
 datatype ('m,'t) typ_view =
     TBase of thead * 'm list (* Dependent types! *)
-  | TPi of 't * 't            (* Πx:A.B *)
-  | TArrow of 't * 't         (* A -> B *)
-  | TApprox of Approx.typ     (* Omitted type, determied by unification *)
+  | TPi of IntSyn.depend * 't * 't  (* Πx:A.B (∀ or →)*)
+  | TApprox of Approx.typ    (* Omitted type, determied by unification *)
 
 type trm
 datatype ('m,'t) trm_view =
-    MLam of 'm              (* Normal: λx.N *)
+    MLam of 't option * 'm  (* Normal: λx.N *)
   | MApp of head * 'm list  (* Atomic: Synthesizing constant and applications *)
   | MRedex of ('m * 't) * 'm list 
                             (* Atomic: Annotated normal term and applications *)
@@ -30,8 +29,7 @@ datatype ('m,'t) trm_view =
 type knd
 datatype 'k knd_view =
     KType of Global.kind    (* type, pers+, pers-, eph+, eph- *)
-  | KPi of typ * 'k         (* Πx:A.K *)
-  | KArrow of typ * 'k      (* A -> K *)
+  | KPi of IntSyn.depend * typ * 'k (* Πx:A.K *)
 
 type rule 
 datatype 'r rule_view = 
@@ -64,9 +62,9 @@ structure R : TYP_FULL
 
 val TBase' : thead * trm list -> typ        
 val TPi' : typ * typ -> typ
-val TArrow' : typ * typ -> typ      
+val TArrow' : typ * typ -> typ
 val TApprox' : Approx.typ -> typ
-val MLam' : trm -> trm               
+val MLam' : typ option * trm -> trm               
 val MApp' : head * trm list -> trm  
 val MRedex' : (trm * typ) * trm list -> trm
 val KType' : Global.kind -> knd
@@ -78,7 +76,5 @@ val RPi' : typ * rule -> rule
 val RAnd' : rule * rule -> rule
 val RArrow' : rule * rule -> rule
 val REq' : trm * trm -> rule
-
-val typ_to_apx : typ -> Approx.typ
 
 end

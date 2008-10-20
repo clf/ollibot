@@ -1,9 +1,38 @@
+(* Approximate type reconstruction
+ * Robert J. Simmons *)
+
+(* Approximate type reconstruction is a two-pass process. Input to the process
+ * is a raw abstract syntax tree, and output of the process is the external
+ * syntax language, which is in a bidirectional form where all eliminations
+ * are either atomic or marked by a (possibly part-approximate) type. 
+ *
+ * The obvious way to do approximate type reconstruction is from the "outside
+ * in," recursing into the structure of a term. However, supported by the 
+ * generic recursion scheme infrastructure, this phase works from the "inside
+ * out." In Pass 1, every point in the syntax tree is marked with a
+ * context of variables, each of which is given an approximate type that starts
+ * out as just a bare unification variables. In Pass 2, the term is "folded"
+ * from the inside to the outside, at each point taking all sub-terms and 
+ * replacing them with a record consisting of the set of free variables (FVars)
+ * and an expression "exp" that is one of the following: 
+ * - AtomicTy - A partially instantiated atomic type
+ * - Rule - A rule
+ * - Type - A (list of) normal type(s)
+ * - Kind - A kind (i.e. "type definition")
+ * - AtomicTm - A partially instantiated atomic term
+ * - RedexTm - A normal term with a type annotation to make it synthesizing, 
+ *   and arguments
+ * - NormalTm - A (list of) normal term(s)
+ *
+ * Lists only appear because the syntax allows A -> B -> C to be written
+ * (A , B) -> C, and similarly allows A B C to be written A (B, C) stage. *)
+
 signature RECON_APPROX = sig
 
   datatype normal_exp = 
-      ExpRule of ExtSyn.rule
-    | ExpType of ExtSyn.typ
-    | ExpKind of ExtSyn.knd
+      ExpKind of ExtSyn.knd
+    | ExpRule of ExtSyn.rule
+    | ExpType of ExtSyn.typ 
     | ExpTerm of ExtSyn.trm * Approx.typ
 
   val parsedsyn_to_extsyn : 
@@ -228,7 +257,10 @@ val merge_freevars =
         (fn (str, t1, t2) => 
             let in
               A.unify(t1,t2) 
-              handle Unify => raise Error("Clashing types for " ^ str, pos);
+              handle Unify => 
+                     raise Error("Clashing types for " ^ str ^ "\n" ^
+                                 "Type 1: " ^ A.to_string t1 ^ "\n" ^
+                                 "Type 2: " ^ A.to_string t2, pos);
               t1
             end)
 
@@ -236,13 +268,13 @@ val lookup_const =
  fn pos =>
  fn var =>
     case Sig.string_to_cid var of 
-      NONE => raise Error("Undefined variable " ^ var, pos)
+      NONE => raise Error("Undefined lower-case constant " ^ var, pos)
     | SOME cid => 
       let val dec = Sig.lookup cid
         fun list_knd knd tys = 
             case IntSyn.K.prj knd of
               IntSyn.KType k => (rev tys, k)
-            | IntSyn.KArrow(ty,knd) => 
+            | IntSyn.KPi(_,ty,knd) => 
               list_knd knd (A.from_exact ty :: tys)
       in
         case dec of 
@@ -256,7 +288,8 @@ val lookup_const =
         | IntSyn.TypAbbrev{typ, knd, ...} => 
           let val (tys,knd) = list_knd knd []
           in AtomicTy(TAbbrev cid, [], tys, knd) end
-        | _ => raise Error("Expected type or kind constant", pos)
+        | _ => raise Error(Sig.cid_to_string cid ^ 
+                           " is not a type or kind constant", pos)
       end
 
 
@@ -271,11 +304,8 @@ fun unify_typ(typ, apx) =
       TBase(TConst cid, _) => A.unify(A.Const' cid, apx)
     (* The Abbrev module checks to expand the type abbreviation anyway. *)
     | TBase(TAbbrev cid, _) => A.unify(A.Const' cid, apx) 
-    | TArrow(typ1,typ2) => 
+    | TPi(dep,typ1,typ2) => 
       let val (apx1, apx2) = A.force_arrow apx 
-      in unify_typ(typ1, apx1); unify_typ(typ2, apx2) end
-    | TPi(typ1, typ2) =>
-      let val (apx1, apx2) = A.force_arrow apx
       in unify_typ(typ1, apx1); unify_typ(typ2, apx2) end
     | TApprox apx' => A.unify(apx, apx')
                       
@@ -287,11 +317,10 @@ val fold_decl : A.typ -> folder E.var_decl -> typ =
     let 
       val typ = get_type pos exp
     in 
-      if MapS.isEmpty freevars then () 
-      else raise Error("Free vars in typ?", pos);
       unify_typ(typ, arg_ty)
       handle Unify =>
-           raise Error("Inferred type does not match specification", pos); typ 
+           raise Error("Inferred type does not match specification\n" ^
+                       "Inferred type: " ^ A.to_string arg_ty, pos); typ 
     end
 
 val fold : folder E.exp_view * mark -> folder = 
@@ -304,15 +333,22 @@ val fold : folder E.exp_view * mark -> folder =
 
     | E.Pi(decl, F{exp,freevars}) =>
       let val var_ty = fold_decl arg_ty decl in
-        F{exp = Rule(RPi'(var_ty, get_rule pos exp)),
-           freevars = freevars} 
+        case normal_exp pos exp of
+          ExpRule r2 => raise Error("Pi or forall for rules?", pos)
+        | ExpType t2 => 
+          F{exp = Type[TPi'(var_ty, t2)], freevars = freevars}
+        | ExpKind k2 =>
+          F{exp = Kind(KPi'(var_ty, k2)), freevars = freevars}
+        | ExpTerm _ => raise Error("Pi cannot contain term", pos)
       end
 
     | E.Lam(decl, F{exp,freevars}) =>
       let val var_ty = fold_decl arg_ty decl
         val (m,apx) = get_term pos exp
-      in F{exp = NormalTm([(MLam'(m), A.Arrow'(arg_ty, apx))]),
-           freevars = freevars} end
+        val ty = case decl of E.Var _ => NONE | E.VarTy _ => SOME var_ty
+      in
+        F{exp = NormalTm([(MLam'(ty,m), A.Arrow'(arg_ty, apx))]),
+          freevars = freevars} end
 
     | E.App(F{exp = e1,freevars = fv1}, F{exp = e2, freevars = fv2}) =>
       let 
@@ -343,7 +379,9 @@ val fold : folder E.exp_view * mark -> folder =
                           raise Error("Non-function applied to argument", pos)
               in A.unify(apx,apx1)
                  handle Unify => 
-                        raise Error("Type of argument did not match", pos);
+                        raise Error("Type of argument did not match" ^
+                                "Expected type: " ^ A.to_string apx ^ "\n" ^
+                                "Inferred type: " ^ A.to_string apx1, pos);
                  tm_args (tm :: current_tms, new_tms, apx2)
               end
 
@@ -440,7 +478,7 @@ val fold : folder E.exp_view * mark -> folder =
           let in
             case K.prj k of 
               KType NONE => F{exp = Type [t], freevars = freevars}
-            | _ => raise Error("Bad type definition ascrption", pos)
+            | _ => raise Error("Type abbreveation is not fully general", pos)
           end
         | (ExpTerm (m, apx), ExpType ty) =>
           let in 

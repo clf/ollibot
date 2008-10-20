@@ -3,7 +3,7 @@ structure IntSyn :> INT_SYN = struct
 open Global
 type cid = int
 
-datatype head = BVar of int | Const of cid
+datatype head = BVar of int | Const of cid | FVar of string
 datatype 'm subst = 
     SubIdx of int * 'm subst 
   | SubTrm of 'm * 'm subst 
@@ -11,17 +11,29 @@ datatype 'm subst =
 datatype 'm trm_view = 
     MBase of head * 'm list
   | MLam of 'm
-  | MVar of string * 'm subst
-datatype trm = FixTrm of trm trm_view
+  | MVar of evar * 'm subst
+and trm = FixTrm of trm trm_view
+and evar = EV of int * trm option ref 
 
+val newEVar = 
+    let val i = ref 0 
+    in fn () => (i := !i + 1; EV(!i, ref NONE)) end
+structure EVar = 
+struct type ord_key = evar
+val compare = fn (EV(i1,_), EV(i2,_)) => Int.compare(i1,i2) 
+end
+
+datatype depend = Arrow | Pi
 datatype 't typ_view =
-    TBase of cid
-  | TArrow of 't * 't
+    TBase of cid * trm list
+  | TPi of depend * 't * 't
 datatype typ = FixTyp of typ typ_view
+type spine = trm list
+type ctx = typ list
 
 datatype 'p knd_view =
     KType of kind
-  | KArrow of typ * 'p
+  | KPi of depend * typ * 'p
 datatype knd = FixKnd of knd knd_view
 
 datatype ('p, 'n) pos_view =
@@ -94,7 +106,7 @@ MakeTyp (struct
          fun map f obj = 
              case obj of 
                TBase cid => TBase cid
-             | TArrow(t1,t2) => TArrow(f t1, f t2)
+             | TPi(d,t1,t2) => TPi(d, f t1, f t2)
          end)
 
 structure K = 
@@ -106,7 +118,7 @@ MakeTyp (struct
          val map = 
           fn f =>
           fn KType k => KType k
-           | KArrow(t,k) => KArrow(t, f k)
+           | KPi(d,t,k) => KPi(d,t, f k)
          end)
 
 structure PN = 

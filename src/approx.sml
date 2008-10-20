@@ -55,7 +55,9 @@ fun inj (Const cid) =
               
 and from_exact obj = 
     IntSyn.T.fold 
-        (inj o (fn TBase cid => Const cid | TArrow(t1,t2) => Arrow(t1,t2))) obj
+        (fn TBase(cid,_) => inj(Const cid)
+          | TPi(_,t1,t2) => inj(Arrow(t1,t2))) obj
+ 
 
 (* Unification is dumb - make better union-find! *)
 structure A = 

@@ -12,12 +12,11 @@ datatype thead =
 
 datatype ('m,'t) typ_view =
     TBase of thead * 'm list (* No dependent types *)
-  | TPi of 't * 't         (* Πx:A.K *)
-  | TArrow of 't * 't        (* A -> B *)
+  | TPi of IntSyn.depend * 't * 't  (* Πx:A.K *)
   | TApprox of Approx.typ    (* Omitted type, determied by unification *)
 
 datatype ('m,'t) trm_view =
-    MLam of 'm              (* Normal: λx.N *)
+    MLam of 't option * 'm  (* Normal: λ[x: V].N *)
   | MApp of head * 'm list  (* Atomic: Synthesizing constant and applications *)
   | MRedex of ('m * 't) * 'm list 
                             (* Atomic: Annotated normal term and applications *)
@@ -25,9 +24,8 @@ datatype typ = FixTyp of (trm, typ) typ_view
      and trm = FixTrm of (trm, typ) trm_view
 
 datatype 'k knd_view =
-    KType of Global.kind    (* type, pers+, pers-, eph+, eph- *)
-  | KPi of typ * 'k         (* Πx:A.K *)
-  | KArrow of typ * 'k      (* A -> K *)
+    KType of Global.kind     (* type, pers+, pers-, eph+, eph- *)
+  | KPi of IntSyn.depend * typ * 'k (* Πx:A.K *)
 datatype knd = FixKnd of knd knd_view
 
 datatype 'r rule_view = 
@@ -52,14 +50,14 @@ MakeTyp2(struct
          val prjb = fn FixTyp t => t
          val mapa =
           fn (f,g) =>
-          fn MLam t => MLam(f t)
+          fn MLam(NONE,t) => MLam(NONE, f t)
+           | MLam(SOME t, m) => MLam(SOME(g t), f m)
            | MApp(h, ms) => MApp(h, List.map f ms)
            | MRedex((t, typ), ts) => MRedex((f t, g typ), List.map f ts)
          val mapb =
           fn (f,g) =>
           fn TBase(h, ms) => TBase(h, List.map f ms)
-           | TArrow(t1, t2) => TArrow(g t1, g t2)
-           | TPi(t1, t2) => TPi(g t1, g t2)
+           | TPi(d, t1, t2) => TPi(d, g t1, g t2)
            | TApprox approx => TApprox approx
          end)
 
@@ -75,8 +73,7 @@ MakeTyp(struct
         val map = 
          fn f =>
          fn KType kind => KType kind
-          | KPi(typ, t) => KPi(typ, f t)
-          | KArrow(typ, t) => KArrow(typ, f t)
+          | KPi(d,typ, t) => KPi(d,typ, f t)
         end)
 
 structure R =
@@ -96,15 +93,16 @@ MakeTyp(struct
         end)
 
 val TBase' = T.inj o TBase
-val TArrow' = T.inj o TArrow
-val TPi' = T.inj o TPi
+val TPi' = fn(t1,t2) => T.inj(TPi(IntSyn.Pi, t1, t2))
+val TArrow' = fn (t1,t2) => T.inj(TPi(IntSyn.Arrow, t1, t2))
 val TApprox' = T.inj o TApprox
 val MLam' = M.inj o MLam
 val MApp' = M.inj o MApp
 val MRedex' = M.inj o MRedex
 val KType' = K.inj o KType
-val KPi' = K.inj o KPi
-val KArrow' = K.inj o KArrow
+val KPi' = K.inj o KPi 
+val KPi' = fn (t,k) => K.inj(KPi(IntSyn.Pi, t, k))
+val KArrow' = fn (t,k) => K.inj(KPi(IntSyn.Arrow, t, k))
 val RAtom' = R.inj o RAtom
 val RExist' = R.inj o RExist
 val RPi' = R.inj o RPi
@@ -120,8 +118,7 @@ fun typ_to_apx typ =
     case T.prj typ of
       TBase(TConst cid, _) => Approx.Const' cid
     | TBase(TAbbrev cid, _) => Approx.Const' cid
-    | TArrow(t1,t2) => Approx.Arrow'(typ_to_apx t1, typ_to_apx t2)
-    | TPi(t1,t2) => Approx.Arrow'(typ_to_apx t1, typ_to_apx t2)
+    | TPi(_,t1,t2) => Approx.Arrow'(typ_to_apx t1, typ_to_apx t2)
     | TApprox(apx) => apx
 
 

@@ -1,24 +1,34 @@
 signature INT_SYN = sig
 
 type cid
-
 (* Classifiers for terms trm are types typ 
  * Classifiers for types typ are just the single kind "type" *)
-datatype head = BVar of int | Const of cid
+datatype head = BVar of int | Const of cid | FVar of string
 type trm
-datatype 'm subst = 
+type evar
+val newEVar : unit -> evar
+structure EVar : ORD_KEY where type ord_key = evar
+datatype 'm subst =
     SubIdx of int * 'm subst 
   | SubTrm of 'm * 'm subst 
   | SubShift of int
 datatype 'm trm_view = 
     MBase of head * 'm list
   | MLam of 'm
-  | MVar of string * 'm subst
+  | MVar of evar * 'm subst
 
+datatype depend = Arrow | Pi 
 type typ 
 datatype 't typ_view =
-    TBase of cid
-  | TArrow of 't * 't
+    TBase of cid * trm list 
+  | TPi of depend * 't * 't
+
+type spine = trm list
+type ctx = typ list
+
+(* Because the signature is separate from the internal syntax the module 
+ * needs the type that a cid synthesizes in order to eta-expand correctly. *)
+(* val MBase' : (head * trm list) * typ -> trm *)
 
 (* Classifiers for proof objects (no datatype) are rules pos and neg
  * Classifiers for rules rul are rule predicates pred. 
@@ -29,7 +39,7 @@ datatype 't typ_view =
 type knd
 datatype 'p knd_view =
     KType of Global.kind
-  | KArrow of typ * 'p
+  | KPi of depend * typ * 'p
 
 type pos
 type neg

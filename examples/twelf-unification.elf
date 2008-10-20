@@ -50,3 +50,69 @@ _ : pbogus _ w w w = pz.
 
 
 % _ : _ _ = c.
+
+nat : type.
+z : nat. s : nat -> nat.
+a : (nat -> nat -> nat) -> type.
+c : a ([x] A).
+e : a ([x][y] A y).
+
+plus : nat -> nat -> nat -> type.
+pz : plus z N N. 
+ps : plus N M P -> plus (s N) M (s P).
+can-plus : {A: nat}{B: nat} plus A B C -> type.
+a : can-plus (s _) _ (ps D).
+a : can-plus (s N) _ (ps _).
+
+r : nat -> nat -> type.
+eq : r N N -> type.
+oops : {n: nat} r n (s n).
+
+o : type.
+a : o -> type.
+b : o -> o -> type.
+eq : b M M -> type.
+x-c : b (U (V: a W)) W.
+% test : eq x-c.
+% Running this causes the following to happen. 
+% Approximate typechecking works out
+% eq M (x-c W ([x] U x) V) - Remember, eq has one implicit parameter.
+% Check that eq M (x-c W ([x] U x) V) is a type 
+% eq => {m: o}{d: b m m} type.
+% M <= o (Ok!)
+% x-c W ([x] U x) V <= b M M
+% x-c => {w: o}{u: a w -> o}{v: a w} b (u v) w.
+% Now, here's the key. We check the spine W ([x] U x) V against this synthesized
+% type and get back the type b (U V) W. Now, the final step in type checking
+% is to ensure b (U V) W = b M M. This requires unification, the first time
+% we have used unification so far. 
+% So here's the problem: seeing that M = W, find W, U, and V such that
+% W = U V. That's fine, until you see the type of U : a (U V) -> o and 
+% V : a (U V). A cycle has been created: The type of U is dependent on V,
+% and the type of V is dependent on U!
+
+
+o : type.
+
+a : o -> type.
+
+c : {X} (a X -> o) -> type.
+
+d : c (U F) U.
+
+
+% Is it possible to directly create a "U : a V" and a "V : a U"? Well, no, 
+% because then what would the kind of a be?
+
+
+a : type.
+b : a -> type.
+
+c : {X: a} b X -> a.
+
+d : b _ -> b _ -> type.
+
+e : d (X : b (c Z Y)) (Y : b Z).
+e : d (X : b Z) (Y : b (c Z X)).
+
+pz : {n}([x][y] plus x y y) z n.

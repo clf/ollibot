@@ -28,6 +28,19 @@ fun install dec =
 fun reset() = (map_forward := MapS.empty; map_backward := MapC.empty; signat := I.sgnEmpty)
 end (* local *)
 
+fun lookup_ConDec cid =
+    case lookup cid of 
+      I.ConDec x => x 
+    | _ => raise Global.Error("Internal error: ConDec expected", Pos.initpos)
+fun lookup_ConAbbrev cid = 
+    case lookup cid of 
+      I.ConAbbrev x => x 
+    | _ => raise Global.Error("Internal error: ConAbbrev expected", Pos.initpos)
+fun lookup_TypDec cid = 
+    case lookup cid of 
+      I.TypDec x => x
+    | _ => raise Global.Error("Internal error: TypDec expected", Pos.initpos)
+
 end
 
 structure Sig = Signat(IntSyn)
