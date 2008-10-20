@@ -1,0 +1,77 @@
+
+exp : type.
+value : type.
+frame : type.
+dest : type.
+
+
+%{ Expressions And Values }%
+
+val : value -> exp.
+lam : (value -> exp) -> value.
+app : exp -> exp -> exp.
+
+
+%{ Frames }%
+
+f_app1 : dest -> exp -> frame.
+f_app2 : value -> dest -> frame.
+f_lam : dest -> frame.
+
+%{ Destinations }%
+
+path : type.
+p_app1 : path -> path.
+p_app2 : path -> path.
+p_lam : path -> path.
+
+sk_dest : path -> dest.
+sk_value : path -> value.
+
+
+%{ Predicates }%
+
+eval : (exp, dest) -> pers+.
+return : (value, dest) -> pers+.
+comp : (frame, dest) -> pers+.
+vreturn : (value, var) -> pers+.
+
+
+%{ Rules }%
+
+eval_value:
+eval(val Val, Dest)
+----------------->
+return(Val, Dest).
+
+eval_app1:
+eval(app E1 E2, Dest)
+-----------------> ∃d1. 
+comp(f_app1 d1 E2, Dest),
+Dest = sk_dest Path, 
+d1 = sk_dest (p_app1 Path).
+
+eval_app2:
+comp(f_app1 Dest1 E2, Dest),
+return(V, Dest1)
+-----------------> ∃d2. 
+eval(E2, d2),
+comp(f_app2 V d2, Dest),
+Dest = sk_dest Path,
+d2 = sk_dest (p_app2 Path).
+
+eval_applam : 
+comp(f_app2 (lam E0) Dest2, Dest), 
+return(V, Dest2) 
+-----------------> ∃d0. 
+eval(E0 V, d0),
+comp(f_lam d0, Dest),
+Dest = sk_dest Path,
+d0 = sk_dest (p_lam Path).
+
+eval_return:
+comp(f_lam Dest0, Dest),
+return(V, Dest0)
+----------------->
+return(V, Dest).
+
