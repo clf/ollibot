@@ -77,7 +77,6 @@ type signat
 val sgnEmpty : signat
 val sgnLookup : signat * cid -> dec
 val sgnAdd : signat * dec -> signat * cid
-
 (* Implementation of recursion schemes *)
 
 structure M : TYP_FULL

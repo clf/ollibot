@@ -1,14 +1,26 @@
 Group is
  $/basis.cm
  $/smlnj-lib.cm
- interface/sources.cm
- parse.cm
- intsyn-sig.sml
- intsyn.sml
- signature.sml
+ HashCons/hash-cons-lib.cm
+ util/growmonoarray-sig.sml
+ util/growmonoarray.sml
+
+ algo/heap-sig.sml
+ algo/heap.sml
+
+ lambda-sig.sml 
+ lambda.sml
+
+ terms-sig.sml
+ terms.sml
+
+ exec.sml
+
+(* signature.sml
  approx.sml
  extsyn-sig.sml
  extsyn.sml
  recon-approx.sml
  recon-exact.sml
-(* codeio.sml *)
+ codeio.sml *)
+

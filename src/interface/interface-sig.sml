@@ -70,6 +70,17 @@ val mapa : ('a1 -> 'a2) * ('b1 -> 'b2) -> ('a1, 'b1) aview -> ('a2, 'b2) aview
 val mapb : ('a1 -> 'a2) * ('b1 -> 'b2) -> ('a1, 'b1) bview -> ('a2, 'b2) bview
 end
 
+signature MTYP2 = sig
+type 'm a
+type 'm b
+type ('a, 'b) aview
+type ('a, 'b) bview
+val inja : ('m a, 'm b) aview * 'm -> 'm a
+val injb : ('m a, 'm b) bview * 'm -> 'm b
+val mapa : ('a1 -> 'a2) * ('b1 -> 'b2) -> ('a1, 'b1) aview -> ('a2, 'b2) aview
+val mapb : ('a1 -> 'a2) * ('b1 -> 'b2) -> ('a1, 'b1) bview -> ('a2, 'b2) bview
+end
+
 signature TYP2_FULLA = sig
   type ('a, 'b) aview
   type ('a, 'b) bview
@@ -87,6 +98,38 @@ signature TYP2_FULLA = sig
   val prj3 : a -> (((a, b) aview, (a, b) bview) aview,
                      ((a, b) aview, (a, b) bview) bview) aview
 end
+
+signature MTYP2_FULLA = sig
+  type 'm a
+  type 'm b
+  type ('a, 'b) aview
+  type ('a, 'b) bview
+ 
+  val fold   : (('a, 'b) aview * 'm -> 't) * (('a, 'b) bview * 'm -> 't) 
+               -> 'm a -> 't
+  val unfold : ('t -> ('a, 'b) aview * 'm) * ('t -> ('a, 'b) bview * 'm)
+               -> 't -> 'm a
+
+  val inj  : (a, b) aview * 'm -> 'm a
+  val prj  : 'm a -> (a, b) aview * m
+end
+
+signature MTYP2_FULLB = sig
+  type 'm a
+  type 'm b
+  type ('a, 'b) aview
+  type ('a, 'b) bview
+ 
+  val fold   : (('a, 'b) aview * 'm -> 't) * (('a, 'b) bview * 'm -> 't) 
+               -> 'm b -> 't
+  val unfold : ('t -> ('a, 'b) aview * 'm) * ('t -> ('a, 'b) bview * 'm)
+               -> 't -> 'm b
+
+  val inj  : (a, b) bview * 'm -> 'm b
+  val prj  : 'm b -> (a, b) bview * m
+end
+
+
 
 signature TYP2_FULLB = sig
   type ('a, 'b) aview
