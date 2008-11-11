@@ -1,4 +1,80 @@
-functor Terms (Rep : TERM_REP) = struct
+
+signature TERM_REP = sig
+
+  (* Base constants are efficient representations of terms that can developed
+   * for types which are finite domains, types that are only used for 
+   * generated parameters, and types that only have unary constructors. *)
+  type base_const = int *  int
+
+  (* Indices are basically hash-table objects *)
+  type ndx
+
+  (* Closed, reduced terms are keys to the hashtable. This is the interface
+   * for these closed, reduced terms. *)
+  type term
+  type intern_term
+
+  val RLam   : int * term -> term
+  val RConst : int * term list -> term  
+  val RFVar  : int * term list -> term
+  val RBase  : base_const -> term
+
+  type table 
+
+  val newtable : 
+      (int -> base_const option) -> 
+      (int * base_const -> base_const option) ->
+      table
+
+  exception Internalize
+  val internalize : table -> term -> intern_term      
+  
+end
+
+
+functor TermRep
+(
+(* Internalized terms are indexes into arrays *)
+  type ndx
+  val compare : ndx -> order
+  val void : ndx
+  datatype cell = Ndx of ndx | BaseConst of int * int | Void
+  datatype int_term = 
+      ILam of int * cell
+    | IConst of int * cell list
+    | IVar of ndx * cell list
+              
+  structure A : sig
+    type growarray
+    val init : int -> growarray
+    val length : growarray -> ndx
+    val append : growarray -> int_term -> unit
+    val sub    : growarray -> ndx -> int_term
+    val update : growarray -> ndx -> int_term -> unit
+  end
+                
+  (* Closed reduced terms are keys to the hashtable *)
+  datatype red_term =
+      RLam of int * red_term
+    | RConst of int * red_term list
+    | RVar  of ndx * red_term list 
+    | RFVar of int * red_term list
+    | RCell of cell
+               
+  structure HT : sig
+    type 'a hash_table
+    type key
+    val mkTable : int * exn -> 'a hash_table
+    val clear   : 'a hash_table -> unit
+    val insert  : 'a hash_table -> key * 'a -> unit
+    val lookup  : 'a hash_table -> key -> 'a
+    val find    : 'a hash_table -> key -> 'a option
+  end
+                 
+  (* Key takes any closed term that is not immediately a cell and turns it
+   * into a hashtable key. *)
+  val key : red_term -> HT.key
+) :> TERM_REP = struct
 
   open Lambda
   exception Invariant
@@ -162,6 +238,5 @@ functor Terms (Rep : TERM_REP) = struct
   fun RConst x = RConst x
   fun RFVar x = RFVar x
   fun RBase x = RCell(BaseConst x)
-
 
 end

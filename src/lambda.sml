@@ -19,7 +19,7 @@ structure Lambda :> LAMBDA = struct
   type signat = dec Map.map
 
   val sgnEmpty = Map.empty
-  val sgnLookup = Map.lookup
+  val sgnLookup : dec Map.map * int -> dec = valOf o Map.find
   val sgnAdd =
    fn (s, decl) => (next := !next + 1; (Map.insert(s,!next,decl),!next))
 

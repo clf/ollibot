@@ -11,6 +11,8 @@ Group is
  lambda-sig.sml 
  lambda.sml
 
+ term-rep.sml
+
  terms-sig.sml
  terms.sml
 
