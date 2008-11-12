@@ -4,6 +4,7 @@ signature TERM_REP = sig
   (* Base constants are efficient representations of terms that can developed
    * for types which are finite domains, types that are only used for 
    * generated parameters, and types that only have unary constructors. *)
+  (* base_const : type_identifier * value_identifier *)
   type base_const = int *  int
 
   (* Indices are basically hash-table objects *)
@@ -12,7 +13,7 @@ signature TERM_REP = sig
   (* Closed, reduced terms are keys to the hashtable. This is the interface
    * for these closed, reduced terms. *)
   type term
-  type intern_term
+(*type intern_term*)
 
   val RLam   : int * term -> term
   val RConst : int * term list -> term  
@@ -27,7 +28,12 @@ signature TERM_REP = sig
       table
 
   exception Internalize
-  val internalize : table -> term -> intern_term      
+(*val internalize : table -> term -> intern_term*)
+  datatype forced_const = 
+      FC_Base of int * int
+    | FC_Const of int * term list
+
+  val force_const : table * term -> forced_const
   
 end
 
@@ -229,6 +235,24 @@ functor TermRep
       case intern(t,tm,1,void) of
         (RCell cell,_) => cell
       | _ => raise Internalize
+
+
+  datatype forced_const = 
+      FC_Base of int * int
+    | FC_Const of int * red_term list
+
+  fun force_const(T{term_array,...}, tm) = 
+      case tm of
+        RConst(id,tms) => FC_Const(id, tms)
+      | RCell(Ndx ndx) =>
+        let in
+          case A.sub term_array ndx of
+            IConst(id,tms) => FC_Const(id, map RCell tms)
+          | _ => raise Internalize
+        end
+      | RCell(BaseConst(ty,v)) => FC_Base(ty,v)
+      | _ => raise Internalize
+
       
   type base_const = int * int
   type ndx = ndx
@@ -238,5 +262,7 @@ functor TermRep
   fun RConst x = RConst x
   fun RFVar x = RFVar x
   fun RBase x = RCell(BaseConst x)
+
+
 
 end
