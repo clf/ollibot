@@ -8,6 +8,8 @@ Group is
  algo/heap-sig.sml
  algo/heap.sml
 
+ global.sml
+
  lambda-sig.sml 
  lambda.sml
 

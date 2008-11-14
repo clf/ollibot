@@ -1,9 +1,13 @@
 functor Terms (Rep : TERM_REP) = struct
 
   open Rep
+  structure L = Lambda
 
   type rule_id = int
   type type_id = int
+
+  structure Map = 
+  RedBlackMapFn(struct type ord_key = int val compare = Int.compare end)
 
   datatype perm = PERSISTANT | LINEAR 
 
@@ -35,8 +39,6 @@ functor Terms (Rep : TERM_REP) = struct
             vars : term list,
             match : term list}
 
-  structure Map = 
-  RedBlackMapFn(struct type ord_key = int val compare = Int.compare end)
 
   datatype tree = 
       Node of {fallthrough : tree option,
@@ -48,16 +50,25 @@ functor Terms (Rep : TERM_REP) = struct
                match : int list}
 
   exception Invariant
+           
   fun match_dtree (fact as F{schild,perm,valid,...}, 
-                   prog as P{intern_table,...})
+                   prog as P{intern_table, ...}) = 
    fn (work, tree, matches) =>
       let 
-        fun match (work, tree, matches) = match_dtree (fact, prog)
-        fun match_fallthrough(tm, tms, tree) =
-            match_dtree (fact, tms, tree, tm :: matches)
+        fun match (work, tree, matches) = 
+            match_dtree (fact, prog) (work,tree,matches)
+        fun match_fallthrough(tm, tms, tree) = match (tms, tree, tm :: matches)
         fun match_seekthrough(tm, tms, map) = 
-            let val (const_id, spine) = force_const(tm in
-              raise Match
+            let val (const_id, spine) = 
+                    case force_const (intern_table, tm) of
+                      FC_Base (base_const) => 
+                      (* XXX Un-base const-ify *) 
+                      (-1, [])
+                    | FC_Const (const_id, spine) => (const_id, spine)
+            in
+              case Map.find(map, const_id) of
+                NONE => []
+              | SOME tree => match (spine @ tms, tree, matches)
             end
       in
         case (work, tree) of
@@ -73,20 +84,14 @@ functor Terms (Rep : TERM_REP) = struct
             schild := srule :: !schild;
             [srule]
           end
-        | (tm :: tms, Node{fallthrough = NONE, seekthrough = NONE}) => []
+        | (tm :: tms, Node{fallthrough = NONE, seekthrough = NONE}) =>
+          []
         | (tm :: tms, Node{fallthrough = SOME ft, seekthrough = NONE}) => 
-          match_dtree (fact, tms, ft, tm :: matches)
+          match_fallthrough(tm,tms,ft)
         | (tm :: tms, Node{fallthrough = NONE, seekthrough = SOME st}) => 
-          Map.foldl 
-              (fn (tree, srules) =>
-                  match_dtree(fact, tms, tree, matches) @ srules)
-              [] st 
+          match_seekthrough(tm,tms,st)
         | (tm :: tms, Node{fallthrough = SOME ft, seekthrough = SOME st}) => 
-          match_dtree (fact, tms, ft, tm :: matches) @
-          Map.foldl 
-              (fn (tree, srules) =>
-                  match_dtree(fact, tms, tree, matches) :: srules)
-              [] st 
+          match_fallthrough(tm,tms,ft) @ match_seekthrough(tm,tms,st)
         | _ => raise Invariant
       end                     
 
