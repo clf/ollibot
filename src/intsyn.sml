@@ -3,7 +3,7 @@ structure IntSyn :> INT_SYN = struct
 open Global
 type cid = int
 
-datatype head = BVar of int | Const of cid | FVar of string
+datatype head = BVar of int | Const of cid
 datatype 'm subst = 
     SubIdx of int * 'm subst 
   | SubTrm of 'm * 'm subst 
@@ -11,29 +11,17 @@ datatype 'm subst =
 datatype 'm trm_view = 
     MBase of head * 'm list
   | MLam of 'm
-  | MVar of evar * 'm subst
-and trm = FixTrm of trm trm_view
-and evar = EV of int * trm option ref 
+  | MVar of string * 'm subst
+datatype trm = FixTrm of trm trm_view
 
-val newEVar = 
-    let val i = ref 0 
-    in fn () => (i := !i + 1; EV(!i, ref NONE)) end
-structure EVar = 
-struct type ord_key = evar
-val compare = fn (EV(i1,_), EV(i2,_)) => Int.compare(i1,i2) 
-end
-
-datatype depend = Arrow | Pi
 datatype 't typ_view =
-    TBase of cid * trm list
-  | TPi of depend * 't * 't
+    TBase of cid
+  | TArrow of 't * 't
 datatype typ = FixTyp of typ typ_view
-type spine = trm list
-type ctx = typ list
 
 datatype 'p knd_view =
     KType of kind
-  | KPi of depend * typ * 'p
+  | KArrow of typ * 'p
 datatype knd = FixKnd of knd knd_view
 
 datatype ('p, 'n) pos_view =
@@ -50,17 +38,13 @@ datatype pos = FixPos of (pos, neg) pos_view
      and neg = FixNeg of (pos, neg) neg_view
 
 datatype dec = 
-    ConDec    of {id: string, typ: typ}            (* c : At : type     *)
-  | ConAbbrev of {id: string, typ: typ, trm: trm}  (* d : At = M : type *)
-  | TypDec    of {id: string, knd: knd}            (* a : Kr : kind     *)
-  | TypAbbrev of {id: string, knd: knd, typ: typ}  (* a : Kr = A : kind *)
-  | PosDec    of {id: string, pos: pos}            (* _ : A+ : p/e+     *)
-  | NegDec    of {id: string, neg: neg}            (* _ : A- : p/e-     *)
+    ConDec  of {id: string, def: typ} (* c : At : type   *)
+  | TypDec  of {id: string, def: knd} (* p : Kr : kind   *)
+  | PosDec  of {id: string, def: pos} (* _ : A+ : p/e+   *)
+  | NegDec  of {id: string, def: neg} (* _ : A- : p/e-   *)
 val dec_id = 
  fn ConDec {id,...} => id
-  | ConAbbrev {id,...} => id
   | TypDec {id,...} => id
-  | TypAbbrev {id,...} => id
   | PosDec {id,...} => id
   | NegDec {id,...} => id
 
@@ -72,7 +56,7 @@ structure MapI = SplayMapFn(Cid)
 type signat = dec MapI.map
 
 val sgnEmpty = MapI.empty
-val sgnLookup = MapI.lookup
+val sgnLookup = fn x => (valOf(MapI.find x))
 val sgnAdd = 
     let val max = ref 0 
     in fn (signat, dec : dec) => 
@@ -106,7 +90,7 @@ MakeTyp (struct
          fun map f obj = 
              case obj of 
                TBase cid => TBase cid
-             | TPi(d,t1,t2) => TPi(d, f t1, f t2)
+             | TArrow(t1,t2) => TArrow(f t1, f t2)
          end)
 
 structure K = 
@@ -118,7 +102,7 @@ MakeTyp (struct
          val map = 
           fn f =>
           fn KType k => KType k
-           | KPi(d,t,k) => KPi(d,t, f k)
+           | KArrow(t,k) => KArrow(t, f k)
          end)
 
 structure PN = 

@@ -69,7 +69,7 @@ datatype tok =
   | LAMBDA | EXISTS | FORALL | PI
   | ID of string
   | DIRECTIVE of string
-  | TYPE of (polarity * permeability) option
+  | TYPE of (polar * perm) option
 
 exception Tokenize of string * Pos.pos
 fun error s pos = raise Tokenize(s,pos)
@@ -86,6 +86,7 @@ fun readSep c =
     | Char1 #"}" => SOME RCURLY
     | Char1 #"," => SOME COMMA
     | Char1 #":" => SOME COLON
+    | Char1 #"\\" => SOME LAMBDA
     | CharM 0wx2203 => SOME EXISTS
     | CharM 0wx2200 => SOME FORALL
     | CharM 0wx3BB  => SOME LAMBDA
@@ -103,6 +104,8 @@ fun isSymb c =
     | Char1 #">" => false
     | Char1 #"<" => false
     | Char1 #"." => false
+    | Char1 #"&" => false
+    | Char1 #";" => false
     | _ => not (isSep c) andalso not (isSpace c)
 
 (* Symbols that can *start* identifiers *)
@@ -113,7 +116,7 @@ fun decodeLaTeX s =
       "lambda" => LAMBDA
     | "exists" => EXISTS
     | "forall" => FORALL
-    | s => ID("\\"^s)
+    | s => ID("&"^s^";")
 
 fun token(c,cs) = 
     case concat (map toString (c :: cs)) of 
@@ -122,13 +125,14 @@ fun token(c,cs) =
     | "as" => AS
     | "=" => EQ
     | "==" => UNIFY
+    | "Exists" => EXISTS
     | "type" => TYPE NONE
-    | "lin+" => TYPE (SOME(Pos,Linear))
-    | "eph+" => TYPE (SOME(Pos,Linear))
-    | "lin-" => TYPE (SOME(Neg,Linear))
-    | "eph-" => TYPE (SOME(Neg,Linear))
-    | "pers+" => TYPE (SOME(Pos,Persistant))
-    | "pers-" => TYPE (SOME(Neg,Persistant))
+    | "lin+" => TYPE (SOME(Pos,Lin))
+    | "eph+" => TYPE (SOME(Pos,Lin))
+    | "lin-" => TYPE (SOME(Neg,Lin))
+    | "eph-" => TYPE (SOME(Neg,Lin))
+    | "pers+" => TYPE (SOME(Pos,Pers))
+    | "pers-" => TYPE (SOME(Neg,Pers))
     | s => ID s
 
 val skipspace = repeat ((satisfy isSpace) return ())
@@ -136,8 +140,7 @@ val symbolstring = repeat1 (satisfy isSymb wth toString) wth concat
 val satchar = fn c => satisfy (eq c)
 
 val directive = satchar #"%" >> symbolstring wth DIRECTIVE
-val escape = satchar #"\\" >> alt [symbolstring wth decodeLaTeX,
-                                   satisfy (eq #"\\") return LAMBDA]
+val escape = satchar #"&" >> symbolstring << satchar #";" wth decodeLaTeX
 val separator = maybe readSep
 val ident = satisfy isSymbStart && repeat (satisfy isSymb) wth token
 val arrow = (repeat1 (satchar #"-") && satchar #">") return ARROW
@@ -146,7 +149,7 @@ val dot = (satchar #"." && ignore_pos(satisfy isSpace)) return DOT
 
 val tokenizer = 
     (ignore_pos skipspace >>
-                alt [directive,escape,separator,ident,arrow,backarrow,dot])
+                alt [separator,directive,escape,ident,arrow,backarrow,dot])
     
 
 val parsefile = fn f => transform (!!tokenizer) (Comment.filter (openstream f))

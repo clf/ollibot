@@ -18,20 +18,19 @@ app : exp -> exp -> exp.
 
 %{ === Frames === }%
 
-dest %[ = exp ]% : type.         % Destinations (abstract) 
 
 frame : type.                    % Frames (syntax trees)
 
-fapp1 : dest -> exp -> frame.    % fapp1(D1,E2) - wait on lambda @ D1
-fapp2 : exp -> dest -> frame.    % fapp2(FP,D2) - wait on value @ D2
+fapp1 : exp -> exp -> frame.    % fapp1(D1,E2) - wait on lambda @ D1
+fapp2 : exp -> exp -> frame.    % fapp2(FP,D2) - wait on value @ D2
 fdest : exp -> frame.            % fdest(D)     - wait on value @ D
 
 
 %{ == Dynamic semantics == }%
 
-eval   : exp   -> dest -> %( lin+ )% %[ pers+ ]% .
-comp   : frame -> dest -> %( lin+ )% %[ pers+ ]% .
-return : exp   -> dest -> %( lin+ )% %[ pers+ ]% .
+eval   : exp   -> exp -> %( lin+ )% %[ pers+ ]% .
+comp   : frame -> exp -> %( lin+ )% %[ pers+ ]% .
+return : exp   -> exp -> %( lin+ )% %[ pers+ ]% .
 
 vreturn : exp -> var -> pers+. 
 
@@ -57,16 +56,16 @@ comp(fapp2 V d2, Dest),
 eval(E2, d2) 
 %[, d2 == E2 ]%.
 
-comp(fapp2 (lam λx. E x) Dest2, Dest),
+comp(fapp2 (lam \x. E x) Dest2, Dest),
 return(V, Dest2)
 -------------------> ∃x. ∃d0.
 comp(fdest d0, Dest),
 eval(E x, d0),
 vreturn(V, x)
-%[x == sk_var E, d0 == lam λx. E x. ]%
+%[, x == sk_var E, d0 == lam \x. E x ]% .
 
+last:
 comp(fdest Dest0, Dest),
 return(V, Dest0)
 ------------------->
 return(V, Dest).
-

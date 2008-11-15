@@ -4,11 +4,12 @@ Group is
  HashCons/hash-cons-lib.cm
  util/growmonoarray-sig.sml
  util/growmonoarray.sml
+ interface/sources.cm
+ parse.cm
 
  algo/heap-sig.sml
  algo/heap.sml
 
- global.sml
 
  lambda-sig.sml 
  lambda.sml
@@ -19,6 +20,16 @@ Group is
  terms.sml
 
  exec.sml
+
+ intsyn-sig.sml
+ intsyn.sml
+ signature.sml
+ approx.sml
+ extsyn-sig.sml
+ extsyn.sml
+ process.sml
+ codeio.sml
+
 
 (* signature.sml
  approx.sml

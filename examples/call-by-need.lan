@@ -80,18 +80,24 @@ return(Val, Dest).
 %{ I don't believe another choice of skolem constant here would make too much
 of a difference. }%
 
+sk_var : var -> dest.
+sk_dest : dest -> fn_ptr.
+sk_fun : dest -> dest.
+sk_fn_body : fn_ptr -> dest.
+sk_fn_var : fn_ptr -> var.
+
 eval(v X, Dest),
 veval(E, X)
--------------------> \exists d.
+-------------------> Exists d.
 vcomp(fdest(d), X),
 eval(E, d)
-%[, d = sk_var(X) ]% . 
+%[, (d == sk_var(X)) ]% . 
 
-eval(lam(\lambda x. E x), Dest)
+eval(lam(\x. E x), Dest)
 -------------------> ∃fp.
-functions(fp, \lambda x. E x),
+functions(fp, \x. E x),
 return(fv(fp), Dest)
-%[, fp = sk_dest(Dest) ]% .
+%[, fp == sk_dest(Dest) ]% .
 
 eval(n N, Dest)
 ------------------->
@@ -101,7 +107,7 @@ eval(app(E1,E2), Dest)
 -------------------> ∃d1. 
 comp(fapp1(d1,E2), Dest),
 eval(E1, d1)
-%[, d1 = sk_fun(Dest) ]% .
+%[, d1 == sk_fun(Dest) ]% .
 
 
 %{ === Delayed evaluation === }%
@@ -111,18 +117,19 @@ of an x by using Dest instead of FP in the sk_fn_var. Would this be 1-CFA? }%
 
 comp(fapp1(Dest1,E2), Dest),
 return(fv(FP), Dest1),
-functions(FP, \lambda x. E x)
+functions(FP, \x. E x)
 -------------------> ∃x. ∃d0.
 eval(E x, d0),
 veval(E2, x),
 comp(fdest(d0), Dest)
-%[, d0 = sk_fn_body(FP), x = sk_fn_var(FP) ]% .
+%[, d0 == sk_fn_body(FP), x == sk_fn_var(FP) ]% .
 
 comp(fdest(Dest0), Dest),
 return(Val, Dest0)
 ------------------->
 return(Val, Dest).
 
+last:
 vcomp(fdest(Dest2), X),
 return(Val, Dest2)
 ------------------->

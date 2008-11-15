@@ -8,9 +8,9 @@ num : type.            % Integers (finite domain)
 exp : type.            % Expressions (syntax trees)
 var : type.            % Variables (abstract)
 
-var : var → exp.
+v : var → exp.
 lam : (var → exp) → exp.
-num : num → exp.
+n : num → exp.
 app : exp → exp → exp.
 
 
@@ -51,9 +51,9 @@ languages:
 * <tt>return</tt> is a passive proposition that passes a value back to a destination.
 }%
 
-eval   : trm   → dest → %( lin+ )% %[ pers+ ]% .
+eval   : exp   → dest → %( lin+ )% %[ pers+ ]% .
 comp   : frame → dest → %( lin+ )% %[ pers+ ]% .
-return : val   → dest → %( lin+ )% %[ pers+ ]% .
+return : exp   → dest → %( lin+ )% %[ pers+ ]% .
 
 %{ 
 We also use the function <tt>vreturn</tt> to pass the value of a variable to all instances of that variable.

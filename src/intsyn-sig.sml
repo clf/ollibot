@@ -1,34 +1,24 @@
 signature INT_SYN = sig
 
 type cid
+
 (* Classifiers for terms trm are types typ 
  * Classifiers for types typ are just the single kind "type" *)
-datatype head = BVar of int | Const of cid | FVar of string
+datatype head = BVar of int | Const of cid
 type trm
-type evar
-val newEVar : unit -> evar
-structure EVar : ORD_KEY where type ord_key = evar
-datatype 'm subst =
+datatype 'm subst = 
     SubIdx of int * 'm subst 
   | SubTrm of 'm * 'm subst 
   | SubShift of int
 datatype 'm trm_view = 
     MBase of head * 'm list
   | MLam of 'm
-  | MVar of evar * 'm subst
+  | MVar of string * 'm subst
 
-datatype depend = Arrow | Pi 
 type typ 
 datatype 't typ_view =
-    TBase of cid * trm list 
-  | TPi of depend * 't * 't
-
-type spine = trm list
-type ctx = typ list
-
-(* Because the signature is separate from the internal syntax the module 
- * needs the type that a cid synthesizes in order to eta-expand correctly. *)
-(* val MBase' : (head * trm list) * typ -> trm *)
+    TBase of cid
+  | TArrow of 't * 't
 
 (* Classifiers for proof objects (no datatype) are rules pos and neg
  * Classifiers for rules rul are rule predicates pred. 
@@ -39,7 +29,7 @@ type ctx = typ list
 type knd
 datatype 'p knd_view =
     KType of Global.kind
-  | KPi of depend * typ * 'p
+  | KArrow of typ * 'p
 
 type pos
 type neg
@@ -56,12 +46,10 @@ datatype ('p, 'n) neg_view =
   | NPos of 'p
 
 datatype dec = 
-    ConDec    of {id: string, typ: typ}            (* c : At : type     *)
-  | ConAbbrev of {id: string, trm: trm, typ: typ}  (* d : At = M : kind *)
-  | TypDec    of {id: string, knd: knd}            (* a : Kr : kind     *)
-  | TypAbbrev of {id: string, typ: typ, knd: knd}  (* a : Kr = A : kind *)
-  | PosDec    of {id: string, pos: pos}            (* _ : A+ : p/e+     *)
-  | NegDec    of {id: string, neg: neg}            (* _ : A- : p/e-     *)
+    ConDec  of {id: string, def: typ} (* c : At : type   *)
+  | TypDec  of {id: string, def: knd} (* a : Kr : kind   *)
+  | PosDec  of {id: string, def: pos} (* _ : A+ : p/e+   *)
+  | NegDec  of {id: string, def: neg} (* _ : A- : p/e-   *)
 
 val dec_id : dec -> string
 
@@ -77,6 +65,7 @@ type signat
 val sgnEmpty : signat
 val sgnLookup : signat * cid -> dec
 val sgnAdd : signat * dec -> signat * cid
+
 (* Implementation of recursion schemes *)
 
 structure M : TYP_FULL

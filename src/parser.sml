@@ -8,8 +8,8 @@ val tokenize : string -> tokenstream
 (* NONE if the stream is exhausted, SOME if the stream has a left edge *)
 val pos : tokenstream -> Pos.pos option
 
-val parseonce : tokenstream -> ((ParsedSyn.decl * Pos.pos) option) * tokenstream
-val parseall : tokenstream -> (ParsedSyn.decl * Pos.pos) Stream.stream
+val parseonce : tokenstream -> (ParsedSyn.decl option) * tokenstream
+val parseall : tokenstream -> ParsedSyn.decl Stream.stream
 
 end
 
@@ -41,14 +41,6 @@ val typ = (!! (maybe (fn TYPE e => SOME e | _ => NONE)))
 val var_decl =
  fn exp => alt [(!! string) wth Var,
                 (!! string << is COLON && exp) wth VarTy]
-
-(* FIXITY (from the TIGHTEST binding (x) to the WEAKEST binding (+))
- * ADJACENCY (application)
- * TYPE ASCRIPTION - 4
- * EQUALITY - 3
- * COMMA - 2
- * ARROW/BACKARROW - 1
- * LAMBDA/EXISTS/PI - 0 *)
 val exp =
     fix (fn exp =>
             parsefixityadj
@@ -59,22 +51,18 @@ val exp =
                          wth Atm o Exists'),
                       (!!(is LAMBDA >> var_decl exp << is DOT) && exp
                          wth Atm o Lam'),
-                      (!!(is UNDERSCORE)) wth Atm o UnknownTerm' o snd,
-                      (!!(is QUESTIONMARK)) wth Atm o UnknownType' o snd,
-                      (is ARROW) return Opr(Infix(Right,1,Arrow')),
-                      (is BACKARROW) return Opr(Infix(Right,1,Arrow' o swap)),
-                      (is COMMA) return Opr(Infix(Right,2,Pair')),
-                      (is UNIFY) return Opr(Infix(Non,3,Eq')),
-                      (is COLON) return Opr(Infix(Non,4,HasType')),
+                      (is ARROW) return Opr(Infix(Right,3,Arrow')),
+                      (is BACKARROW) return Opr(Infix(Right,3,Arrow' o swap)),
+                      (is COMMA) return Opr(Infix(Right,5,Pair')),
+                      (is UNIFY) return Opr(Infix(Right,6,Eq')),
                       (typ) wth Atm o Type',
                       (is LPAREN >> exp << is RPAREN) wth Atm])
                 Left App')
 
 val decl = 
-    !!(alt [(string wth SOME) << is COLON && exp wth Decl,
-            string << is EQ && exp wth Defn,
-            succeed NONE && exp wth Decl]
-           << is DOT)
+    !!(alt [opt (string << is COLON) && (exp wth SOME) && opt (is UNIFY >> exp),
+            (string << is UNIFY wth SOME) && succeed NONE && (exp wth SOME)]
+           << is DOT wth flat3)
 
 type tokenstream = (tok * Pos.pos) Stream.stream
 

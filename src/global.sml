@@ -6,6 +6,6 @@ type kind = (polar * perm) option
 
 exception Unimplemented of string
 
-(*exception Error of string * Pos.pos*)
+exception Error of string * Pos.pos
 
 end

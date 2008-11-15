@@ -86,11 +86,17 @@ the only other apparent option, we would equate all syntatically identical
 functions instead of all functions from the same position in the program,
 which is actually less precise than a typical 0-CFA analysis. }% 
 
+sk_lambda : dest -> fn_ptr.
+sk_fun : dest -> dest.
+sk_arg : dest -> dest.
+sk_fn_body : fn_ptr -> dest.
+sk_fn_var : fn_ptr -> var.
+
 eval(lam E, Dest)
 -------------------> ∃fp.
 functions(fp, E),
 return(fv(fp), Dest)
-%[, fp = sk_lambda(Dest) ]% .
+%[, fp == sk_lambda(Dest) ]% .
 
 eval(n N, Dest)
 ------------------->
@@ -101,7 +107,7 @@ eval(app(E1,E2), Dest)
 comp(fapp(d1,d2), Dest),
 eval(E1, d1),
 eval(E2, d2)
-%[, d1 = sk_fun(Dest), d2 = sk_arg(Dest) ]% .
+%[, d1 == sk_fun(Dest), d2 == sk_arg(Dest) ]% .
 
 
 %{ === Delayed evaluation === }%
@@ -118,13 +124,14 @@ functions(FP, E)
 eval(E x, d0),
 comp(fdest(d0), Dest),
 vcomp(fdest(Dest2), x)
-%[, d0 = sk_fn_body(FP), x = sk_fn_var(FP) ]% .
+%[, d0 == sk_fn_body(FP), x == sk_fn_var(FP) ]% .
 
 comp(fdest(Dest0), Dest),
 return(Val, Dest0)
 ------------------->
 return(Val, Dest).
 
+last:
 vcomp(fdest(Dest2), X),
 return(Val, Dest2)
 ------------------->

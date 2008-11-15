@@ -5,6 +5,7 @@ structure Lambda :> LAMBDA = struct
   structure Cid = struct type ord_key = cid val compare = Int.compare end
 
   datatype knd = Type
+
   datatype typ = 
       TBase of cid
     | TArrow of typ * typ

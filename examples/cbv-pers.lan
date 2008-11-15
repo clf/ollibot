@@ -34,7 +34,7 @@ sk_value : path -> value.
 eval : (exp, dest) -> pers+.
 return : (value, dest) -> pers+.
 comp : (frame, dest) -> pers+.
-vreturn : (value, var) -> pers+.
+vreturn : (value, value) -> pers+.
 
 
 %{ Rules }%
@@ -48,8 +48,7 @@ eval_app1:
 eval(app E1 E2, Dest)
 -----------------> ∃d1. 
 comp(f_app1 d1 E2, Dest),
-Dest = sk_dest Path, 
-d1 = sk_dest (p_app1 Path).
+d1 == sk_dest (p_app1 Path).
 
 eval_app2:
 comp(f_app1 Dest1 E2, Dest),
@@ -57,8 +56,7 @@ return(V, Dest1)
 -----------------> ∃d2. 
 eval(E2, d2),
 comp(f_app2 V d2, Dest),
-Dest = sk_dest Path,
-d2 = sk_dest (p_app2 Path).
+d2 == sk_dest (p_app2 Path).
 
 eval_applam : 
 comp(f_app2 (lam E0) Dest2, Dest), 
@@ -66,8 +64,8 @@ return(V, Dest2)
 -----------------> ∃d0. 
 eval(E0 V, d0),
 comp(f_lam d0, Dest),
-Dest = sk_dest Path,
-d0 = sk_dest (p_lam Path).
+Dest == sk_dest Path,
+d0 == sk_dest (p_lam Path).
 
 eval_return:
 comp(f_lam Dest0, Dest),

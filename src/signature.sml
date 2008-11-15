@@ -12,8 +12,12 @@ local
   val map_backward : string MapC.map ref = ref MapC.empty
   val signat : I.signat ref = ref I.sgnEmpty
 in
+fun reset () = 
+    (signat := I.sgnEmpty; 
+     map_forward := MapS.empty; 
+     map_backward := MapC.empty)
 fun string_to_cid s = MapS.find(!map_forward, s)
-fun cid_to_string c = MapC.lookup(!map_backward, c)
+fun cid_to_string c = valOf(MapC.find (!map_backward, c))
 fun lookup c = I.sgnLookup(!signat, c)
 fun install dec = 
     let 
@@ -25,21 +29,7 @@ fun install dec =
       signat := newsig;
       cid
     end
-fun reset() = (map_forward := MapS.empty; map_backward := MapC.empty; signat := I.sgnEmpty)
 end (* local *)
-
-fun lookup_ConDec cid =
-    case lookup cid of 
-      I.ConDec x => x 
-    | _ => raise Global.Error("Internal error: ConDec expected", Pos.initpos)
-fun lookup_ConAbbrev cid = 
-    case lookup cid of 
-      I.ConAbbrev x => x 
-    | _ => raise Global.Error("Internal error: ConAbbrev expected", Pos.initpos)
-fun lookup_TypDec cid = 
-    case lookup cid of 
-      I.TypDec x => x
-    | _ => raise Global.Error("Internal error: TypDec expected", Pos.initpos)
 
 end
 

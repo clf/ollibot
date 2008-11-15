@@ -64,9 +64,9 @@ datatype uchar_utf8 =
   | Word4 of byte * byte * byte * byte
 
 val toByte : word -> byte =
- fn w => Word8.fromLarge(toLarge(w andb 0wxFF))
+ fn w => Word8.fromLargeWord(toLargeWord(w andb 0wxFF))
 val fromByte : byte -> word = 
- fn b => fromLarge(Word8.toLarge b)
+ fn b => fromLargeWord(Word8.toLargeWord b)
 
 val prj_utf8 =
  fn w =>

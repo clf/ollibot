@@ -120,7 +120,7 @@ hpts(L, F, ValY).
 f :
 eval(call(Proc, Y, M), Dest),
 pts(Y, ValY),
-funcs(Proc, \lambda z. MBody z)
+funcs(Proc, \z. MBody z)
 -------------------> ∃z. ∃dest. 
 eval(MBody z, dest),
 pts(z, ValY),

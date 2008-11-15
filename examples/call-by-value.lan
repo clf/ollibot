@@ -66,6 +66,15 @@ We also use the function <tt>vreturn</tt> to pass the value of a variable to all
 
 vreturn : value → var → pers+. 
 
+%[ 
+sk_dest : dest -> fn_ptr.
+sk_fun : dest -> dest.
+sk_arg : dest -> dest.
+sk_fn_body : fn_ptr -> dest.
+sk_fn_var : fn_ptr -> var.
+]%
+
+
 %{ === Eager evaluation === }%
 
 eval(v X, Dest),
@@ -78,11 +87,11 @@ the only other apparent option, we would equate all syntatically identical
 functions instead of all functions from the same position in the program,
 which is actually less precise than a typical 0-CFA analysis. }% 
 
-eval(lam(\lambda x. E x), Dest)
+eval(lam(\x. E x), Dest)
 -------------------> ∃fp.
-functions(fp, \lambda x. E x),
+functions(fp, \x. E x),
 return(fv(fp), Dest)
-%[, fp = sk_dest(Dest) ]% .
+%[, fp == sk_dest(Dest) ]% .
 
 eval(n N, Dest)
 ------------------->
@@ -92,7 +101,7 @@ eval(app(E1,E2), Dest)
 -------------------> ∃d1. 
 comp(fapp1(d1,E2), Dest),
 eval(E1, d1)
-%[, d1 = sk_fun(Dest) ]% .
+%[, d1 == sk_fun(Dest) ]% .
 
 
 %{ === Delayed evaluation === }%
@@ -102,17 +111,18 @@ return(fv(FP), Dest1)
 -------------------> ∃d2.
 eval(E2, d2),
 comp(fapp2(FP, d2), Dest)
-%[, d2 = sk_arg(Dest) ]% .
+%[, d2 == sk_arg(Dest) ]% .
 
 comp(fapp2(FP, Dest2), Dest),
 return(Val, Dest2),
-functions(FP, \lambda x. E x)
+functions(FP, \x. E x)
 -------------------> ∃x. ∃d0.
 eval(E x, d0),
 comp(fdest(d0), Dest),
 vreturn(Val, x)
-%[, d2 = sk_fn_body(FP), x = sk_fn_var(FP) ]% .
+%[, d0 == sk_fn_body(FP), x == sk_fn_var(FP) ]% .
 
+last:
 comp(fdest(Dest0), Dest),
 return(Val, Dest0)
 ------------------->

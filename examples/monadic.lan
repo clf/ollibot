@@ -61,19 +61,22 @@ wait : dest → exp → dest → %( lin+ )% %[ pers+ ]% .
 %[
 sk_s : (var -> exp) -> dest -> var.
 sk_l : (var -> exp) -> dest -> loc.
+sk_y : (var -> exp) -> dest -> var.
 sk_z : func -> var.
 sk_proc : func -> dest.
 ]%
 
 %{ === Object creation === }%
 
-eval(new(Ty,\lambda x. M x), Dest), 
+
+eval(new(Ty,\x. M x), Dest), 
 fields(Ty,Fields)
 -------------------> ∃y. ∃loc. 
 pts(y, l loc), 
 eval(M y, Dest), 
 newfields(loc, Fields)
-%[, y = sk_y(M,Dest), l = sk_l(M,Dest) ]% .
+%[, y == sk_y(M,Dest), 
+loc == sk_l(M,Dest) ]% .
 
 true : pers+. true.
 newfields(L,nil) → (true).
@@ -129,12 +132,12 @@ hpts(L, F, ValY).
 f :
 eval(call(Proc, Y, M), Dest),
 pts(Y, ValY),
-funcs(Proc, \lambda z. MBody z)
+funcs(Proc, \z. MBody z)
 -------------------> ∃z. ∃dest. 
 eval(MBody z, dest),
 pts(z, ValY),
 wait(dest, M, Dest)
-%[, z = sk_z Proc, dest = sk_proc(Proc) ]% .
+%[, z == sk_z Proc, dest == sk_proc(Proc) ]% .
 
 
 wait(Dest', M, Dest),

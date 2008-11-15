@@ -15,17 +15,12 @@ datatype 'e exp_view =
   | UCid of string 
   | LCid of string
   | Eq of 'e * 'e
-  | Type of (polarity * permeability) option
-  | HasType of 'e * 'e
-  | UnknownTerm 
-  | UnknownType
+  | Type of kind
 
 datatype 'a exp = Fix of ('a exp) exp_view * 'a
 
 type pexp = pos exp
-datatype decl = 
-    Decl of string option * pexp 
-  | Defn of string * pexp 
+type decl =  (string option * pexp option * pexp option) * Pos.pos
 
 structure E = 
 MakeMTyp(struct
@@ -51,9 +46,6 @@ MakeMTyp(struct
            | LCid s                 => LCid s
            | Eq(e1,e2)              => Eq(f e1, f e2)
            | Type s                 => Type s
-           | HasType(e1,e2)         => HasType(f e1, f e2) 
-           | UnknownType            => UnknownType
-           | UnknownTerm            => UnknownTerm
          end)
 open E
 
@@ -74,9 +66,34 @@ val LCid'   = fn (s,pos) => Fix(LCid s, pos)
 val Eq'     = fn (e1 as Fix (_,pos1), e2 as Fix (_,pos2)) => 
                  Fix(Eq(e1,e2), union(pos1,pos2))
 val Type'   = fn (ppm,pos) => Fix(Type ppm, pos)
-val HasType'   = fn (e1 as Fix (_,pos1), e2 as Fix (_,pos2)) => 
-                 Fix(HasType(e1,e2), union(pos1,pos2))
-val UnknownTerm' = fn pos => Fix(UnknownTerm, pos)
-val UnknownType' = fn pos => Fix(UnknownType, pos)
+
+fun wrap(s,true) = "(" ^ s ^ ")"
+  | wrap(s,false) = s
+
+fun tos e = 
+    fold
+    (fn (e,pos) =>
+        case e of 
+          Exists(_,(e,_)) => 
+          ("Exists " ^ e, false)
+        | Pi(_,(e,_)) => 
+          ("Pi " ^ e, false)
+        | Lam(_,(e,_)) => 
+          ("Lam " ^ e, false)
+        | App(e1,e2) => 
+          (wrap e1 ^ " " ^ wrap e2, true)
+        | Arrow(e1,e2) =>
+          (wrap e1 ^ " -> " ^ wrap e2, true)
+        | Pair(e1,e2) => 
+          (wrap e1 ^ "," ^ wrap e2, true)
+        | UCid s => (s, false)
+        | LCid s => (s, false)
+        | Eq (e1,e2) => (wrap e1 ^ " == " ^ wrap e2, true)
+        | Type k => ("type", false))
+    e
+
+fun to_string e = #1 (tos e)
+
+fun to_string_paren e = wrap (tos e)
 
 end

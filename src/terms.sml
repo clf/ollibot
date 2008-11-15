@@ -12,7 +12,7 @@ functor Terms (Rep : TERM_REP) = struct
   datatype perm = PERSISTANT | LINEAR 
 
   datatype prog = 
-      P of {intern_table: table}
+      P of {intern_table: table, more : unit}
 
   datatype fact = 
       F of {perm : perm,
@@ -63,7 +63,7 @@ functor Terms (Rep : TERM_REP) = struct
                     case force_const (intern_table, tm) of
                       FC_Base (base_const) => 
                       (* XXX Un-base const-ify *) 
-                      (-1, [])
+                      (~1, [])
                     | FC_Const (const_id, spine) => (const_id, spine)
             in
               case Map.find(map, const_id) of

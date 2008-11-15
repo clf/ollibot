@@ -17,9 +17,6 @@ datatype 'e exp_view =
   | LCid of string
   | Eq of 'e * 'e
   | Type of Global.kind
-  | HasType of 'e * 'e 
-  | UnknownTerm 
-  | UnknownType
 
 type pexp = Pos.pos exp
 
@@ -37,12 +34,10 @@ val UCid' : string * Pos.pos -> pexp
 val LCid' : string * Pos.pos -> pexp
 val Eq' : pexp * pexp -> pexp
 val Type' : Global.kind * Pos.pos -> pexp
-val HasType' : pexp * pexp -> pexp
-val UnknownTerm' : Pos.pos -> pexp
-val UnknownType' : Pos.pos -> pexp
 
-datatype decl = 
-    Decl of string option * pexp
-  | Defn of string * pexp
+type decl = (string option * pexp option * pexp option) * Pos.pos
+
+val to_string: pexp -> string
+val to_string_paren: pexp -> string
 
 end

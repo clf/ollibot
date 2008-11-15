@@ -1,0 +1,10 @@
+nat : type.
+z : nat.
+s : nat -> nat.
+
+n : nat -> pers+.
+
+n N
+-------> Exists m.
+n m,
+s N == m.
