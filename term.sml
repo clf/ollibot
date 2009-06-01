@@ -1,44 +1,23 @@
 
-structure Names = struct
-
-  fun new_name(vars,x) =
-      let 
-        fun new_name_backup (vars,x,i) = 
-            if List.exists (fn y => (x ^ Int.toString i) = y) vars
-            then new_name_backup (vars,x,i+1)
-            else x ^ Int.toString i
-        fun new_name' (vars,x) =
-            if List.exists (fn y => x = y) vars 
-            then new_name_backup (vars,x,1) else x
-      in case x of 
-           NONE => new_name' (vars,"x")
-         | SOME x => new_name' (vars,x)
-      end
-
-  fun nth (vars,j) = 
-      if length vars > j then List.nth(vars,j)
-      else "xx" ^ Int.toString(j - length vars)
-           
+signature TERM = 
+sig
+  type term 
+  datatype term_view =
+           Lambda of string option * term
+         | Var of int * term list
+         | Const of string * term list
+  val Lambda' : term -> term
+  val Lambdan : string * term -> term 
+  val Var' : int * term list -> term
+  val Const' : string * term list -> term
+  val prj : term -> term_view
+  val inj : term_view -> term
+  val apply : term * term list -> term
+  val subst : term * term list -> term
+  val to_string : term -> string
+  val to_string_env : string list -> term -> string
+  val eq : term * term -> bool
 end
-
-signature TERM = sig
-                    type term 
-                    datatype term_view =
-                        Lambda of string option * term
-                      | Var of int * term list
-                      | Const of string * term list
-                    val Lambda' : term -> term
-                    val Lambdan : string * term -> term 
-                    val Var' : int * term list -> term
-                    val Const' : string * term list -> term
-                    val prj : term -> term_view
-                    val inj : term_view -> term
-                    val apply : term * term list -> term
-                    val subst : term * term list -> term
-                    val to_string : term -> string
-                    val to_string_env : string list -> term -> string
-                    val eq : term * term -> bool
-                  end
 
 structure Term :> TERM = 
 struct
@@ -98,7 +77,6 @@ struct
               | Const(c,trms) => Const(c, map (shift n) trms)
       in shift 0 trm end
 
-  exception HSubst
 
   (* hsubst: (Γ,Δ ⊢ τ) → (Γ,τ,Δ ⊢ σ) → (Γ,Δ ⊢ σ) *)
   fun hsubst (trm,i) trm' = 

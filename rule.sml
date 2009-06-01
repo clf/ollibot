@@ -1,5 +1,7 @@
 structure Rule = struct
 
+  open IntSyn
+
   datatype pullterm = 
     LambdaP of string * pullterm
   | VarP of int * pullterm list
@@ -13,7 +15,6 @@ structure Rule = struct
   | StoreM of int * bool list
   | MatchM of int * pullterm list
 
-  datatype perm = Ordered
   type rule = string vector * 
                   (string * perm * matchterm list) list * 
                   (string * perm * pullterm list) list
@@ -108,5 +109,6 @@ structure Rule = struct
         val str_prems = String.concatWith " • " (map prem_to_string prems)
         val str_concs = String.concatWith " • " (map conc_to_string concs)
       in str_prems ^ " ->> " ^ str_concs end
+
 
 end

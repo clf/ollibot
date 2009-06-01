@@ -8,9 +8,9 @@ structure Exec = struct
   structure MapI = 
   RedBlackMapFn(struct type ord_key = int val compare = Int.compare end)
   
+  open Rule 
   open Term
-  open Rule
-           
+          
   exception RuleFail
   exception EquateFail
   exception ContextFail

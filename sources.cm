@@ -3,5 +3,7 @@ Group is
   $/smlnj-lib.cm
   term.sml
   context.sml
+  intsyn.sml
   rule.sml
   exec.sml
+  test.sml
