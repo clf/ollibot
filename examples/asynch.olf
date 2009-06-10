@@ -1,0 +1,22 @@
+%% Asynchronous communication
+%% "Substructural Operational Semantics as Ordered Logic Programming", LICS '09
+%% Robert J. Simmons, Frank Pfenning
+
+
+%% Call-by-value functions (Figure 3)
+
+r₁ : eval(lam λx. E x) ->> return(lam E).
+r₂ : eval(app E₁ E₂) ->> comp(app₁ E₂) • eval(E₁).
+r₃ : comp(app₁ E₂) • return(V₁) ->> comp(app₂ V₁) • eval(E₂).
+r₄ : comp(app₂ (lam λx.E₀ x)) • return(V₂) ->> eval(E₀ V₂).
+
+
+%% Asynchronous communication (Figure 6)
+
+enew : eval(new (λx. E x)) ->> ∃C. eval(E C).
+
+esnd₁ : eval(send C E) ->> comp(send₁ C) • eval(E).
+esnd₂ : comp(send₁ C) • return(V) ->> ¡msg C V • return(V).
+
+ercv₁ : eval(rcv C) • ->> comp(await C).
+ercv₂ : comp(await C) • ¡msg C V ->> return(V).

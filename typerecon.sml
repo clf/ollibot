@@ -48,6 +48,10 @@ structure TypeRecon = struct
               let (* val _ = print "Lambda\n" *)
                 val (fvar0,tp0) = vars_and_types (trm0, MapS.insert(bvar,x,tp))
               in ST.unify tp0 ST.Prop'; (fvar0, ST.Prop') end
+            | E.Exists(p,tp,x,trm0) =>
+              let (* val _ = print "Lambda\n" *)
+                val (fvar0,tp0) = vars_and_types (trm0, MapS.insert(bvar,x,tp))
+              in ST.unify tp0 ST.Prop'; (fvar0, ST.Prop') end
             | E.Fuse(p,trm1,trm2) =>
               let (* val _ = print "Fuse\n" *)
                 val (fvar1,tp1) = vars_and_types (trm1, bvar)
@@ -115,7 +119,7 @@ structure TypeRecon = struct
   fun transformfile (fr,constmap) = 
       let 
         datatype var = V_MVar | V_Var
-        fun lookup_var x vars (u,i) =
+        fun lookup_var (x : string) vars (u,i) =
             case vars of 
               [] => NONE
             | (V_MVar, y, tp) :: vars => 
@@ -257,26 +261,23 @@ structure TypeRecon = struct
 
   fun readfile file =
       let 
-        val x = print "B\n"
         val fs = Parse.readfile file
-        val x = print "C\n"
         val (fr,constmap) = reconfile fs
-        val x = print "D\n"
         val signat = MapS.map groundST constmap
-        val x = print "E\n"
         val x = MapS.appi 
                 (fn (c,tp) => print(c ^ " : " ^ I.typ_to_string tp ^ "\n")) 
                 signat
-        val x = print "E\n"
         val ft = transformfile (fr, signat)
-        val x = print "F\n"
         val x = List.app I.decl_to_string ft
-      in (fr, constmap) end 
+      in () end 
 
   val x = 
    fn () =>
       let in
+        print "\n== Combinators ==\n";
         readfile "TEST/comb.olf";
+        print "\n== Church numerals ==\n";
+        readfile "TEST/church.olf";
         ()
       end
 

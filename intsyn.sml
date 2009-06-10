@@ -1,7 +1,7 @@
 
 structure IntSyn = struct
 
-  datatype perm = Ordered
+  datatype perm = Ordered | Linear | Persistent
 
   datatype tp = Prop | Item | Arrow of tp * tp
 
@@ -146,9 +146,9 @@ structure IntSyn = struct
       end
 
   fun decl_to_string (RULE(p,r,trm)) =
-      print (r ^ " : " ^ neg_prop_to_string_env [] false trm ^ "\n")
+      print (r ^ " : " ^ neg_prop_to_string_env [] false trm ^ ".\n")
     | decl_to_string (EXEC(p,trm)) =
-      print ("%query " ^ pos_prop_to_string_env [] false trm ^ "\n")
+      print ("%exec " ^ pos_prop_to_string_env [] false trm ^ ".\n")
 
   val term_to_string = term_to_string_env [] []
 

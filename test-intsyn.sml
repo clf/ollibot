@@ -3,82 +3,6 @@ structure Test = struct
   open IntSyn
   val Lambda' = fn trm => Lambda("x",trm)
 
-  fun church_numerals () = 
-      let
-        val x = print ("== Church numerals ==\n")
-
-        (* λn:(o→o)→o. λf:o→o. λx:o. f (n f x) *)
-        val succ = 
-            Lambda("n",
-              Lambda("f",
-                Lambda("x",
-                  Var'(1,[Var'(2,[Lambda'(Var'(2,[Var'(0,[])])),
-                                  Var'(0,[])])]))))
-        val x = print ("+1: " ^ term_to_string succ ^ "\n") 
-                
-        val plus = 
-           Lambda("m",
-             Lambda("n",
-               Lambda("f",
-                 Lambda("x",
-                   Var'(3,[Lambda'(Var'(2,[Var'(0,[])])),
-                           Var'(2,[Lambda'(Var'(2,[Var'(0,[])])),
-                                   Var'(0,[])])])))))
-        val x = print ("+: " ^ term_to_string plus ^ "\n") 
-                
-        (* λf:o→o. λx:o. x *)
-        val zero = 
-            Lambda("f",Lambda("x",Var'(0,[])))
-        val x = print ("0: " ^ term_to_string zero ^ "\n") 
-                
-        val one = 
-            Lambda
-              ("f",Lambda
-                ("x",hred(succ,[zero,(Lambda'(Var'(2,[Var'(0,[])]))),
-                                Var'(0,[])])))
-        val x = print ("1: " ^ term_to_string one ^ "\n") 
-                
-        val two = 
-            Lambda
-              ("f",Lambda
-                ("x",hred(succ,[one,(Lambda'(Var'(2,[Var'(0,[])]))),
-                                Var'(0,[])])))
-        val x = print ("2: " ^ term_to_string two ^ "\n") 
-
-        val three = 
-            Lambda
-              ("f",Lambda
-                ("x",hred(succ,[two,(Lambda'(Var'(2,[Var'(0,[])]))),
-                                Var'(0,[])])))
-        val x = print ("3: " ^ term_to_string three ^ "\n") 
-
-        val four = 
-            Lambda
-              ("f",Lambda
-                ("x",hred(succ,[three,(Lambda'(Var'(2,[Var'(0,[])]))),
-                                Var'(0,[])])))
-        val x = print ("4: " ^ term_to_string four ^ "\n") 
- 
-        val eight = 
-            Lambda
-              ("f",Lambda
-                ("x",hred(plus,[four,four,
-                  (Lambda'(Var'(2,[Var'(0,[])]))),Var'(0,[])])))
-        val x = print ("8: " ^ term_to_string eight ^ "\n") 
-
-        val a4 = 
-            Lambda("x",
-              hred(four,[Lambda'(Const'("suc",[Var'(0,[])])),Var'(0,[])]))
-        val x = print ("a4: " ^ term_to_string a4 ^ "\n")
-
-        val b4 = 
-            Lambda("f",
-              hred(four,[Lambda'(Var'(1,[Var'(0,[])])),Const'("z",[])]))
-        val x = print ("b4: " ^ term_to_string b4 ^ "\n")
-      in print ("\n") end
-
-
-
   val t0 = Item
   val t1 = Arrow(Item,Item)
   val t01 = Arrow(Item,Arrow(Item,Item))
@@ -118,8 +42,8 @@ structure Test = struct
       end
 
   val x = 
+   fn () => 
       let in
-        church_numerals();
         eta_expansions();
         mvars()
       end
