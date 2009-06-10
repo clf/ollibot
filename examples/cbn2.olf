@@ -1,6 +1,0 @@
-r₁ : nat(N) ->> nat(s N).
-r₂ : nat((λf.λy.f y) (λx.x) z).
-r₄ : a(λx. λy. c x y).
-r₆ : a(c).
-r₅ : a(λx. c x).
-r₇ : a(E).
