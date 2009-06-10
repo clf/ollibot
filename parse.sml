@@ -9,8 +9,8 @@ structure Parse = struct
   infixr 1 ||
 
   datatype token = 
-      PERIOD | LPAREN | RPAREN | FUSE
-    | RIGHTI
+      PERIOD | LPAREN | RPAREN | FUSE 
+    | RIGHTI | LEFTI | BANG | GNAB
     | LAMBDA of string | FORALL of string | EXISTS of string 
     | ID of string list * string 
     | PERCENT of string | COLON | WS
@@ -18,7 +18,7 @@ structure Parse = struct
   fun token_to_string token = 
       case token of 
         PERIOD => "." | LPAREN => "(" | RPAREN => ")" | FUSE => "•"
-      | RIGHTI => "->>"
+      | RIGHTI => "->>" | LEFTI => ">->" | BANG => "!" | GNAB => "¡"
       | LAMBDA x => "λ " ^ x | FORALL x => "∀ " ^ x | EXISTS x => "∃ " ^ x
       | ID(path,x) => concat (map (fn x => x ^  ".") path) ^ x 
       | PERCENT x => "% " ^ x | COLON => ":" | WS => ""
@@ -27,6 +27,7 @@ structure Parse = struct
       let
         val sep = 
             fn "." => false | "(" => false | ")" => false | "•" => false 
+             | "!" => false | "¡" => false
              | "λ" => false | "∀" => false | "∃" => false 
              | "\\" => false | "%" => false | ":" => false
              | " " => false | "\t" => false | "\n" => false
@@ -41,6 +42,7 @@ structure Parse = struct
         val tokenparser = 
             alt [linecomment, 
                  literal ".", literal "(", literal ")", literal "•",
+                 literal "!", literal "¡",
                  literal "λ", literal "∀", literal "∃", 
                  literal "\\", literal "%", literal ":",
                  repeat1 (satisfy ws) >> succeed " ", idpart]
@@ -50,6 +52,7 @@ structure Parse = struct
       let
         val sep = 
             fn "." => false | "(" => false | ")" => false | "•" => false 
+             | "!" => false | "¡" => false
              | "\\" => false | "%" => false | ":" => false
              | " " => false | _ => true
         fun not str pos =
@@ -66,10 +69,13 @@ structure Parse = struct
                  literal "(" >> succeed LPAREN,
                  literal ")" >> succeed RPAREN,
                  literal "•" >> succeed FUSE,
+                 literal "!" >> succeed BANG,
+                 literal "¡" >> succeed GNAB,
                  literal "%" >> any wth PERCENT,
                  literal ":" >> succeed COLON,
                  literal " " >> succeed WS,
                  literal "->>" >> succeed RIGHTI,
+                 literal ">->" >> succeed LEFTI,
                  literal "λ" >> (white >> any << white << literal "." 
                                        ## (fn pos => not "λ" pos)) wth LAMBDA,
                  literal "∀" >> (white >> any << white << literal "." 
@@ -96,9 +102,18 @@ structure Parse = struct
         fun fuse pos ((pos1,trm1),(pos2,trm2)) =
             let val pos = Pos.union(Pos.union(pos,pos1),pos2)
             in (pos,ExtSyn.Fuse(pos,trm1,trm2)) end
+        fun bang pos ((pos1,trm1)) = 
+            let val pos = Pos.union(pos,pos1)
+            in (pos,ExtSyn.Bang(pos,trm1)) end
+        fun gnab pos ((pos1,trm1)) = 
+            let val pos = Pos.union(pos,pos1)
+            in (pos,ExtSyn.Gnab(pos,trm1)) end
         fun righti pos ((pos1,trm1),(pos2,trm2)) =
             let val pos = Pos.union(Pos.union(pos,pos1),pos2)
             in (pos,ExtSyn.Righti(pos,trm1,trm2)) end
+        fun lefti pos ((pos1,trm1),(pos2,trm2)) =
+            let val pos = Pos.union(Pos.union(pos,pos1),pos2)
+            in (pos,ExtSyn.Lefti(pos,trm1,trm2)) end
         fun lambda ((pos,x),(pos',trm)) = 
             let val pos = Pos.union(pos,pos') 
             in (pos,ExtSyn.Lambda(pos,SimpleType.Var'(),x,trm)) end
@@ -113,6 +128,9 @@ structure Parse = struct
             case tok of 
               FUSE => SOME(Opr(Infix(Right,6,fuse pos)))
             | RIGHTI => SOME(Opr(Infix(Right,4,righti pos)))
+            | LEFTI => SOME(Opr(Infix(Right,4,lefti pos)))
+            | BANG => SOME(Opr(Prefix(10, bang pos)))
+            | GNAB => SOME(Opr(Prefix(10, gnab pos)))
             | ID (path,x) => SOME(Atm(pos,ExtSyn.Id(pos,path,x)))
             | LAMBDA _ => NONE
             | FORALL _ => NONE

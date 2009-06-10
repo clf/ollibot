@@ -60,7 +60,23 @@ structure TypeRecon = struct
               in
                 unify(tp1, ST.Prop'); unify(tp2, ST.Prop'); (fvar, ST.Prop')
               end
+            | E.Esuf(p,trm1,trm2) =>
+              let (* val _ = print "Fuse\n" *)
+                val (fvar1,tp1) = vars_and_types (trm1, bvar)
+                val (fvar2,tp2) = vars_and_types (trm2, bvar)
+                val fvar = MapS.unionWith unify (fvar1,fvar2)
+              in
+                unify(tp1, ST.Prop'); unify(tp2, ST.Prop'); (fvar, ST.Prop')
+              end
             | E.Righti(p,trm1,trm2) =>
+              let (* val _ = print "Righti\n" *)
+                val (fvar1,tp1) = vars_and_types (trm1, bvar)
+                val (fvar2,tp2) = vars_and_types (trm2, bvar)
+                val fvar = MapS.unionWith unify (fvar1,fvar2)
+              in
+                unify(tp1, ST.Prop'); unify(tp2, ST.Prop'); (fvar, ST.Prop')
+              end
+            | E.Lefti(p,trm1,trm2) =>
               let (* val _ = print "Righti\n" *)
                 val (fvar1,tp1) = vars_and_types (trm1, bvar)
                 val (fvar2,tp2) = vars_and_types (trm2, bvar)
@@ -86,6 +102,20 @@ structure TypeRecon = struct
                     let val tp = lookup x
                     in (MapS.empty, tp) end
               end
+            | E.Id(p,_,x) => (print "No paths yet!"; raise Match)
+            | E.Bang(p,trm1) =>
+              let (* val _ = print "Righti\n" *)
+                val (fvar1,tp1) = vars_and_types (trm1, bvar)
+              in
+                unify(tp1, ST.Prop'); (fvar1, ST.Prop')
+              end
+            | E.Gnab(p,trm1) =>
+              let (* val _ = print "Righti\n" *)
+                val (fvar1,tp1) = vars_and_types (trm1, bvar)
+              in
+                unify(tp1, ST.Prop'); (fvar1, ST.Prop')
+              end
+
 
         (* Print a partially inferred type *)
         fun strST tp needs_parens = 
@@ -207,6 +237,20 @@ structure TypeRecon = struct
                 val tp = is_groundST tp
                 val trm = e2i_pos(trm, (V_MVar,x,tp) :: vars)
               in I.Exists(x,trm) end
+            | E.Bang(p,trm) =>
+              let in
+                case e2i_term (trm, vars) of
+                  ((PT_Root(I.Const a),trms), I.Prop) => 
+                  I.Atom(I.Persistent,a,trms)
+                | _ => (print "Banged not positive proposition\n"; raise Match)
+              end
+            | E.Gnab(p,trm) =>
+              let in
+                case e2i_term (trm, vars) of
+                  ((PT_Root(I.Const a),trms), I.Prop) => 
+                  I.Atom(I.Linear,a,trms)
+                | _ => (print "Gnabed not positive proposition\n"; raise Match)
+              end
             | trm =>
               let in
                 case e2i_term (trm, vars) of
@@ -265,7 +309,7 @@ structure TypeRecon = struct
         val (fr,constmap) = reconfile fs
         val signat = MapS.map groundST constmap
         val x = MapS.appi 
-                (fn (c,tp) => print(c ^ " : " ^ I.typ_to_string tp ^ "\n")) 
+                (fn (c,tp) => print(c ^ " : " ^ I.typ_to_string tp ^ ".\n")) 
                 signat
         val ft = transformfile (fr, signat)
         val x = List.app I.decl_to_string ft
@@ -278,6 +322,22 @@ structure TypeRecon = struct
         readfile "TEST/comb.olf";
         print "\n== Church numerals ==\n";
         readfile "TEST/church.olf";
+        print "\n== Fig. 3: Call-by-value functions ==\n";
+        readfile "examples/cbv.olf";
+        print "\n== Fig. 4: Mutable storage ==\n";
+        readfile "examples/mutable.olf";
+        print "\n== Fig. 5: Parallel evaluation for pairs ==\n";
+        readfile "examples/pairs.olf";
+        print "\n== Fig. 6: Asynchronous communication ==\n";
+        readfile "examples/asynch.olf";
+        print "\n== Fig. 7: Call-by-name functions ==\n";
+        readfile "examples/cbn.olf";
+        print "\n== Fig. 8: Call-by-name functions with destinations ==\n";
+        readfile "examples/cbn-dest.olf";
+        print "\n== Fig. 9: Call-by-need ==\n";
+        readfile "examples/cbneed.olf";
+        print "\n== Fig. 10: Exceptions ==\n";
+        readfile "examples/exceptions.olf";
         ()
       end
 

@@ -114,7 +114,12 @@ structure IntSyn = struct
                 to_string mvars true trm1 ^ " • " ^
                 to_string mvars false trm2
           in if needs_parens then "(" ^ str ^ ")" else str end
-        | Atom(_,a,trms) => term_to_string_env mvars [] (Root(Const a,trms))
+        | Atom(Persistent,a,trms) => 
+          "!" ^ term_to_string_env mvars [] (Root(Const a,trms))
+        | Atom(Linear,a,trms) => 
+          "¡" ^ term_to_string_env mvars [] (Root(Const a,trms))
+        | Atom(Ordered,a,trms) => 
+          term_to_string_env mvars [] (Root(Const a,trms))
       end
 
   fun neg_prop_to_string_env mvars needs_parens trm = 
