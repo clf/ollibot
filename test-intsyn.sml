@@ -3,70 +3,6 @@ structure Test = struct
   open IntSyn
   val Lambda' = fn trm => Lambda("x",trm)
 
-  fun combinators () = 
-      let
-        val x = print ("== Combinators ==\n")
-
-        (* λx: o.x *)
-        val I = Lambda("x",Var' (0,[]))
-                
-        (* λx: o.λy: o.x *)
-        val K = Lambda("x",Lambda("y",Var' (1, [])))
-                
-        (* λx: o -> o -> o. λy: o -> o. λz: o. xz(yz) *)
-        val S = 
-            Lambda("x",
-             Lambda("y",
-              Lambda("z",Var'(2, [Var'(0,[]), Var'(1,[Var'(0,[])])]))))
-        val x = print ("I: " ^ term_to_string I ^ "\n")
-        val x = print ("K: " ^ term_to_string K ^ "\n")
-        val x = print ("S: " ^ term_to_string S ^ "\n")
-                
-        val Ic = hred (I, [Const'("c",[])])
-        val x = print ("Ic: " ^ term_to_string Ic ^ "\n")
-                
-        val Kcd = hred (K, [Const'("c",[]), Const'("d",[])])
-        val x = print ("Kcd: " ^ term_to_string Kcd ^ "\n")
-                
-        val SKId = hred (S, [K, I, Const'("d",[])])
-        val x = print ("SKId: " ^ term_to_string SKId ^ "\n")
-                
-        val SKI = Lambda("x",hred (S, [K, I, Var'(0,[])]))
-        val x = print ("SKI: " ^ term_to_string SKI ^ "\n")
-                
-        val SK = Lambda("x",
-                  Lambda("y",hred (S, [K, Lambda'(Var'(1,[Var'(0,[])])), 
-                                       Var'(0,[])])))
-        val x = print ("SK: " ^ term_to_string SK ^ "\n")
-                
-        (* λx:o. Ix *)
-        val I' = Lambda("x",hred (I,[Var'(0,[])]))
-        val x = print ("Iʳ: " ^ term_to_string I' ^ "\n") 
-                
-        (* λx:o. λy:o. Iyx *)
-        val Kyx = Lambda("x",Lambda("y",hred (K,[Var'(0,[]),Var'(1,[])])))
-        val x = print ("λx.λy.Kyx: " ^ term_to_string Kyx ^ "\n") 
-                
-        (* λx:o. λy:o. Ixy *)
-        val Kxy = Lambda("x",Lambda("y",hred (K,[Var'(1,[]),Var'(0,[])])))
-        val x = print ("λx.λy.Kxy: " ^ term_to_string Kxy ^ "\n") 
-                
-        val Kxx = Lambda("x",Lambda("y",hred (K,[Var'(1,[]),Var'(1,[])])))
-        val x = print ("λx.λy.Kxx: " ^ term_to_string Kxx ^ "\n") 
-        val Kyy = Lambda("x",Lambda("y",hred (K,[Var'(0,[]),Var'(0,[])])))
-        val x = print ("λx.λy.Kyy: " ^ term_to_string Kyy ^ "\n") 
-
-        (* λx:o. λy:o → o. λz: o → o → o. Szkx*)
-        val S' = 
-            Lambda 
-            ("x",Lambda
-            ("y",Lambda 
-            ("z",hred (S,[Lambda'(Lambda'(Var'(2,[Var'(1,[]),Var'(0,[])]))),
-                      Lambda'(Var'(2,[Var'(0,[])])),
-                      Var'(2,[])]))))
-        val x = print ("Sʳ: " ^ term_to_string S' ^ "\n") 
-      in print ("\n") end  
-
   fun church_numerals () = 
       let
         val x = print ("== Church numerals ==\n")
@@ -183,7 +119,6 @@ structure Test = struct
 
   val x = 
       let in
-        combinators();
         church_numerals();
         eta_expansions();
         mvars()
