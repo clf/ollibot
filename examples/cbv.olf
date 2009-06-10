@@ -2,6 +2,7 @@
 %% "Substructural Operational Semantics as Ordered Logic Programming", LICS '09
 %% Robert J. Simmons, Frank Pfenning
 
+
 %% Call-by-value functions (Figure 3)
 
 r₁ : eval(lam λx. E x) ->> return(lam E).
