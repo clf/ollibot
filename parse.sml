@@ -34,8 +34,13 @@ structure Parse = struct
         val ws = 
             fn " " => true | "\t" => true | "\n" => true | _ => false
         val idpart = repeat1 (satisfy sep) wth concat
+        val linecomment = 
+            literal "%" >> literal "%" >> 
+            repeat (satisfy (fn "\n" => false | _ => true)) >> literal "\n" >>
+            succeed " "
         val tokenparser = 
-            alt [literal ".", literal "(", literal ")", literal "•",
+            alt [linecomment, 
+                 literal ".", literal "(", literal ")", literal "•",
                  literal "λ", literal "∀", literal "∃", 
                  literal "\\", literal "%", literal ":",
                  repeat1 (satisfy ws) >> succeed " ", idpart]

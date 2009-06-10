@@ -2,64 +2,6 @@ structure Test = struct
  
   open Term
 
-  (* λx: o.x *)
-  val I = Lambdan("x",Var' (0,[]))
-
-  (* λx: o.λy: o.x *)
-  val K = Lambdan("x",Lambdan("y",Var' (1, [])))
-
-  (* λx: o -> o -> o. λy: o -> o. λz: o. xz(yz) *)
-  val S = 
-      Lambdan("x",
-       Lambdan("y",
-        Lambdan("z",Var'(2, [Var'(0,[]), Var'(1,[Var'(0,[])])]))))
-  val x = print ("I: " ^ to_string I ^ "\n")
-  val x = print ("K: " ^ to_string K ^ "\n")
-  val x = print ("S: " ^ to_string S ^ "\n")
-
-  val Ic = apply (I, [Const'("c",[])])
-  val x = print ("Ic: " ^ to_string Ic ^ "\n")
-
-  val Kcd = apply (K, [Const'("c",[]), Const'("d",[])])
-  val x = print ("Kcd: " ^ to_string Kcd ^ "\n")
-
-  val SKId = apply (S, [K, I, Const'("d",[])])
-  val x = print ("SKId: " ^ to_string SKId ^ "\n")
-
-  val SKI = Lambdan("x",apply (S, [K, I, Var'(0,[])]))
-  val x = print ("SKI: " ^ to_string SKI ^ "\n")
-
-  val SK = Lambdan("x",Lambdan("y",apply (S, [K, Lambda'(Var'(1,[Var'(0,[])])), 
-                                              Var'(0,[])])))
-  val x = print ("SK: " ^ to_string SK ^ "\n")
-
-  (* λx:o. Ix *)
-  val I' = Lambdan("x",apply (I,[Var'(0,[])]))
-  val x = print ("Iʳ: " ^ to_string I' ^ "\n") 
-
-  (* λx:o. λy:o. Iyx *)
-  val Kyx = Lambdan("x",Lambdan("y",apply (K,[Var'(0,[]),Var'(1,[])])))
-  val x = print ("λx.λy.Kyx: " ^ to_string Kyx ^ "\n") 
-
-  (* λx:o. λy:o. Ixy *)
-  val Kxy = Lambdan("x",Lambdan("y",apply (K,[Var'(1,[]),Var'(0,[])])))
-  val x = print ("λx.λy.Kxy: " ^ to_string Kxy ^ "\n") 
-
-  val Kxx = Lambdan("x",Lambdan("y",apply (K,[Var'(1,[]),Var'(1,[])])))
-  val x = print ("λx.λy.Kxx: " ^ to_string Kxx ^ "\n") 
-  val Kyy = Lambdan("x",Lambdan("y",apply (K,[Var'(0,[]),Var'(0,[])])))
-  val x = print ("λx.λy.Kyy: " ^ to_string Kyy ^ "\n") 
-
-  (* λx:o. λy:o → o. λz: o → o → o. Szkx*)
-  val S' = 
-      Lambdan 
-       ("x",Lambdan
-         ("y",Lambdan 
-           ("z",apply (S,[Lambda'(Lambda'(Var'(2,[Var'(1,[]),Var'(0,[])]))),
-                      Lambda'(Var'(2,[Var'(0,[])])),
-                      Var'(2,[])]))))
-  val x = print ("Sʳ: " ^ to_string S' ^ "\n") 
-  
   (* λn:(o→o)→o. λf:o→o. λx:o. f (n f x) *)
   val succ = 
       Lambdan("n",

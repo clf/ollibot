@@ -1,0 +1,15 @@
+Group is 
+  $/basis.cm
+  $/smlnj-lib.cm
+  ../../../sml-lib/util/stream.cm
+  ../../../sml-lib/parse/parse.cm
+
+  extsyn.sml
+  parse.sml
+
+  names.sml
+  intsyn.sml
+
+  typerecon.sml
+
+  test-intsyn.sml

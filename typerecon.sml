@@ -96,10 +96,14 @@ structure TypeRecon = struct
         fun learntypes (E.RULE(p,s,trm)) = 
             let val (fv, tp) = vars_and_types(trm,MapS.empty)
               fun wrap (fv, tp, trm) = E.Forall(p,tp,fv,trm)
-            in E.RULE(p,s,MapS.foldri wrap trm fv) end
+            in
+              ST.unify tp ST.Prop'; 
+              E.RULE(p,s,MapS.foldri wrap trm fv)
+            end
           | learntypes (E.EXEC(p,trm)) = 
             let val (fv, tp) = vars_and_types(trm,MapS.empty)
             in 
+              ST.unify tp ST.Prop'; 
               if MapS.isEmpty fv then E.EXEC(p,trm)
               else raise Match (* XXX needs error message *)
             end
@@ -251,17 +255,29 @@ structure TypeRecon = struct
       | ST.Item => I.Item
       | ST.Prop => I.Prop  
 
-  val x = 
-   fn () => 
+  fun readfile file =
       let 
-        val fs = Parse.readfile "examples/cbn2.olf"      
+        val x = print "B\n"
+        val fs = Parse.readfile file
+        val x = print "C\n"
         val (fr,constmap) = reconfile fs
+        val x = print "D\n"
         val signat = MapS.map groundST constmap
+        val x = print "E\n"
         val x = MapS.appi 
                 (fn (c,tp) => print(c ^ " : " ^ I.typ_to_string tp ^ "\n")) 
                 signat
+        val x = print "E\n"
         val ft = transformfile (fr, signat)
+        val x = print "F\n"
         val x = List.app I.decl_to_string ft
       in (fr, constmap) end 
+
+  val x = 
+   fn () =>
+      let in
+        readfile "TEST/comb.olf";
+        ()
+      end
 
 end
