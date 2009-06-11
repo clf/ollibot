@@ -2,6 +2,8 @@
 signature TERM = 
 sig
   type term 
+  datatype front = M of term | R of int
+  type subst = front list
   datatype term_view =
            Lambda of string * term
          | Var of int * term list
@@ -13,7 +15,7 @@ sig
   val prj : term -> term_view
   val inj : term_view -> term
   val apply : term * term list -> term
-  val subst : term * term list -> term
+  val apply_subst : front list -> term -> term
   val to_string : term -> string
   val to_string_env : string list -> term -> string
   val eq : term * term -> bool
@@ -57,6 +59,8 @@ struct
   val to_string = to_string_env []
 
   type term = term_view
+  datatype front = M of term | R of int
+  type subst = front list
               
   val prj = fn x => x
   val inj = fn x => x
@@ -104,16 +108,20 @@ struct
 
   val apply = hred
 
-  fun subst (trm,sigma) = 
-      let 
-        fun subst' n trm =
-            case trm of 
-              Lambda(x,trm) => Lambda(x,subst' (n+1) trm)
-            | Var(i,trms) =>
-              if i < n then Var(i,map (subst' n) trms)
-              else apply(List.nth(sigma, i-n), trms)
-            | Const(c,trms) => Const(c,map (subst' n) trms)
-      in subst' 0 trm end
+  fun weaken_subst [] = []
+    | weaken_subst (R i :: subst) = (R (i+1) :: weaken_subst subst)
+    | weaken_subst (M trm :: subst) = (M (weaken trm) :: weaken_subst subst)
+
+  fun apply_subst subst trm = 
+      case trm of 
+        Lambda(x,trm) => Lambda(x, apply_subst (R 0 :: weaken_subst subst) trm)
+      | Var(i,trms) => 
+        let in
+          case List.nth(subst, i) of
+            R i => Var(i, map (apply_subst subst) trms)
+          | M trm => apply(trm, map (apply_subst subst) trms)
+        end
+      | Const(c,trms) => Const(c, map (apply_subst subst) trms)
 
   fun eq (trm1,trm2) = 
       case (trm1,trm2) of

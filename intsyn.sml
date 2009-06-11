@@ -40,6 +40,7 @@ structure IntSyn = struct
   and pos_prop =  
       Exists of string * pos_prop
     | Fuse of pos_prop * pos_prop
+    | Esuf of pos_prop * pos_prop
     | Atom of perm * string * term list
    
   datatype decl =
@@ -112,6 +113,12 @@ structure IntSyn = struct
           let 
             val str = 
                 to_string mvars true trm1 ^ " • " ^
+                to_string mvars false trm2
+          in if needs_parens then "(" ^ str ^ ")" else str end
+        | Esuf(trm1,trm2) =>
+          let 
+            val str = 
+                to_string mvars true trm1 ^ " ○ " ^
                 to_string mvars false trm2
           in if needs_parens then "(" ^ str ^ ")" else str end
         | Atom(Persistent,a,trms) => 

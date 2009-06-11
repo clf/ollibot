@@ -77,7 +77,7 @@ structure TypeRecon = struct
                 unify(tp1, ST.Prop'); unify(tp2, ST.Prop'); (fvar, ST.Prop')
               end
             | E.Lefti(p,trm1,trm2) =>
-              let (* val _ = print "Righti\n" *)
+              let (* val _ = print "Lefti\n" *)
                 val (fvar1,tp1) = vars_and_types (trm1, bvar)
                 val (fvar2,tp2) = vars_and_types (trm2, bvar)
                 val fvar = MapS.unionWith unify (fvar1,fvar2)
@@ -104,13 +104,13 @@ structure TypeRecon = struct
               end
             | E.Id(p,_,x) => (print "No paths yet!"; raise Match)
             | E.Bang(p,trm1) =>
-              let (* val _ = print "Righti\n" *)
+              let (* val _ = print "Bang\n" *)
                 val (fvar1,tp1) = vars_and_types (trm1, bvar)
               in
                 unify(tp1, ST.Prop'); (fvar1, ST.Prop')
               end
             | E.Gnab(p,trm1) =>
-              let (* val _ = print "Righti\n" *)
+              let (* val _ = print "Gnab\n" *)
                 val (fvar1,tp1) = vars_and_types (trm1, bvar)
               in
                 unify(tp1, ST.Prop'); (fvar1, ST.Prop')
@@ -232,6 +232,11 @@ structure TypeRecon = struct
                 val trm1 = e2i_pos(trm1,vars)
                 val trm2 = e2i_pos(trm2,vars)
               in I.Fuse(trm1,trm2) end
+            | E.Esuf(p,trm1,trm2) => 
+              let
+                val trm1 = e2i_pos(trm1,vars)
+                val trm2 = e2i_pos(trm2,vars)
+              in I.Esuf(trm1,trm2) end
             | E.Exists(p,tp,x,trm) =>
               let
                 val tp = is_groundST tp

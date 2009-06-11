@@ -1,8 +1,8 @@
 Group is 
   $/basis.cm
   $/smlnj-lib.cm
-  ../../../sml-lib/util/stream.cm
-  ../../../sml-lib/parse/parse.cm
+  util/stream.cm
+  parse/parse.cm
 
   extsyn.sml
   parse.sml
@@ -11,5 +11,3 @@ Group is
   intsyn.sml
 
   typerecon.sml
-
-  test-intsyn.sml
