@@ -47,13 +47,14 @@ structure Exec = struct
         else ListPair.app matchterm (trms,mtrms)
       | _ => raise EquateFail
   
-  fun matchrule ((_,prems,concs),Context.S{ordered}) = 
+  fun matchrule ((_,prems,concs),Context.S{ordered,...}) = 
       let 
         fun trymatch (leftO,[],rightO) = (* SUCCESS! *)
             let 
               fun mapper(name,Ordered,trms) = (name,map pullterm trms)
               val midO = map mapper concs
-            in Context.S{ordered = (rev leftO) @ midO @ rightO} end
+            in Context.S{ordered = (rev leftO) @ midO @ rightO,
+                         linear = [], persistent = []} end
           (* Ran outta context *)
           | trymatch(leftO,_,[]) = raise ContextFail 
           (* Make progress *)

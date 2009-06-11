@@ -3,7 +3,7 @@ signature TERM =
 sig
   type term 
   datatype term_view =
-           Lambda of string option * term
+           Lambda of string * term
          | Var of int * term list
          | Const of string * term list
   val Lambda' : term -> term
@@ -23,7 +23,7 @@ structure Term :> TERM =
 struct
 
   datatype term_view =
-      Lambda of string option * term_view
+      Lambda of string * term_view
     | Var of int * term_view list
     | Const of string * term_view list
                
@@ -60,8 +60,8 @@ struct
               
   val prj = fn x => x
   val inj = fn x => x
-  val Lambda' = fn trm => Lambda (NONE, trm)
-  val Lambdan = fn (x,trm) => Lambda (SOME x, trm)
+  val Lambda' = fn trm => Lambda ("x", trm)
+  val Lambdan = fn (x,trm) => Lambda (x, trm)
   val Var' = Var
   val Const' = Const
                 
@@ -77,6 +77,8 @@ struct
               | Const(c,trms) => Const(c, map (shift n) trms)
       in shift 0 trm end
 
+
+  exception HSubst
 
   (* hsubst: (Γ,Δ ⊢ τ) → (Γ,τ,Δ ⊢ σ) → (Γ,Δ ⊢ σ) *)
   fun hsubst (trm,i) trm' = 

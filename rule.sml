@@ -24,7 +24,7 @@ structure Rule = struct
         fun pts vars needs_parens trm = 
             case trm of 
               LambdaP(x,trm0) =>
-              let val x = Names.new_name (vars,SOME x) in
+              let val x = Names.new_name (vars, x) in
                 if needs_parens 
                 then "(λ" ^ x ^ ". " ^
                      pts(x :: vars) false trm0 ^ ")"
@@ -56,7 +56,7 @@ structure Rule = struct
         fun mts vars needs_parens trm = 
             case trm of 
               LambdaM(x,trm0) =>
-              let val x = Names.new_name (vars,SOME x) in
+              let val x = Names.new_name (vars, x) in
                 if needs_parens 
                 then "(λ" ^ x ^ ". " ^
                      mts(x :: vars) false trm0 ^ ")"
@@ -94,17 +94,24 @@ structure Rule = struct
 
   fun rule_to_string (evars,prems,concs) = 
       let
-        fun prem_to_string (a,Ordered,[]) = a
-          | prem_to_string (a,Ordered,[trm]) = 
-            a ^ "(" ^ matchterm_to_string evars [] false trm ^ ")"
-          | prem_to_string (a,Ordered,trms) = 
-            a ^ " " ^ String.concatWith 
+        fun perm_to_string perm = 
+            case perm of 
+              Ordered => ""
+            | Linear => "¡"
+            | Persistent => "!"
+        fun prem_to_string (a,perm,[]) = perm_to_string perm ^ a
+          | prem_to_string (a,perm,[trm]) = 
+            a ^ "(" ^ perm_to_string perm ^ 
+            matchterm_to_string evars [] false trm ^ ")"
+          | prem_to_string (a,perm,trms) = 
+            a ^ " " ^ perm_to_string perm ^ String.concatWith 
                           " " (map (matchterm_to_string evars [] true) trms)
-        fun conc_to_string (a,Ordered,[]) = a
-          | conc_to_string (a,Ordered,[trm]) = 
-            a ^ "(" ^ pullterm_to_string evars [] false trm ^ ")"
-          | conc_to_string (a,Ordered,trms) = 
-            a ^ " " ^ String.concatWith 
+        fun conc_to_string (a,perm,[]) = perm_to_string perm ^ a
+          | conc_to_string (a,perm,[trm]) = 
+            a ^ "(" ^ perm_to_string perm ^ 
+            pullterm_to_string evars [] false trm ^ ")"
+          | conc_to_string (a,perm,trms) = 
+            a ^ " " ^ perm_to_string perm ^ String.concatWith 
                           " " (map (pullterm_to_string evars [] true) trms)
         val str_prems = String.concatWith " • " (map prem_to_string prems)
         val str_concs = String.concatWith " • " (map conc_to_string concs)

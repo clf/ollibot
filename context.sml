@@ -1,9 +1,11 @@
 structure Context = struct
 
   datatype context = 
-      S of {ordered: (string * Term.term list) list}
+      S of {persistent: (string * Term.term list) list,
+            linear: (string * Term.term list) list,
+            ordered: (string * Term.term list) list}
 
-  fun to_string (S{ordered}) = 
+  fun to_string (S{ordered,...}) = 
       let 
         fun mapper (s,[]) = s
           | mapper (s,[trm]) = s ^ "(" ^ Term.to_string trm ^ ")"

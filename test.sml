@@ -1,72 +1,7 @@
 structure Test = struct
  
-  open Term
-
-  (* λn:(o→o)→o. λf:o→o. λx:o. f (n f x) *)
-  val succ = 
-      Lambdan("n",
-        Lambdan("f",
-          Lambdan("x",
-            Var'(1,[Var'(2,[Lambda'(Var'(2,[Var'(0,[])])),Var'(0,[])])]))))
-  val x = print ("+1: " ^ to_string succ ^ "\n") 
-
-  val plus = 
-      Lambdan("m",
-        Lambdan("n",
-          Lambdan("f",
-            Lambdan("x",
-              Var'(3,[Lambda'(Var'(2,[Var'(0,[])])),
-                      Var'(2,[Lambda'(Var'(2,[Var'(0,[])])),
-                              Var'(0,[])])])))))
-  val x = print ("+: " ^ to_string plus ^ "\n") 
-
-  (* λf:o→o. λx:o. x *)
-  val zero = 
-      Lambdan("f",Lambdan("x",Var'(0,[])))
-  val x = print ("0: " ^ to_string zero ^ "\n") 
-
-  val one = 
-      Lambdan
-        ("f",Lambdan
-          ("x",apply(succ,[zero,(Lambda'(Var'(2,[Var'(0,[])]))),Var'(0,[])])))
-  val x = print ("1: " ^ to_string one ^ "\n") 
-
-  val two = 
-      Lambdan
-        ("f",Lambdan
-          ("x",apply(succ,[one,(Lambda'(Var'(2,[Var'(0,[])]))),Var'(0,[])])))
-  val x = print ("2: " ^ to_string two ^ "\n") 
-
-  val three = 
-      Lambdan
-        ("f",Lambdan
-          ("x",apply(succ,[two,(Lambda'(Var'(2,[Var'(0,[])]))),Var'(0,[])])))
-  val x = print ("3: " ^ to_string three ^ "\n") 
-
-  val four = 
-      Lambdan
-        ("f",Lambdan
-          ("x",apply(succ,[three,(Lambda'(Var'(2,[Var'(0,[])]))),Var'(0,[])])))
-  val x = print ("4: " ^ to_string four ^ "\n") 
- 
-  val eight = 
-      Lambdan
-        ("f",Lambdan
-          ("x",apply(plus,[four,four,
-                           (Lambda'(Var'(2,[Var'(0,[])]))),Var'(0,[])])))
-  val x = print ("8: " ^ to_string eight ^ "\n") 
-
-  val a4 = 
-      Lambdan("x",
-        apply(four,[Lambda'(Const'("suc",[Var'(0,[])])),Var'(0,[])]))
-  val x = print ("a4: " ^ to_string a4 ^ "\n")
-
-  val b4 = 
-      Lambdan("f",
-        apply(four,[Lambda'(Var'(1,[Var'(0,[])])),Const'("z",[])]))
-  val x = print ("b4: " ^ to_string b4 ^ "\n")
-
   open Rule 
+  open Term
 
   val p1 = ConstM("lam",[LambdaM("x",StoreM(0,[true]))])
   val c1 = ConstP("lam",[LambdaP("x",EvarP(0,[VarP(0,[])]))])
@@ -131,7 +66,7 @@ structure Test = struct
   val x = print ("r3: " ^ rule_to_string r3 ^ "\n")
   val x = print ("r4: " ^ rule_to_string r4 ^ "\n")
 
-  val om0 = Context.S{ordered = [("eval", [s0])]}
+  val om0 = Context.S{ordered = [("eval", [s0])], linear=[],persistent=[]}
   val x = print ("Ω₀: " ^ Context.to_string om0 ^ "\n")
   val om1 = Exec.matchrule(r2,om0)
   val x = print ("Ω₁: " ^ Context.to_string om1 ^ "\n")
