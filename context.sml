@@ -5,12 +5,16 @@ structure Context = struct
             linear: (string * Term.term list) list,
             ordered: (string * Term.term list) list}
 
-  fun to_string (S{ordered,...}) = 
+  fun to_string (S{ordered,linear,persistent}) = 
       let 
-        fun mapper (s,[]) = s
-          | mapper (s,[trm]) = s ^ "(" ^ Term.to_string trm ^ ")"
-          | mapper (s,trms) = 
-            s ^ " " ^ String.concatWith " " (map Term.to_string trms)
-      in String.concatWith " • " (map mapper ordered) end
+        fun mapper p (s,[]) = p ^ s
+          | mapper p (s,[trm]) = p ^ s ^ "(" ^ Term.to_string trm ^ ")"
+          | mapper p (s,trms) = 
+            p ^ s ^ " " ^ String.concatWith " " (map Term.to_string trms)
+      in 
+        String.concatWith " • " (map (mapper "!") persistent @
+                                 map (mapper "¡") linear @
+                                 map (mapper "") ordered)
+      end
 
 end

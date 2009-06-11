@@ -23,6 +23,7 @@ structure Execute = struct
         | I.Root(I.Const c,trms) => T.Const'(c,map (pull_term evars) trms)
         | I.MVar(u,subst) => 
           T.apply_subst (pull_subst evars subst) (valOf(List.nth(evars,u)))
+          handle Option => ("Error; non-ground evar\n"; raise Option)
       end
       (* handle exn => raise exn *)
 
@@ -86,6 +87,7 @@ structure Execute = struct
           in 
             if a = b then ([(a,gtrms)], tl O) else raise MatchFail
           end
+        | _ => ([], O)
       end
       (* handle exn => raise exn *)
 
@@ -172,16 +174,36 @@ structure Execute = struct
 
 
   (* Right focus *)
-  fun match_atom (S{persistent,linear,ordered}, evars) (perm,a,trms) = 
-      let in
+  fun match_atom (ctx as S{persistent,linear,ordered}, evars) (perm,a,trms) = 
+      let 
+        fun seek (nomatch,[]) _ = raise MatchFail
+          | seek (nomatch, (b,gtrms) :: unknownmatch) (a,trms) =
+            let
+              val () = if a <> b then raise MatchFail else ()
+              val evars = match_terms evars (gtrms,trms)
+            in
+              (List.revAppend(nomatch,unknownmatch), evars)
+            end
+            handle MatchFail => 
+                   seek ((b,gtrms) :: nomatch, unknownmatch) (a,trms)
+      in
         case perm of
           I.Ordered =>
           let 
             val (a,trms') = hd ordered
             val ctx = 
                 S{persistent=persistent, linear=linear, ordered=tl ordered} 
-                handle Empty => (print "NOO\n"; raise Empty)
             val evars = match_terms evars (trms',trms)
+          in (ctx,evars) end
+        | I.Linear => 
+          let
+            val (linear, evars) = seek ([],linear) (a,trms)
+            val ctx = 
+                S{persistent=persistent, linear=linear, ordered=ordered} 
+          in (ctx,evars) end
+        | I.Persistent => 
+          let
+            val (_, evars) = seek([],persistent) (a,trms)
           in (ctx,evars) end
       end
       (* handle exn => raise exn *)
