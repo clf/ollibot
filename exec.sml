@@ -1,10 +1,6 @@
 
 structure Exec = struct
 
-  val x = print "ABC\n" 
-  val x = print "λπω\n"
-  val x = print "comp(app₂ (lam λx.x)) • eval(app (lam λy.y) (lam λz.c))\n"
-          
   structure MapI = 
   RedBlackMapFn(struct type ord_key = int val compare = Int.compare end)
   

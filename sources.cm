@@ -5,6 +5,4 @@ Group is
 
   term.sml
   context.sml
-  rule.sml
-  exec.sml
-  test.sml
+  execute.sml

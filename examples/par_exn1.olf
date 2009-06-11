@@ -1,0 +1,47 @@
+%% Problems with combining parallel evaluation and exceptions
+%% "Substructural Operational Semantics as Ordered Logic Programming", LICS '09
+%% Robert J. Simmons, Frank Pfenning
+
+
+%% Exceptions as presented in the paper rely on a global property of the
+%% operational semantics, essentially that there is only one control stack
+%% per process. However, the parallel evaluation of pairs creates multiple
+%% control stacks that are related by juxtoposition in the ordered context.
+%% Therefore, the two cannot be combined without problems, as demonstrated
+%% in this example.
+%%
+%% One possibility for addressing this problem is given in par_exn2.olf
+
+
+%% Parallel evaluation for pairs (Figure 5), plus unit.
+
+eunit : eval(unit) ->> return(unit).
+
+epair₁ : eval(pair E₁ E₂) ->> comp(pair₁) • eval(E₁) • eval(E₂).
+epair₂ : comp(pair₁) • return(V₁) • return(V₂) ->> return(pair V₁ V₂).
+
+elet₁ : eval(split E (λx₁.λx₂. E' x₁ x₂)) ->> comp(split₁ E') • eval(E).
+elet₂ : eval(split₁ (λx₁.λx₂. E' x₁ x₂)) • return(pair V₁ V₂) ->> eval(E' V₁ V₂).
+
+
+%% Exceptions (Figure 10)
+
+etry   : eval(try E₁ E₂) ->> catch(E₂) • eval(E₁).
+eraise : eval(raise) ->> fail.
+epop   : comp(F) • fail ->> fail.
+ecatch : catch(E₂) • fail ->> eval(E₂).
+eret   : catch(E₂) • return(V) ->> return(V).
+
+
+%% If there is an exception in the first branch of a pair's evaluation, then
+%% the error will "abandon" the stack belonging to the second branch, eagerly
+%% propogating the error before the second branch has even necessarily finished
+%% evaluating.
+
+%exec eval(try (pair raise (pair unit unit)) unit).
+
+
+%% If there is an exception in the second branch, it will be "blocked" by
+%% the return in the first branch and execution will become stuck.
+
+%exec eval(try (pair (pair unit unit) raise) unit).
