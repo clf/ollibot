@@ -158,9 +158,9 @@ structure IntSyn = struct
       end
 
   fun decl_to_string (RULE(p,r,trm)) =
-      print (r ^ " : " ^ neg_prop_to_string_env [] false trm ^ ".\n")
+      r ^ " : " ^ neg_prop_to_string_env [] false trm ^ ".\n"
     | decl_to_string (EXEC(p,trm)) =
-      print ("%exec " ^ pos_prop_to_string_env [] false trm ^ ".\n")
+      "%exec " ^ pos_prop_to_string_env [] false trm ^ ".\n"
 
   val term_to_string = term_to_string_env [] []
 

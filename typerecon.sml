@@ -317,8 +317,8 @@ structure TypeRecon = struct
                 (fn (c,tp) => print(c ^ " : " ^ I.typ_to_string tp ^ ".\n")) 
                 signat
         val ft = transformfile (fr, signat)
-        val x = List.app I.decl_to_string ft
-      in () end 
+        val x = List.app (print o I.decl_to_string) ft
+      in (ft,signat) end 
 
   val x = 
    fn () =>
@@ -345,5 +345,13 @@ structure TypeRecon = struct
         readfile "examples/exceptions.olf";
         ()
       end
+
+  fun readfile file =
+      let 
+        val fs = Parse.readfile file
+        val (fr,constmap) = reconfile fs
+        val signat = MapS.map groundST constmap
+        val ft = transformfile (fr, signat)
+      in (ft,signat) end 
 
 end
