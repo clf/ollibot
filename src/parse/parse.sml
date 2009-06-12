@@ -63,14 +63,15 @@ struct
   fun fix f (pos, ts) = f (fix f) (pos, ts)
 
   fun parsewith s f p ts =
-        let val (x,_,_,_) = p (Pos.initpos, ts)
-        in s x end
+        let val (x,_,_,ts) = p (Pos.initpos, ts)
+        in s(x,ts) end
         handle Fail err => f err
 
   fun push ns p (pos, ts) =
       p (Pos.initpos, Stream.append ns ts)
 
-  fun parse p = parsewith SOME (fn _ => NONE) p
+  fun parse p = parsewith (fn (x,s) => SOME x) (fn _ => NONE) p
+  fun parseWithStream p = parsewith SOME (fn _ => NONE) p
 
   fun transform p ts =
     let

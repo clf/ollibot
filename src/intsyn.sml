@@ -43,8 +43,9 @@ structure IntSyn = struct
     | Esuf of pos_prop * pos_prop
     | Atom of perm * string * term list
    
+  type rule = Pos.pos * string * neg_prop
   datatype decl =
-      RULE of Pos.pos * string * neg_prop
+      RULE of rule
     | EXEC of Pos.pos * pos_prop
 
   fun typ_to_string typ = 
@@ -63,11 +64,11 @@ structure IntSyn = struct
       let 
         fun front_to_string front = 
             case front of 
-              M trm => term_to_string_env mvars vars trm
+              M trm => term_to_string_env mvars vars false trm
             | R i => Names.nth(vars,i)
       in "[" ^ String.concatWith "," (map front_to_string subst) ^ "]" end
 
-  and term_to_string_env mvars vars trm = 
+  and term_to_string_env mvars vars needs_parens trm = 
       let 
         fun to_string' vars needs_parens trm = 
             case trm of 
@@ -95,7 +96,7 @@ structure IntSyn = struct
               else c ^ " " ^ args vars trms
         and args vars trms = 
             String.concatWith " " (map (to_string' vars true) trms)
-      in to_string' vars false trm end
+      in to_string' vars needs_parens trm end
 
   fun pos_prop_to_string_env mvars needs_parens trm = 
       let val to_string = pos_prop_to_string_env
@@ -122,11 +123,11 @@ structure IntSyn = struct
                 to_string mvars false trm2
           in if needs_parens then "(" ^ str ^ ")" else str end
         | Atom(Persistent,a,trms) => 
-          "!" ^ term_to_string_env mvars [] (Root(Const a,trms))
+          "!" ^ term_to_string_env mvars [] false (Root(Const a,trms))
         | Atom(Linear,a,trms) => 
-          "¡" ^ term_to_string_env mvars [] (Root(Const a,trms))
+          "¡" ^ term_to_string_env mvars [] false (Root(Const a,trms))
         | Atom(Ordered,a,trms) => 
-          term_to_string_env mvars [] (Root(Const a,trms))
+          term_to_string_env mvars [] false (Root(Const a,trms))
       end
 
   fun neg_prop_to_string_env mvars needs_parens trm = 
@@ -245,9 +246,10 @@ structure IntSyn = struct
       | (Root(Const c,trms), []) => Root(Const c, trms)
       | (MVar(u,subst),[]) => MVar(u,subst)
       | (trm,trms) =>
-        (print (term_to_string trm); 
+        (print (term_to_string false trm); 
          print " @ ("; 
-         print (String.concatWith "; " (map term_to_string trms)); print ")\n"; 
+         print (String.concatWith "; " (map (term_to_string false) trms));
+         print ")\n"; 
          raise HSubst)
 
   (* apply_subst: (subst: Γ ⊢ Ψ) → (trm: Ψ ⊢ τ) → (Γ ⊢ τ) *)

@@ -1,8 +1,20 @@
-structure Execute = struct
+signature EXECUTE = sig
 
+  val trace :
+      IntSyn.pos_prop * IntSyn.rule list -> Context.context Stream.stream
+  val execute : 
+      IntSyn.pos_prop * IntSyn.rule list * int option -> Context.context * int
+
+end
+
+structure Execute :> EXECUTE = struct
+
+  open Global
+  open Stream
+  open List
+  open Context
   structure I = IntSyn
   structure T = Term
-  open Context
    
   datatype consume = Left | Right
   exception MatchFail
@@ -14,18 +26,23 @@ structure Execute = struct
       let val r = ref 0 
       in fn () => (r := !r + 1; "d" ^ Int.toString (!r)) end
  
+  (* == PART 1: TERM MATCHING == *)
+  (* Currently done very simplisticly, needs to be extended 
+   * at least to handle a non-identity pattern substitution
+   * as the first evar occurance, and probably to be able to delay
+   * until the first strict occurance *)
+
   (* Pulling ground terms from intsyn terms *)
   fun pull_term evars trm = 
-      let in
+      (* let in *)
         case trm of
           I.Lambda(x,trm) => T.Lambdan(x,pull_term evars trm)
         | I.Root(I.Var i,trms) => T.Var'(i,map (pull_term evars) trms)
         | I.Root(I.Const c,trms) => T.Const'(c,map (pull_term evars) trms)
         | I.MVar(u,subst) => 
           T.apply_subst (pull_subst evars subst) (valOf(List.nth(evars,u)))
-          handle Option => ("Error; non-ground evar\n"; raise Option)
-      end
-      (* handle exn => raise exn *)
+      (* end
+      handle exn => raise exn *)
 
   and pull_front evars (I.R i) = (T.R i)
     | pull_front evars (I.M trm) = (T.M (pull_term evars trm))
@@ -35,7 +52,7 @@ structure Execute = struct
 
   (* Matching ground terms against intsyn terms *)
   fun match_term evars (gtrm,trm) = 
-      let in
+      (* let in *)
         case (T.prj gtrm,trm) of
           (T.Lambda(_,gtrm), I.Lambda(_,trm)) => match_term evars (gtrm,trm)
         | (T.Var(i,gtrms), I.Root(I.Var j,trms)) =>
@@ -64,8 +81,8 @@ structure Execute = struct
               then raise MatchFail else evars
           end
         | _ => raise MatchFail
-      end
-      (* handle exn => raise exn *)
+      (* end
+      handle exn => raise exn *)
 
   and match_terms evars ([],[]) = evars
     | match_terms evars (gtrm :: gtrms, trm :: trms) = 
@@ -73,12 +90,27 @@ structure Execute = struct
     | match_terms evars _ = raise ListPair.UnequalLengths
 
 
-  (* Prefocusing: the get_ordered code internalizes the left-to-right
-   * evaluation of ordered propositions and does some fail-fast to prevent
-   * focusing phases that can't possibly succeed. *)
+  (* == PART 2: Ordered Prefocusing == *)
+  (* This code internalizes the left-to-right evaluation of ordered
+   * propositions. 
+   * 
+   * The only essential requirement of prefocusing is that it handle the 
+   * "resource management" problem, carving out the correct atomic propositions
+   * from the context and putting them in a list in the order that they will
+   * be needed in the left-to-right traversal of the term.
+   *
+   * Note that this is NOT the same thing as the order they appear in the 
+   * context; if the rule is ((a • b) ◦ (c ◦ d) ->> ...) and we are prefocusing
+   * at the point Ω₁[]dcabΩ₂, which means we will suceed, the returned list
+   * will be [a,b,c,d].
+   * 
+   * Prefocusing must return NONE if there is not enough ordered context
+   * to allow focusing at a particular point; we additionally fail if
+   * it is obvious based only on the predicates that we will fail (i.e. if 
+   * need an eval(E) but there is a comp(F) there). *)
 
-  fun get_ordered_atom O (perm,a,trms) =
-      let in
+  fun get_ordered_atom O (perm,a:string,trms) =
+      (* let in *)
         case perm of
           I.Ordered => 
           let
@@ -88,12 +120,12 @@ structure Execute = struct
             if a = b then ([(a,gtrms)], tl O) else raise MatchFail
           end
         | _ => ([], O)
-      end
-      (* handle exn => raise exn *)
+      (* end
+      handle exn => raise exn *)
 
                                 
   fun get_ordered_left OL trm = 
-      let in
+      (* let in *)
         case trm of
           I.Exists(_,trm) => get_ordered_left OL trm
         | I.Atom atom => get_ordered_atom OL atom
@@ -107,26 +139,30 @@ structure Execute = struct
             val (O1,OL) = get_ordered_left OL trm1
             val (O2,OL) = get_ordered_left OL trm2
           in (O1 @ O2, OL) end
-      end
-      (* handle exn => raise exn *)
+      (* end
+      handle exn => raise exn *)
 
   fun get_ordered_right OR trm = 
-      case trm of
-        I.Exists(_,trm) => get_ordered_right OR trm
-      | I.Atom atom => get_ordered_atom OR atom
-      | I.Fuse(trm1,trm2) =>
-        let 
-          val (O1,OR) = get_ordered_right OR trm1
-          val (O2,OR) = get_ordered_right OR trm2
-        in (O1 @ O2, OR) end
-      | I.Esuf(trm1,trm2) => 
-        let 
-          val (O2,OR) = get_ordered_right OR trm2
-          val (O1,OR) = get_ordered_right OR trm1
-        in (O1 @ O2, OR) end
+      (* let in *)
+        case trm of
+          I.Exists(_,trm) => get_ordered_right OR trm
+        | I.Atom atom => get_ordered_atom OR atom
+        | I.Fuse(trm1,trm2) =>
+          let 
+            val (O1,OR) = get_ordered_right OR trm1
+            val (O2,OR) = get_ordered_right OR trm2
+          in (O1 @ O2, OR) end
+        | I.Esuf(trm1,trm2) => 
+          let 
+            val (O2,OR) = get_ordered_right OR trm2
+            val (O1,OR) = get_ordered_right OR trm1
+          in (O1 @ O2, OR) end
+      (* end
+      handle exn => raise exn *)
+
 
   fun get_ordered_neg (OL,OR) trm = 
-      let in
+      (* let in *)
         case trm of 
           I.Forall(_,trm) => get_ordered_neg (OL,OR) trm
         | I.Righti(trm1,trm2) =>
@@ -140,10 +176,13 @@ structure Execute = struct
             val (OL,OB,OR) = get_ordered_neg (OL,OR) trm2
           in (OL,OA @ OB,OR) end
         | I.Shift(conc) => (OL,[],OR)
-      end
-      (* handle exn => raise exn *)
+      (* end
+      handle exn => raise exn *)
   
-  (* Focused proof search *)
+  fun prefocus (OL,OR) trm = get_ordered_neg (OL,OR) trm
+
+  (* == PART 3: FOCUSED PROOF SEARCH == *)
+  (* Traverse rules to match the context and derive conclusions *)
  
   (* Left inversion *)
   fun conc_left evars trm = 
@@ -174,10 +213,10 @@ structure Execute = struct
 
 
   (* Right focus *)
-  fun match_atom (ctx as S{persistent,linear,ordered}, evars) (perm,a,trms) = 
+  fun match_atom (ctx as (U,L,O), evars) (perm,a,trms) = 
       let 
         fun seek (nomatch,[]) _ = raise MatchFail
-          | seek (nomatch, (b,gtrms) :: unknownmatch) (a,trms) =
+          | seek (nomatch, (b,gtrms) :: unknownmatch) (a:string,trms) =
             let
               val () = if a <> b then raise MatchFail else ()
               val evars = match_terms evars (gtrms,trms)
@@ -190,20 +229,16 @@ structure Execute = struct
         case perm of
           I.Ordered =>
           let 
-            val (a,trms') = hd ordered
-            val ctx = 
-                S{persistent=persistent, linear=linear, ordered=tl ordered} 
-            val evars = match_terms evars (trms',trms)
-          in (ctx,evars) end
+            val (a,trms') = hd O
+            val O = tl O
+          in ((U,L,O),evars) end
         | I.Linear => 
           let
-            val (linear, evars) = seek ([],linear) (a,trms)
-            val ctx = 
-                S{persistent=persistent, linear=linear, ordered=ordered} 
-          in (ctx,evars) end
+            val (L, evars) = seek ([],L) (a,trms)
+          in ((U,L,O),evars) end
         | I.Persistent => 
           let
-            val (_, evars) = seek([],persistent) (a,trms)
+            val (_, evars) = seek([],U) (a,trms)
           in (ctx,evars) end
       end
       (* handle exn => raise exn *)
@@ -234,59 +269,68 @@ structure Execute = struct
       end
       (* handle exn => raise exn *)
 
-  fun focus (ctx, rules) = 
+  fun focus (S{persistent=U,linear=L,ordered=O}, rules) = 
       let 
-        fun focushere (U,L,OL,OR) rule = 
-            let 
-              val (OL,O,OR) = get_ordered_neg (OL,OR) rule
-              val (S{linear=L,...},evars,conc) = 
-                  match_neg (S{persistent=U, linear=L, ordered=O}, []) rule
-              val (U',L',O') = conc_left evars conc
-            in S{persistent = U' @ U,
-                 linear = L' @ L, 
-                 ordered = rev OL @ O' @ OR} end
-            handle MatchFail => 
-                   let in
-                     case List.getItem OR of
-                       NONE => raise MatchFail
-                     | SOME(Q, OR) => focushere(U,L,Q::OL,OR) rule
-                   end
-        fun focusrules (ctx, []) = raise MatchFail
-          | focusrules (ctx as S{persistent,linear,ordered}, rule :: rules) =
-            focushere (persistent,linear,[],ordered) rule 
-            handle MatchFail => focusrules (ctx, rules)
-      in
-        focusrules(ctx, rules)
-      end
-      (* handle exn => raise exn *)
-  
-  fun execfile file = 
-      let 
-        fun exec trm rules = 
-            let 
-              val (U,L,O) = conc_left [] trm
-              val ctx = S{persistent=U, linear=L, ordered=O}
-              fun step ctx = 
-                  let in
-                    print ("-- " ^ Context.to_string ctx ^ "\n");
-                    step(focus(ctx,rules))
-                  end
-                  handle MatchFail => ()
-            in step ctx end
 
-        fun run (decl,rules) =
-            let val _ = print (I.decl_to_string decl)
+        (* Try to focus at a particular place on a particular rule *)
+        fun focusrule (U,L,OL,OR) (p,r,neg_prop) =
+            let 
+              val (OL,O,OR) = get_ordered_neg (OL,OR) neg_prop
+              val ((U,L,O),evars,conc) = match_neg ((U,L,O), []) neg_prop
+              val (U',L',O') = conc_left evars conc
             in
-              case decl of
-                I.RULE(_,_,rule) => (rules @ [rule])
-              | I.EXEC(_,trm) => (exec trm rules; rules)
+              if not(null O)
+              then raise ErrPos(p, "Prefocusing error (internal), rule " ^ r)
+              else SOME(S{persistent = U' @ U,
+                          linear = L' @ L, 
+                          ordered = rev OL @ O' @ OR})
             end
-        val (decls,signat) = TypeRecon.readfile file
-        val _ = print "== Implied Signature == \n"
-        val _ = TypeRecon.MapS.appi 
-                (fn (c,tp) => print(c ^ " : " ^ I.typ_to_string tp ^ ".\n")) 
-                signat
-        val _ = print "\n== Program == \n"
-      in foldl run [] decls; () end
+            handle MatchFail => NONE
+
+        (* Try to focus at a particular place on any rule *)
+        fun focuspos (U,L,OL,OR) rules = 
+            case ListUtil.findpartial (focusrule (U,L,OL,OR)) rules of
+              NONE => 
+              if null OR then NONE 
+              else focuspos (U,L,hd OR :: OL, tl OR) rules
+            | SOME ctx => SOME ctx
+
+      in
+        focuspos (U,L,[],O) rules
+      end
+
+  fun trace (pos_prop, rules) = 
+      let
+        val (U,L,O) = conc_left [] pos_prop
+        val ctx = S{persistent=U, linear=L, ordered=O}
+        fun stream ctx () =
+            case focus(ctx, rules) of
+              NONE => Nil
+            | SOME ctx' => Cons(ctx', delay (stream ctx'))
+      in
+        delay(fn () => Cons(ctx, delay(stream ctx)))
+      end
+
+  fun execute (pos_prop, rules, stop) = 
+      let
+        val (U,L,O) = conc_left [] pos_prop
+        val ctx = S{persistent=U, linear=L, ordered=O}
+
+        (* Loop until no more steps can be taken *)
+        fun loop n ctx = 
+            case focus(ctx, rules) of
+              NONE => (ctx,n)
+            | SOME ctx => loop (n+1) ctx
+
+        (* Loop for a maximum number of steps *)
+        fun loopFor m 0 ctx = (ctx,m)
+          | loopFor m n ctx = 
+            case focus(ctx, rules) of
+              NONE => (ctx,m-n)
+            | SOME ctx => loopFor m (n-1) ctx
+      in
+        (case stop of NONE => loop 0 | SOME m => loopFor m m) ctx
+      end
+            
 
 end

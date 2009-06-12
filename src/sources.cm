@@ -1,6 +1,21 @@
 Group is
   $/basis.cm
   $/smlnj-lib.cm
+
+  util/util.cm
+  util/stream.cm
+  parse/parse.cm
+
+  global-sig.sml
+  global.sml
+
+  extsyn.sml
+  parse.sml
+
+  names.sml
+  intsyn.sml
+
+  typerecon.sml
   parse.cm
 
   term.sml

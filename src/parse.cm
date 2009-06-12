@@ -4,6 +4,9 @@ Group is
   util/stream.cm
   parse/parse.cm
 
+  global-sig.sml
+  global.sml
+
   extsyn.sml
   parse.sml
 

@@ -1,3 +1,7 @@
+(* Ollibot — Robert J. Simmons and Frank Pfenning
+ * Simple type inference and *)
+
+
 structure SimpleType :> 
           sig
             type evar
@@ -45,6 +49,13 @@ struct
   val Item' = Item
   val Prop' = Prop
   val Arrow' = Arrow
+
+  fun occurs_check (e1 : evar) t2 = 
+      case t2 of
+        Var e2 = if e1 = e2 then raise Err("Cannon assign types") else ()
+      | Item => ()
+      | Prop => ()
+      | Arrow(t1,t2) => (occurs_check e1 t1; occurs_check e1 t2)
 
   exception Unify
   fun unify t1 t2 = 

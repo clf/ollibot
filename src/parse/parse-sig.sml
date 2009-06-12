@@ -45,6 +45,10 @@ sig
     val parse : ('a,'t) parser -> ('t * Pos.pos) Stream.stream -> 
                  'a option
 
+    (* parse a stream, also return the remainder of the stream *)
+    val parseWithStream : ('a,'t) parser -> ('t * Pos.pos) Stream.stream -> 
+                ('a * ('t * Pos.pos) Stream.stream) option
+
     (* transform p s
 
        parses consecutive maximal prefixes of s with p as many times

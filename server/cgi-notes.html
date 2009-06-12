@@ -1,0 +1,33 @@
+<html>
+<title>The CGI-BIN Code Writer Manual to Obelisk-http</title>
+<body>
+<center><h1>Obelisk-HTTP CGI Notes</h1></center>
+<hr><br>
+<b>What languages I can use to write a CGI-SCRIPT?</b><br>
+You can use Interpreted languages Python(file MUST end in .py), Perl(MUST end in .pl)<br>
+or BASH(MUST END IN .sh). Or you can use any COMPILED language so you will can use<br>
+C, C++, Pascal, Cobol and much more languages<br><br>
+
+<b>Why not PHP?</b><br>
+PHP will be inplemented at the 1.0.0, so be patient<br><br>
+<hr>
+<center><h3>Why mine CGI-SCRIPT don't run?</h3></center>
+
+<b>When the client want a cgi-script the request begins with /cgi-bin/ ?</b><br>
+Change your CGI-SCRIPT links to '/cgi-bin/.../script'<br><br>
+<b>Is the CGI-SCRIPT is on a INTERPRETED language?</b></br>
+...The first line is #!/path/to/interpreter ?(
+#!/usr/bin/python,
+#!/usr/bin/perl,
+#!/bin/bash)<br><br>
+
+<b>You have execution permissions?(*nix only)</b><br>
+Change the permissions of the script(chmod 775 scriptname)<br><br>
+
+
+
+
+</body>
+
+
+</html>

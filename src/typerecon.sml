@@ -1,5 +1,6 @@
 structure TypeRecon = struct
   
+  open Global
   structure MapS = 
   RedBlackMapFn(struct type ord_key = string val compare = String.compare end)
 
@@ -10,7 +11,7 @@ structure TypeRecon = struct
   (* Type approximation and closure 
    * 
    * In this stage, we determine all types in the file, and discover any
-   * type errors. We use a "file-wide" means of estimating the . 
+   * type errors. 
    * 
    *** Types are determined by unification using the SimpleType structure
    *** Free variables are determined by 
@@ -308,6 +309,7 @@ structure TypeRecon = struct
       | ST.Item => I.Item
       | ST.Prop => I.Prop  
 
+(*
   fun readfile file =
       let 
         val fs = Parse.readfile file
@@ -353,5 +355,6 @@ structure TypeRecon = struct
         val signat = MapS.map groundST constmap
         val ft = transformfile (fr, signat)
       in (ft,signat) end 
+*)
 
 end

@@ -23,7 +23,6 @@ epair₂ : comp(pair₁) • return(V₁) • return(V₂) ->> return(pair V₁ 
 elet₁ : eval(split E (λx₁.λx₂. E' x₁ x₂)) ->> comp(split₁ E') • eval(E).
 elet₂ : eval(split₁ (λx₁.λx₂. E' x₁ x₂)) • return(pair V₁ V₂) ->> eval(E' V₁ V₂).
 
-
 %% Exceptions (Figure 10)
 
 etry   : eval(try E₁ E₂) ->> catch(E₂) • eval(E₁).

@@ -13,3 +13,4 @@ r₄ : eval(D) • !bind D E ->> eval(E).
 %exec eval(app (lam λx.x) (app (lam λy.y) (lam λz.c))).
 
 
+('frame-font)
