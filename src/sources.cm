@@ -16,7 +16,7 @@ Group is
   intsyn.sml
 
   typerecon.sml
-  parse.cm
+  parse.cm2
 
   term.sml
   context.sml
