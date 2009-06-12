@@ -1,0 +1,7 @@
+(* Utilities for working with UTF8 strings *)
+Group is
+
+$/basis.cm
+
+utf8util-sig.sml
+utf8util.sml
