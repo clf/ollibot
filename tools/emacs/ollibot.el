@@ -1,18 +1,21 @@
 ;;; Ollibot editing mode
 
 ;; Ollibot's text mode is currently very simple; it only sets the input method
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.l?olf\\'" . ollibot-mode))
+;;;###autoload
+(modify-coding-system-alist 'file "\\.l?olf\\'" 'utf-8)
+;;;###autoload
 (define-derived-mode ollibot-mode nil "Ollibot"
- "Major mode for ollibot files. Currently does nothing but force .olf files
-to be opened with the correct encoding."
+ "Major mode for ollibot files. 
+Currently does nothing but force .olf files to be opened with the correct 
+encoding and text input mode."
  (set-input-method "Ollibot"))
-
-;; Automatically load ollibot-mode on files
-(add-to-list 'auto-mode-alist '("\\.olf$" . ollibot-mode))
 
 ;; Make the universal change to presume that all subprocess communication UTF-8
 ;; This could be problematic on, for instance, unix systems, so it would be
 ;; better if we worked out subprocess communication and used that instead.
-(setq-default default-process-coding-system (cons 'mule-utf-8 'mule-utf-8))
+(setq-default default-process-coding-system (cons 'utf-8 'utf-8))
 
 ;; Set up the quail input-method for Ollibot
 (require 'quail)
@@ -33,9 +36,13 @@ The purpose of this input method is to edit .olf programs."
  ("\\ex" ?∃)
  ("\\exists" ?∃)
 
- ;; Connectives
- ("\\!" ?¡)
+ ;; Exponentials
  ("!`" ?¡)
+ ("\\!" ?¡)
+ ("\\gnab" ?¡)
+ ("\\bang" ?!)
+ 
+ ;; Connectives
  ("\\all" ?∀)
  ("\\forall" ?∀)
  ("\\fuse" ?•)
