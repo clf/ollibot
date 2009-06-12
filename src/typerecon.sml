@@ -275,7 +275,7 @@ structure TypeRecon = struct
               let in
                 case lookup_var x vars (0,0) of 
                   (* Case 1: Variable in signature *)
-                  NONE => ((PT_Root(I.Const x), []), MapS.lookup(constmap, x))
+                  NONE => ((PT_Root(I.Const x), []), valOf(MapS.find(constmap, x)))
                   (* Case 2: Modal variable *)
                 | SOME(V_MVar, u, tp) => ((PT_MVar u, []), tp)
                   (* Case 3: Regular variable *)
