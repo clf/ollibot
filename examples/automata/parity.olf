@@ -1,0 +1,6 @@
+r1 : even • zero ->> even.
+r2 : even • one ->> odd.
+r3 : odd • zero ->> odd.
+r4 : odd • one ->> even.
+
+%exec even • one • zero • one • one.
