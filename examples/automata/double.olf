@@ -11,4 +11,5 @@ r6 : copy₁ • 0 ->> 1 • copy₀.
 r7 : copy₁ • 1 ->> 1 • copy₁.
 r8 : copy₁ • # ->> 1 • #.
 
-%exec # • double • 1 • 1 • 0 • 1 • #.
+%trace * 
+  # • double • 1 • 1 • 0 • 1 • #.

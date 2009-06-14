@@ -1,9 +1,20 @@
 %% Language of matching parens
 %% Recognition with a deterministic push-down automaton
-%% with one state |>.  To accept, final state must be
-%% |> only (stack to the left of |> is empty).
+%% with one state ▷.  To accept, final state must be
+%% ▷ only (stack to the left of ▷ is empty).
 
-r1 : |> • [ ->> [ • |>.
-r2 : [ • |> • ] ->> |>.
+r1 : ▷ • [ ->> [ • ▷.
+r2 : [ • ▷ • ] ->> ▷.
 
-%exec |> • [ • [ • ] • [ • [ • ] • ] • ] • ].
+%% Success
+%trace * 
+  ▷ • [ • [ • [ • ] • [ • [ • ] • ] • ] • ].
+
+%% Failure (too many right parens)
+%trace * 
+  ▷ • [ • [ • ] • [ • [ • ] • ] • ] • ].
+
+%% Failure (too many left parens)
+%trace * 
+  ▷ • [ • [ • [ • [ • [ • ] • ] • ] • ].
+

@@ -39,5 +39,6 @@ e>1 : e> • 1 ->> <a • 0.
 e># : e> • # ->>     1 • h> • #.
 #<e : # • <e ->> # • 1 • h>.
 
-%% Warning: next line would take 47,176,870 steps
-%% %exec # • a> • #.
+%% Next line would take 47,176,870 steps to run to completion
+%exec 100000
+  # • a> • #.

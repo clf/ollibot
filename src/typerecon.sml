@@ -141,11 +141,18 @@ structure TypeRecon = struct
               ST.unify tp ST.Prop'; 
               E.RULE(p,s,MapS.foldri wrap trm fv)
             end
-          | learntypes (E.EXEC(p,trm)) = 
+          | learntypes (E.EXEC(p,n,trm)) = 
             let val (fv, tp) = vars_and_types(trm,MapS.empty)
             in 
               ST.unify tp ST.Prop'; 
-              if MapS.isEmpty fv then E.EXEC(p,trm)
+              if MapS.isEmpty fv then E.EXEC(p,n,trm)
+              else raise Match (* XXX needs error message *)
+            end
+          | learntypes (E.TRACE(p,n,trm)) = 
+            let val (fv, tp) = vars_and_types(trm,MapS.empty)
+            in 
+              ST.unify tp ST.Prop'; 
+              if MapS.isEmpty fv then E.TRACE(p,n,trm)
               else raise Match (* XXX needs error message *)
             end
 
@@ -321,7 +328,8 @@ structure TypeRecon = struct
             let in
               case trm of
                 E.RULE(p,r,trm) => I.RULE(p,r,e2i_neg(trm,[]))
-              | E.EXEC(p,trm) => I.EXEC(p,e2i_pos(trm,[]))
+              | E.EXEC(p,n,trm) => I.EXEC(p,n,e2i_pos(trm,[]))
+              | E.TRACE(p,n,trm) => I.TRACE(p,n,e2i_pos(trm,[]))
             end
 
         val decl = e2i_decl decl

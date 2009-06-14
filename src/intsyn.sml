@@ -48,7 +48,8 @@ structure IntSyn = struct
   type rule = Pos.pos * string * neg_prop
   datatype decl =
       RULE of rule
-    | EXEC of Pos.pos * pos_prop
+    | EXEC of Pos.pos * int option * pos_prop
+    | TRACE of Pos.pos * int option * pos_prop
 
   fun typ_to_string typ = 
       let 
@@ -162,8 +163,12 @@ structure IntSyn = struct
 
   fun decl_to_string (RULE(p,r,trm)) =
       r ^ " : " ^ neg_prop_to_string_env [] false trm ^ "."
-    | decl_to_string (EXEC(p,trm)) =
-      "%exec " ^ pos_prop_to_string_env [] false trm ^ "."
+    | decl_to_string (EXEC(p,n,trm)) =
+      "%exec " ^ (case n of NONE => "*" | SOME n => Int.toString n) ^
+      " " ^ pos_prop_to_string_env [] false trm ^ "."
+    | decl_to_string (TRACE(p,n,trm)) =
+      "%trace " ^ (case n of NONE => "*" | SOME n => Int.toString n) ^
+      " " ^ pos_prop_to_string_env [] false trm ^ "."
 
   val term_to_string = term_to_string_env [] []
 

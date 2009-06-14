@@ -102,6 +102,7 @@ structure ExtSyn = struct
 
   datatype decl = 
       RULE of Pos.pos * string * term
-    | EXEC of Pos.pos * term
+    | EXEC of Pos.pos * int option * term
+    | TRACE of Pos.pos * int option * term
               
 end

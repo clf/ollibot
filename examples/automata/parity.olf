@@ -7,4 +7,5 @@ r2 : even • 1 ->> odd.
 r3 : odd • 0 ->> odd.
 r4 : odd • 1 ->> even.
 
-%exec even • 1 • 0 • 1 • 1.
+%trace * 
+  even • 1 • 0 • 1 • 1.

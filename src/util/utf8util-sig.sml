@@ -9,5 +9,4 @@ signature UTF8_UTIL = sig
   (* Extract the nth code point from a string *)
   val sub : string * int -> string
   
-
 end

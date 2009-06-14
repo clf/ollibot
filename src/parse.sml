@@ -31,7 +31,7 @@ structure Parse :> PARSE = struct
       | RIGHTI => "->>" | LEFTI => ">->" | BANG => "!" | GNAB => "¡"
       | LAMBDA x => "λ " ^ x | FORALL x => "∀ " ^ x | EXISTS x => "∃ " ^ x
       | ID(path,x) => concat (map (fn x => x ^  ".") path) ^ x 
-      | PERCENT x => "% " ^ x | COLON => ":" | WS => ""
+      | PERCENT x => "%" ^ x | COLON => ":" | WS => ""
 
   (* Transform 1: 
    *** Strip line comments
@@ -204,12 +204,22 @@ structure Parse :> PARSE = struct
             && !! exp_parser << force_period 
                 wth (fn ((x,pos),(trm,pos')) => 
                         ExtSyn.RULE(Pos.union(pos,pos'), x, trm))
+        val numparser =
+         fn ID([],"*") => SOME(NONE)
+          | ID([],id) => 
+            (case Int.fromString id of NONE => NONE | SOME i => SOME(SOME i))
+          | _ => NONE
         val exec_parser = 
             get (fn pos => 
               maybe (fn PERCENT("exec") => SOME() | _ => NONE)
-              >> exp_parser << force_period 
-                wth (fn x => ExtSyn.EXEC(pos,x)))
-      in alt [rule_parser,exec_parser] end
+              >> maybe numparser && exp_parser << force_period 
+                wth (fn (n,x) => ExtSyn.EXEC(pos,n,x)))
+        val trace_parser = 
+            get (fn pos => 
+              maybe (fn PERCENT("trace") => SOME() | _ => NONE)
+              >> maybe numparser && exp_parser << force_period 
+                wth (fn (n,x) => ExtSyn.TRACE(pos,n,x)))
+      in alt [rule_parser,exec_parser,trace_parser] end
 
   fun stream_to_tokenstream f fs = 
       let 
