@@ -1,26 +1,52 @@
 /* Wrapper for index page */
 #main {
-	font: 10pt/16pt georgia; 
-	color: #555753; 
-	background: #fff; 
-	margin-left: auto;
-	margin-right: auto;
-	width: 800px;
-	border: 1px;
-	border-style: dotted;
-	padding: 10px;
-	}
+    font: 10pt/16pt georgia; 
+    color: #555753; 
+    background: #fff; 
+    margin-left: auto;
+    margin-right: auto;
+    width: 800px;
+    border: 1px;
+    border-style: dotted;
+    padding: 10px;
+}
 #title h1 {
-	font: 30pt arial;
-        margin-top: 0px;
-        margin-bottom: 0px;
-	color: #5557FF;
-	font-weight: bold;
-	}
+    font: 30pt arial;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    color: #5557FF;
+    font-weight: bold;
+}
 #subtitle h2 {
-	font: 20pt arial;
-        margin-top: 0px;
-        margin-bottom: 0px;
-	color: #5557FF;
-	font-weight: bold;
-	}
+    font: 20pt arial;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    color: #5557FF;
+    font-weight: bold;
+}
+#hyp {
+    clear: left;
+    margin-left: 10px;
+    border-style: dashed none none none;
+    border-width: 1px;
+    font-family: "Courier New",courier,monospace;
+    font-weight: bold;
+    }
+#hyp_pers { 
+    float: left;
+    background: #afa;
+    margin: 1px;
+    padding: 1px;
+    }
+#hyp_lin { 
+    float: left;
+    background: #faa;
+    margin: 1px;
+    padding: 1px;
+    }
+#hyp_ord { 
+    float: left;
+    background: #aaf;
+    margin: 1px;
+    padding: 1px;
+    }

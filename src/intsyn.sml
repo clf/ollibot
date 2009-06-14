@@ -1,6 +1,8 @@
 
 structure IntSyn = struct
 
+  open Global
+
   datatype perm = Ordered | Linear | Persistent
 
   datatype tp = Prop | Item | Arrow of tp * tp
@@ -159,9 +161,9 @@ structure IntSyn = struct
       end
 
   fun decl_to_string (RULE(p,r,trm)) =
-      r ^ " : " ^ neg_prop_to_string_env [] false trm ^ ".\n"
+      r ^ " : " ^ neg_prop_to_string_env [] false trm ^ "."
     | decl_to_string (EXEC(p,trm)) =
-      "%exec " ^ pos_prop_to_string_env [] false trm ^ ".\n"
+      "%exec " ^ pos_prop_to_string_env [] false trm ^ "."
 
   val term_to_string = term_to_string_env [] []
 
@@ -246,11 +248,8 @@ structure IntSyn = struct
       | (Root(Const c,trms), []) => Root(Const c, trms)
       | (MVar(u,subst),[]) => MVar(u,subst)
       | (trm,trms) =>
-        (print (term_to_string false trm); 
-         print " @ ("; 
-         print (String.concatWith "; " (map (term_to_string false) trms));
-         print ")\n"; 
-         raise HSubst)
+        raise Err("HSubst: " ^ term_to_string false trm ^ " @ (" ^
+                  String.concatWith "; " (map (term_to_string false) trms))
 
   (* apply_subst: (subst: Γ ⊢ Ψ) → (trm: Ψ ⊢ τ) → (Γ ⊢ τ) *)
   fun apply_subst subst trm = 

@@ -6,18 +6,15 @@ structure Frontend = struct
   fun read file = 
       let 
         fun step (rules, decl) =
-            let in
-              print (I.decl_to_string decl ^ "\n");
-              case decl of 
-                I.RULE rule => (rule :: rules)
-              | I.EXEC (p,pos_prop) => 
-                let val (ctx,n) = Execute.execute(pos_prop, rules, NONE)
-                in 
-                  print ("-- After " ^ Int.toString n ^ " steps:\n");
-                  print ("-- " ^ Context.to_string ctx ^ "\n");
-                  rules
-                end 
-            end
+            case decl of 
+              I.RULE rule => (rule :: rules)
+            | I.EXEC (p,pos_prop) => 
+              let val (ctx,n) = Execute.execute(pos_prop, rules, NONE)
+              in 
+                print ("\n-- After " ^ Int.toString n ^ " steps:\n");
+                print ("-- " ^ Context.to_string ctx ^ "\n");
+                rules
+              end 
               
         fun loop (signat, rules, tokens) =
             case Parsing.parseWithStream Parse.decl_parser tokens of

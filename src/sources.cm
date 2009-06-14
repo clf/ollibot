@@ -16,8 +16,9 @@ Group is
   intsyn.sml
 
   typerecon.sml
-  parse.cm2
 
   term.sml
   context.sml
   execute.sml
+
+  frontend.sml

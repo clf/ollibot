@@ -216,10 +216,16 @@ structure Parse :> PARSE = struct
         val pos0 = Pos.initposex f
         fun mark ("\n",pos) = 
             let val pos' = Pos.nextline pos 
-            in (("\n", Pos.union(pos,pos')), pos') end
+            in
+              liveprint "\n";
+              (("\n", Pos.union(pos,pos')), pos')
+            end
           | mark (c, pos) =
             let val pos' = Pos.nextchar pos
-            in ((c, Pos.union(pos,pos')), pos') end
+            in
+              liveprint c;
+              ((c, Pos.union(pos,pos')), pos')
+            end
         val fs1 = StreamUtil.foldstream mark pos0 fs
         val fs2 = transform_tok1 fs1
         val fs3 = transform_tok2 fs2

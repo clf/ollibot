@@ -231,6 +231,7 @@ structure Execute :> EXECUTE = struct
           let 
             val (a,trms') = hd O
             val O = tl O
+            val evars = match_terms evars (trms', trms)
           in ((U,L,O),evars) end
         | I.Linear => 
           let
@@ -276,7 +277,8 @@ structure Execute :> EXECUTE = struct
         fun focusrule (U,L,OL,OR) (p,r,neg_prop) =
             let 
               val (OL,O,OR) = get_ordered_neg (OL,OR) neg_prop
-              val ((U,L,O),evars,conc) = match_neg ((U,L,O), []) neg_prop
+              val ((U,L,O),evars,conc) = 
+                  match_neg ((U,L,O), []) neg_prop
               val (U',L',O') = conc_left evars conc
             in
               if not(null O)
@@ -286,6 +288,8 @@ structure Execute :> EXECUTE = struct
                           ordered = rev OL @ O' @ OR})
             end
             handle MatchFail => NONE
+                 | Option =>
+                   raise ErrPos(p,"Rule " ^ r ^ " not range restricted!")
 
         (* Try to focus at a particular place on any rule *)
         fun focuspos (U,L,OL,OR) rules = 

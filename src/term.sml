@@ -24,6 +24,8 @@ end
 structure Term :> TERM = 
 struct
 
+  open Global
+
   datatype term_view =
       Lambda of string * term_view
     | Var of int * term_view list
@@ -99,10 +101,8 @@ struct
     | hred (Var(i,trms), []) = Var(i,trms)
     | hred (Const(s,trms), []) = Const(s, trms)
     | hred (trm,trms) = 
-      (print (to_string trm); 
-       print " @ ("; 
-       print (String.concatWith "; " (map to_string trms)); print ")\n"; 
-       raise HSubst)
+      raise Err("HSubst: " ^ to_string trm ^ " @ (" ^
+                String.concatWith "; " (map to_string trms))
 
   datatype tp = Base | Arrow of tp * tp
 

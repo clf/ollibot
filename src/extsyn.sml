@@ -19,6 +19,8 @@ structure SimpleType :>
           end =
 struct
 
+  open Global
+
   datatype evar = E of styp_view option ref
   and styp_view = Var of evar | Item | Prop | Arrow of styp_view * styp_view
 
@@ -52,7 +54,7 @@ struct
 
   fun occurs_check (e1 : evar) t2 = 
       case t2 of
-        Var e2 = if e1 = e2 then raise Err("Cannon assign types") else ()
+        Var e2 => if e1 = e2 then raise Err("Cannon assign types") else ()
       | Item => ()
       | Prop => ()
       | Arrow(t1,t2) => (occurs_check e1 t1; occurs_check e1 t2)

@@ -1,14 +1,12 @@
 structure TypeRecon = struct
   
   open Global
-  structure MapS = 
-  RedBlackMapFn(struct type ord_key = string val compare = String.compare end)
 
   structure ST = SimpleType
   structure E = ExtSyn
   structure I = IntSyn
 
-  (* Type approximation and closure 
+  (* Type approximation and abstracting over free variables 
    * 
    * In this stage, we determine all types in the file, and discover any
    * type errors. 
@@ -16,17 +14,25 @@ structure TypeRecon = struct
    *** Types are determined by unification using the SimpleType structure
    *** Free variables are determined by 
    *)
-  fun reconfile fs = 
+  fun infertypes_decl (signat,decl) = 
       let 
-        val fl = Stream.tolist fs
 
         (* This map stores the inferred global signature for constants *)
         val constmap : ST.styp MapS.map ref = ref MapS.empty
+        fun ItoST typ = 
+            case typ of
+              I.Prop => ST.Prop'
+            | I.Item => ST.Item'
+            | I.Arrow(typ1,typ2) => ST.Arrow'(ItoST typ1, ItoST typ2)
         fun lookup s = 
-            case MapS.find(!constmap,s) of
-              NONE => let val t = ST.Var'()
-              in constmap := MapS.insert(!constmap,s,t); t end
-            | SOME t => t 
+            case MapS.find(signat,s) of
+              SOME t => ItoST t
+            | NONE => 
+              (case MapS.find(!constmap,s) of
+                 SOME t => t
+               | NONE => 
+                 let val t = ST.Var'()
+                 in constmap := MapS.insert(!constmap,s,t); t end)
         fun unify (x,y) = ST.unify x y
 
         (* vars_and_types(trm, bvar) = (fvar, tp) 
@@ -103,7 +109,7 @@ structure TypeRecon = struct
                     let val tp = lookup x
                     in (MapS.empty, tp) end
               end
-            | E.Id(p,_,x) => (print "No paths yet!"; raise Match)
+            | E.Id(p,_,x) => raise ErrPos(p,"Paths not yet supported!")
             | E.Bang(p,trm1) =>
               let (* val _ = print "Bang\n" *)
                 val (fvar1,tp1) = vars_and_types (trm1, bvar)
@@ -143,11 +149,22 @@ structure TypeRecon = struct
               else raise Match (* XXX needs error message *)
             end
 
-        val fr = map learntypes fl
+        val closed_decl = learntypes decl
 
-      in (fr,!constmap) end
+        fun groundST tp = 
+            case ST.prj tp of
+              ST.Var ev => (ST.bind ev ST.Item'; I.Item)
+            | ST.Arrow(t1,t2) => I.Arrow(groundST t1, groundST t2)
+            | ST.Item => I.Item
+            | ST.Prop => I.Prop  
+
+        val new_signat =
+            MapS.unionWith (fn _ => raise Err("Cannot merge signatures"))
+                           (signat, MapS.map groundST (!constmap))
+
+      in (new_signat, closed_decl) end
  
-  fun transformfile (fr,constmap) = 
+  fun transform_decl (signat, decl) = 
       let 
         datatype var = V_MVar | V_Var
         fun lookup_var (x : string) vars (u,i) =
@@ -168,9 +185,10 @@ structure TypeRecon = struct
               in (i+1, I.eta_expand_head tp1 (I.Var i) :: spine) end
 
         (* Check that a type is ground, return the internal type *)
+        exception CouldNotInferType
         fun is_groundST tp = 
             case ST.prj tp of
-              ST.Var ev => (print "Could not infer type\n"; raise Match)
+              ST.Var ev => raise CouldNotInferType
             | ST.Arrow(tp1,tp2) => I.Arrow(is_groundST tp1, is_groundST tp2)
             | ST.Item => I.Item
             | ST.Prop => I.Prop
@@ -212,6 +230,8 @@ structure TypeRecon = struct
               E.Forall(p,tp,x,trm) =>
               let
                 val tp = is_groundST tp
+                    handle CouldNotInferType
+                           => raise ErrPos(p,"Could not infer type of argument")
                 val trm = e2i_neg(trm, (V_MVar,x,tp) :: vars)
               in I.Forall(x,trm) end
             | E.Righti(p,trm1,trm2) =>
@@ -241,6 +261,8 @@ structure TypeRecon = struct
             | E.Exists(p,tp,x,trm) =>
               let
                 val tp = is_groundST tp
+                    handle CouldNotInferType
+                           => raise ErrPos(p,"Could not infer type of argument")
                 val trm = e2i_pos(trm, (V_MVar,x,tp) :: vars)
               in I.Exists(x,trm) end
             | E.Bang(p,trm) =>
@@ -248,21 +270,21 @@ structure TypeRecon = struct
                 case e2i_term (trm, vars) of
                   ((PT_Root(I.Const a),trms), I.Prop) => 
                   I.Atom(I.Persistent,a,trms)
-                | _ => (print "Banged not positive proposition\n"; raise Match)
+                | _ => raise Err("Banged not positive proposition\n")
               end
             | E.Gnab(p,trm) =>
               let in
                 case e2i_term (trm, vars) of
                   ((PT_Root(I.Const a),trms), I.Prop) => 
                   I.Atom(I.Linear,a,trms)
-                | _ => (print "Gnabed not positive proposition\n"; raise Match)
+                | _ => raise Err("Gnabed not positive proposition\n")
               end
             | trm =>
               let in
                 case e2i_term (trm, vars) of
                   ((PT_Root(I.Const a),trms), I.Prop) => 
                   I.Atom(I.Ordered,a,trms)
-                | _ => (print "Subterm not positive proposition\n"; raise Match)
+                | _ => raise Err("Subterm not positive proposition\n")
               end
 
         and e2i_term (trm, vars) = 
@@ -273,24 +295,27 @@ structure TypeRecon = struct
                 val (ptrm2,tp2) = e2i_term(trm2,vars)
               in app_partial_term (ptrm1,tp1) (ptrm2,tp2) end
             | E.Id(p,[],x) => 
-              let in
+              (let in
                 case lookup_var x vars (0,0) of 
                   (* Case 1: Variable in signature *)
-                  NONE => ((PT_Root(I.Const x), []), valOf(MapS.find(constmap, x)))
+                  NONE => ((PT_Root(I.Const x), []), 
+                           valOf(MapS.find(signat, x)))
                   (* Case 2: Modal variable *)
                 | SOME(V_MVar, u, tp) => ((PT_MVar u, []), tp)
                   (* Case 3: Regular variable *)
                 | SOME(V_Var, i, tp) => ((PT_Root(I.Var i), []), tp)
               end
+              handle Option => 
+                     raise ErrPos(p,"Could not find " ^ x ^ " in signature"))
             | E.Lambda(p,tp1,x,trm) =>
               let 
                 val tp1 = is_groundST tp1
+                    handle CouldNotInferType
+                           => raise ErrPos(p,"Could not infer type of argument")
                 val (ptrm,tp2) = e2i_term(trm, (V_Var,x,tp1) :: vars)
                 val trm = partial_to_canonical (ptrm,tp2) 
               in ((PT_Term(I.Lambda(x,trm)), []), I.Arrow(tp1,tp2)) end
-            | _ =>
-              (print("Not a term: " ^ Pos.toString (E.getpos trm) ^ "\n");
-               raise Match)
+            | _ => raise ErrPos(E.getpos trm, "Not a term")
             
         fun e2i_decl trm = 
             let in
@@ -299,15 +324,17 @@ structure TypeRecon = struct
               | E.EXEC(p,trm) => I.EXEC(p,e2i_pos(trm,[]))
             end
 
-      in map e2i_decl fr end
+        val decl = e2i_decl decl
+
+      in decl end
+
+      fun load_decl (signat,extsyn_decl) = 
+          let 
+            val (new_signat,closed_decl) = infertypes_decl(signat,extsyn_decl)
+            val intsyn_decl = transform_decl(new_signat,closed_decl)
+          in (new_signat,intsyn_decl) end
 
   (* Turn all partially instantiated leaves into base type *)
-  fun groundST tp = 
-      case ST.prj tp of
-        ST.Var ev => (ST.bind ev ST.Item'; I.Item)
-      | ST.Arrow(t1,t2) => I.Arrow(groundST t1, groundST t2)
-      | ST.Item => I.Item
-      | ST.Prop => I.Prop  
 
 (*
   fun readfile file =
