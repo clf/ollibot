@@ -2,6 +2,7 @@
 
 from BaseHTTPServer import HTTPServer
 from BaseHTTPServer import BaseHTTPRequestHandler
+import os.subprocess
 
 class myHandler(BaseHTTPRequestHandler):
 
@@ -40,8 +41,10 @@ class myHandler(BaseHTTPRequestHandler):
             f = open('server/ollibot.css', 'r')
             self.wfile.write(f.read())
         else:
+            s = subprocess.getoutput("echo \"" + self.path[1:] + "\" " +
+                                     "| sml -m src/web.cm -Dcm.verbose=0")
             self.printCustomHTTPResponse(200)
-            self.do_CUSTOM("File not found","","Sorry!")
+            self.do_CUSTOM("Page!","",s)
 
     def printBrowserHeaders(self):
         keys = self.headers.dict.keys()                                

@@ -400,6 +400,7 @@ struct
 
   (* PERF: Should do it in a single pass *)
   fun losespecsides sp s = losespecr sp (losespecl sp s)
+  val trim = losespecsides whitespec
 
   (* Substring.all in 1997 basis, Substring.full in 2002.
      This works in both, but is perhaps not as fast. *)

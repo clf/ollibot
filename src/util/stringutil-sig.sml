@@ -134,6 +134,8 @@ sig
   val losespecr : (char -> bool) -> string -> string
   (* both sides *)
   val losespecsides : (char -> bool) -> string -> string
+  (* equivalent to (losespecsides whitespec) *)
+  val trim : string -> string
 
   (* matchat n small big
      true if the string 'small' occurs within 'big'

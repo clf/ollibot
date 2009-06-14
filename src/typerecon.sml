@@ -251,7 +251,7 @@ structure TypeRecon = struct
                 val trm1 = e2i_pos(trm1,vars)
                 val trm2 = e2i_neg(trm2,vars)
               in I.Lefti(trm1,trm2) end
-            | trm => I.Shift(e2i_pos (trm,vars))
+            | trm => I.Up(e2i_pos (trm,vars))
 
         and e2i_pos (trm, vars) = 
             case trm of

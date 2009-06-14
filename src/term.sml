@@ -17,6 +17,7 @@ sig
   val apply : term * term list -> term
   val apply_subst : front list -> term -> term
   val to_string : term -> string
+  val to_string_parens : term -> string
   val to_string_env : string list -> term -> string
   val eq : term * term -> bool
 end
@@ -31,34 +32,35 @@ struct
     | Var of int * term_view list
     | Const of string * term_view list
                
-  fun to_string_env env trm = 
-      let 
-        fun to_string' vars needs_parens trm = 
-            case trm of 
-              Lambda (x,trm0) => 
-              let val x = Names.new_name (vars,x) in
-                if needs_parens 
-                then "(λ" ^ x ^ ". " ^
-                     to_string' (x :: vars) false trm0 ^ ")"
-                else "λ" ^ x ^ ". " ^ 
+  fun to_string' vars needs_parens trm = 
+      case trm of 
+        Lambda (x,trm0) => 
+        let val x = Names.new_name (vars,x) in
+          if needs_parens 
+          then "(λ" ^ x ^ ". " ^
+               to_string' (x :: vars) false trm0 ^ ")"
+          else "λ" ^ x ^ ". " ^ 
                      to_string' (x :: vars) false trm0 
-              end
-            | Var(j,[]) => Names.nth(vars,j)
-            | Const(c,[]) => c
-            | Var(j,trms) => 
-              if needs_parens
-              then
-                "(" ^ Names.nth(vars,j) ^ " " ^ args vars trms ^ ")"
-              else Names.nth(vars,j) ^ " " ^ args vars trms
-            | Const(c,trms) => 
-              if needs_parens
-              then "(" ^ c ^ " " ^ args vars trms ^ ")"
-              else c ^ " " ^ args vars trms
-        and args vars trms = 
-            String.concatWith " " (map (to_string' vars true) trms)
-      in to_string' env false trm end
+        end
+      | Var(j,[]) => Names.nth(vars,j)
+      | Const(c,[]) => c
+      | Var(j,trms) => 
+        if needs_parens
+        then
+          "(" ^ Names.nth(vars,j) ^ " " ^ args vars trms ^ ")"
+        else Names.nth(vars,j) ^ " " ^ args vars trms
+      | Const(c,trms) => 
+        if needs_parens
+        then "(" ^ c ^ " " ^ args vars trms ^ ")"
+        else c ^ " " ^ args vars trms
+  and args vars trms = 
+      String.concatWith " " (map (to_string' vars true) trms)
 
-  val to_string = to_string_env []
+
+  fun to_string_env vars trm = to_string' vars false trm 
+
+  fun to_string_parens trm = to_string' [] true trm 
+  fun to_string trm = to_string' [] false trm
 
   type term = term_view
   datatype front = M of term | R of int

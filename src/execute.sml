@@ -175,7 +175,7 @@ structure Execute :> EXECUTE = struct
             val (OA,OL) = get_ordered_left OL trm1
             val (OL,OB,OR) = get_ordered_neg (OL,OR) trm2
           in (OL,OA @ OB,OR) end
-        | I.Shift(conc) => (OL,[],OR)
+        | I.Up(conc) => (OL,[],OR)
       (* end
       handle exn => raise exn *)
   
@@ -266,7 +266,7 @@ structure Execute :> EXECUTE = struct
           I.Forall(_,trm) => match_neg (ctx,NONE :: evars) trm
         | I.Righti(trm1,trm2) => match_neg (match_pos (ctx,evars) trm1) trm2
         | I.Lefti(trm1,trm2) => match_neg (match_pos (ctx,evars) trm1) trm2
-        | I.Shift(conc) => (ctx,evars,conc)
+        | I.Up(conc) => (ctx,evars,conc)
       end
       (* handle exn => raise exn *)
 

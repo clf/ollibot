@@ -37,7 +37,7 @@ structure IntSyn = struct
       Forall of string * neg_prop
     | Righti of pos_prop * neg_prop
     | Lefti of pos_prop * neg_prop
-    | Shift of pos_prop
+    | Up of pos_prop
 
   and pos_prop =  
       Exists of string * pos_prop
@@ -158,7 +158,7 @@ structure IntSyn = struct
                 to_string_pos mvars false trm1 ^ " >-> " ^ 
                 to_string mvars false trm2
           in if needs_parens then "(" ^ str ^ ")" else str end
-        | Shift trm => to_string_pos mvars false trm
+        | Up trm => to_string_pos mvars false trm
       end
 
   fun decl_to_string (RULE(p,r,trm)) =
