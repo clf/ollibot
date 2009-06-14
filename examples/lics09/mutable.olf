@@ -26,4 +26,4 @@ eset₃ : comp(set₂ (loc D)) • return(V₂) • ¡cell D V ->> return(V₂) 
 
 vloc : eval(loc D) ->> return(loc D).
 
-%exec eval (set (ref (lam λx. lam λy. y)) (lam λx. lam λy. x)).
+%trace * eval (set (ref (lam λx. lam λy. y)) (lam λx. lam λy. x)).

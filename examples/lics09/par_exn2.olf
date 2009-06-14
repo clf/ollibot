@@ -47,6 +47,6 @@ epop₃  : comp₂(F) • fail • fail ->> fail.
 
 %% The troublesome examples before now correctly evaluate to unit.
 
-%exec eval(try (pair raise (pair unit unit)) unit).
-%exec eval(try (pair (pair unit unit) raise) unit).
-%exec eval(try (pair (pair raise unit) (pair unit raise)) unit).
+%trace * eval(try (pair raise (pair unit unit)) unit).
+%trace * eval(try (pair (pair unit unit) raise) unit).
+%trace * eval(try (pair (pair raise unit) (pair unit raise)) unit).

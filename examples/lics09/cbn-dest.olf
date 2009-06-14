@@ -10,7 +10,4 @@ r₂ : eval(app E₁ E₂) ->> comp(app₁ E₂) • eval(E₁).
 r₃ : comp(app₁ E₂) • return(lam λx. E₁' x) ->> ∃D₂. eval(E₁' D₂) • !bind D₂ E₂.
 r₄ : eval(D) • !bind D E ->> eval(E).
 
-%exec eval(app (lam λx.x) (app (lam λy.y) (lam λz.c))).
-
-
-('frame-font)
+%trace * eval(app (lam λx.x) (app (lam λy.y) (lam λz.c))).

@@ -3,25 +3,25 @@
 
 %% The basic combinators
 
-%exec ci(�»x. x).               %% I : i → i
-%exec ck(�»x.�»y. x).            %% K : i → i → i
-%exec cs(�»x.�»y.�»z. x z (y z)). %% S : (i → i) → i → i
+%exec * ci(λx. x).               %% I : i → i
+%exec * ck(λx.λy. x).            %% K : i → i → i
+%exec * cs(λx.λy.λz. x z (y z)). %% S : (i → i) → i → i
 
 %% Composition tests (the constants "c" and "d" should have base type)
 
-%exec co((�»x. x) c).                                    %% Ic
-%exec co((�»x.�»y. x) c d).                               %% Kcd
-%exec co((�»x.�»y.�»z. x z (y z)) (�»x.�»y. x) (�»x. x) d).   %% SKId
-%exec ci((�»x.�»y.�»z. x z (y z)) (�»x.�»y. x) (�»x. x)).     %% SKI
-%exec ck'((�»x.�»y.�»z. x z (y z)) (�»x.�»y. x)).            %% SK
+%exec * co((λx. x) c).                                    %% Ic
+%exec * co((λx.λy. x) c d).                               %% Kcd
+%exec * co((λx.λy.λz. x z (y z)) (λx.λy. x) (λx. x) d).   %% SKId
+%exec * ci((λx.λy.λz. x z (y z)) (λx.λy. x) (λx. x)).     %% SKI
+%exec * ck'((λx.λy.λz. x z (y z)) (λx.λy. x)).            %% SK
 
 %% Modified eta-expansion 
 
-%exec ci(�»x. (�»x. x) x).  
-%exec ck(�»x.�»x. (�»x. x) x).
-%exec ck(�»x.�»y. (�»x. x) x).
-%exec ck(�»x.�»y. (�»x.�»y. x) x y). %% �»x.�»y.Kxy                         
-%exec ck(�»x.�»y. (�»x.�»y. x) x x). %% �»x.�»y.Kxx
-%exec ck(�»x.�»y. (�»x.�»y. x) y y). %% �»x.�»y.Kyy
-%exec ck(�»x.�»y. (�»x.�»y. x) y x). %% �»x.�»y.Kyx
-%exec cs�³(�»x.�»y.�»z. (�»x.�»y.�»z. x z (y z)) z y x).
+%exec * ci(λx. (λx. x) x).  
+%exec * ck(λx.λx. (λx. x) x).
+%exec * ck(λx.λy. (λx. x) x).
+%exec * ck(λx.λy. (λx.λy. x) x y). %% λx.λy.Kxy                         
+%exec * ck(λx.λy. (λx.λy. x) x x). %% λx.λy.Kxx
+%exec * ck(λx.λy. (λx.λy. x) y y). %% λx.λy.Kyy
+%exec * ck(λx.λy. (λx.λy. x) y x). %% λx.λy.Kyx
+%exec * cs'(λx.λy.λz. (λx.λy.λz. x z (y z)) z y x).

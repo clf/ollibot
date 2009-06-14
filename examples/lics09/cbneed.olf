@@ -14,6 +14,6 @@ evar₁ : eval(D) • ¡susp D E ->> comp(bind₁ D) • eval(E).
 evar₂ : comp(bind₁ D) • return(V) ->> return(V) • !bind D V.
 evar₃ : eval(D) • !bind D V ->> return(V).
 
-%exec eval(app (lam λx.x) (app (lam λy.y) (lam λz.c))).
+%trace * eval(app (lam λx.x) (app (lam λy.y) (lam λz.c))).
 
 

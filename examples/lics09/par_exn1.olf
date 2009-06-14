@@ -37,10 +37,10 @@ eret   : catch(E₂) • return(V) ->> return(V).
 %% propogating the error before the second branch has even necessarily finished
 %% evaluating.
 
-%exec eval(try (pair raise (pair unit unit)) unit).
+%trace * eval(try (pair raise (pair unit unit)) unit).
 
 
 %% If there is an exception in the second branch, it will be "blocked" by
 %% the return in the first branch and execution will become stuck.
 
-%exec eval(try (pair (pair unit unit) raise) unit).
+%trace * eval(try (pair (pair unit unit) raise) unit).

@@ -2,4 +2,4 @@ r₁ : nat(z) ->> list(nil).
 r₂ : nat(s(N)) ->> ∃D. item(D) • nat(N).
 r₃ : item(D) • list(L) ->> list(cons D L).
 
-%exec nat(s(s(s(s(z))))).
+%trace * nat(s(s(s(s(z))))).

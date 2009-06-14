@@ -1,20 +1,22 @@
-%exec succ(λn. λf. λx. f (n (λx. f x) x)).
+%exec * succ(λn. λf. λx. f (n (λx. f x) x)).
 
 %% Successors: 0,1,2,3,4
-%exec nat(λf. λx. x).
-%exec nat((λn. λf. λx. f (n (λx. f x) x)) (λf. λx. x)).
-%exec nat((λn. λf. λx. f (n (λx. f x) x)) 
+%% Can't start with 0 because f is not strict
+%exec * nat(λf. λx. f x).
+%exec * nat(λf. λx. x).
+%exec * nat((λn. λf. λx. f (n (λx. f x) x)) (λf. λx. x)).
+%exec * nat((λn. λf. λx. f (n (λx. f x) x)) 
       ((λn. λf. λx. f (n (λx. f x) x)) (λf. λx. x))).
-%exec nat((λn. λf. λx. f (n (λx. f x) x)) 
+%exec * nat((λn. λf. λx. f (n (λx. f x) x)) 
       ((λn. λf. λx. f (n (λx. f x) x)) 
       ((λn. λf. λx. f (n (λx. f x) x)) (λf. λx. x)))).
-%exec nat((λn. λf. λx. f (n (λx. f x) x)) 
+%exec * nat((λn. λf. λx. f (n (λx. f x) x)) 
       ((λn. λf. λx. f (n (λx. f x) x)) 
       ((λn. λf. λx. f (n (λx. f x) x)) 
       ((λn. λf. λx. f (n (λx. f x) x)) (λf. λx. x))))).
 
 %% 4 + 4
-%exec nat((λm. λn. λf. λx. m f (n f x))
+%exec * nat((λm. λn. λf. λx. m f (n f x))
       ((λn. λf. λx. f (n (λx. f x) x)) 
       ((λn. λf. λx. f (n (λx. f x) x)) 
       ((λn. λf. λx. f (n (λx. f x) x)) 
@@ -24,7 +26,7 @@
       ((λn. λf. λx. f (n (λx. f x) x)) 
       ((λn. λf. λx. f (n (λx. f x) x)) (λf. λx. x)))))).
 
-%exec a(
+%exec * a(
       ((λm. λn. λf. λx. m f (n f x))
       ((λn. λf. λx. f (n (λx. f x) x)) 
       ((λn. λf. λx. f (n (λx. f x) x)) 
@@ -36,7 +38,7 @@
       ((λn. λf. λx. f (n (λx. f x) x)) (λf. λx. x))))))
       suc).
 
-%exec b(λf. 
+%exec * b(λf. 
       ((λm. λn. λf. λx. m f (n f x))
       ((λn. λf. λx. f (n (λx. f x) x)) 
       ((λn. λf. λx. f (n (λx. f x) x)) 

@@ -9,6 +9,6 @@ r₁ : eval(lam λx. E x) ->> return(lam E).
 r₂ : eval(app E₁ E₂) ->> comp(app₁ E₂) • eval(E₁).
 r₃ : comp(app₁ E₂) • return(lam (λx. E₁' x)) ->> eval(E₁' E₂).
 
-%exec eval(app (lam λx.x) (app (lam λy.y) (lam λz.c))).
+%trace * eval(app (lam λx.x) (app (lam λy.y) (lam λz.c))).
 
 
