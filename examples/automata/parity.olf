@@ -1,6 +1,10 @@
-r1 : even • zero ->> even.
-r2 : even • one ->> odd.
-r3 : odd • zero ->> odd.
-r4 : odd • one ->> even.
+%% DFA determining parity (= num of 1's mod 2)
+%% No end-of-input marker: we stop in the state
+%% indicating the parity
 
-%exec even • one • zero • one • one.
+r1 : even • 0 ->> even.
+r2 : even • 1 ->> odd.
+r3 : odd • 0 ->> odd.
+r4 : odd • 1 ->> even.
+
+%exec even • 1 • 0 • 1 • 1.

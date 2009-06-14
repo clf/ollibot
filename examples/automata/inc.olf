@@ -1,5 +1,8 @@
+%% Incrementing a number in binary representation
+%% # is the end-of-tape marker
+
 r1 : inc • 0 ->> 1.
 r2 : inc • 1 ->> 0 • inc.
 r3 : inc • # ->> 1 • #.
 
-%exec inc • 1 • 1 • 0 • 1 • #.
+%exec # • inc • 1 • 1 • 0 • 1 • #.
