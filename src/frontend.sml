@@ -20,7 +20,7 @@ structure Frontend = struct
               | I.TRACE (p,n_opt,pos_prop) => 
                 let fun loop (trace, n, 0) = 
                         print("-- Total of " ^ Int.toString n ^ 
-                              " steps\n")
+                              " steps (limit reached)\n")
                       | loop (trace, n, m) =
                         case Stream.force trace of
                           Stream.Nil => 
@@ -31,7 +31,7 @@ structure Frontend = struct
                            loop (trace, n, m-1))
                   val n : int = case n_opt of NONE => 100000 | SOME n => n
                 in 
-                  loop (Execute.trace(pos_prop, rules),n,n);
+                  loop (Execute.trace(pos_prop, rules),n,n+1);
                   rules
                 end
             end
