@@ -12,25 +12,29 @@ structure Frontend = struct
               | I.EXEC (p,n,pos_prop) => 
                 let val (ctx,n) = Execute.execute(pos_prop, rules, n)
                 in 
-                  print ("<p>After ^ " ^ Int.toString n ^ " steps:</p>");
+                  print("<div class=\"hyps\">");                  
+                  print ("<p>After " ^ Int.toString n ^ " steps:</p>");
                   print (Context.to_web_string ctx);
-                  print ("<div id=\"hyp\"/>");
+                  print ("<div class=\"hyp\"></div>");
+                  print("</div>");
                   rules
                 end
               | I.TRACE (p,n_opt,pos_prop) => 
                 let fun loop (trace, n, 0) = 
-                        (print("<div id=\"hyp\"/>");
-                         print("<div id=\"hyp\"/>"))
+                        (print("<div class=\"hyp\"></div>");
+                         print("<div class=\"hyp\"></div>"))
                       | loop (trace, n, m) =
                         case Stream.force trace of
                           Stream.Nil => 
-                          print("<div id=\"hyp\"/>")
+                          print("<div class=\"hyp\"></div>")
                         | Stream.Cons(ctx, trace) =>
                           (print (Context.to_web_string ctx);
                            loop (trace, n, m-1))
                   val n : int = case n_opt of NONE => 100000 | SOME n => n
                 in 
+                  print("<div class=\"hyps\">");
                   loop (Execute.trace(pos_prop, rules),n,n+1);
+                  print("</div>");
                   rules
                 end
             end

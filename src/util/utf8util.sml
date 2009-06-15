@@ -35,8 +35,6 @@ structure UTF8Util :> UTF8_UTIL = struct
           size vec (start + bytes) (n+1)
         end
 
-
-
   fun sub_impl (vec,m) start n =
       if start = length vec then raise Subscript
       else if m = n then 
@@ -54,5 +52,6 @@ structure UTF8Util :> UTF8_UTIL = struct
 
   val size = fn s => size (Byte.stringToBytes s) 0 0
   val sub = fn (s,n) => sub_impl (Byte.stringToBytes s,n) 0 0
+
 
 end

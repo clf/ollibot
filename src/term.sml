@@ -44,6 +44,12 @@ struct
         end
       | Var(j,[]) => Names.nth(vars,j)
       | Const(c,[]) => c
+      | Var(j,[trm]) => 
+        let val s = Names.nth(vars,j) ^ "(" ^ to_string' vars false trm ^ ")"
+        in if needs_parens then "(" ^ s ^ ")" else s end
+      | Const(c,[trm]) => 
+        let val s = c ^ "(" ^ to_string' vars false trm ^ ")"
+        in if needs_parens then "(" ^ s ^ ")" else s end
       | Var(j,trms) => 
         if needs_parens
         then

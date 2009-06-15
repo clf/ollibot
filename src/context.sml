@@ -1,4 +1,19 @@
-structure Context = struct
+signature CONTEXT = sig
+
+  datatype context = 
+      S of {persistent: (string * Term.term list) list,
+            linear: (string * Term.term list) list,
+            ordered: (string * Term.term list) list}
+
+  val to_string : context -> string
+
+  val to_web_string : context -> string
+
+end
+
+structure Context :> CONTEXT = struct
+
+  open Global
 
   datatype context = 
       S of {persistent: (string * Term.term list) list,
@@ -21,18 +36,24 @@ structure Context = struct
       let 
         fun mapper pre post (s,trms) = 
             case trms of 
-              [] => pre ^ s ^ post
-            | [trm] => pre ^ s ^ "(" ^ Term.to_string trm ^ ")" ^ post
+              [] => pre ^ "<span class=\"hyp_pred\">" ^ s ^ "</span>" ^ post
+            | [trm] =>
+              pre ^ "<span class=\"hyp_pred\">" ^ s ^ "</span>" ^ 
+              "(" ^ Term.to_string trm ^ ")" ^ post
             | trms =>
-              pre ^ s ^ " " ^ 
+              pre ^ "<span class=\"hyp_pred\">" ^ s ^ "</span> " ^ 
               String.concatWith " " (map Term.to_string_parens trms) ^ post
       in 
-        "\n  <div id=\"hyp\">\n" ^
-        String.concatWith "\n"
-           (map (mapper "   <span id=\"hyp_pers\">" "</span>") persistent @
-            map (mapper "   <span id=\"hyp_lin\">" "</span>") linear @
-            map (mapper "   <span id=\"hyp_ord\">" "</span>") ordered) ^
-        "\n  </div>\n"
+        "<div class=\"hyp\">" ^
+        String.concatWith ("<span class=\"hyp_space\">•</span>")
+           (map (mapper "<span class=\"hyp_pers\">!" "</span>") persistent @
+            (*if null persistent then [] 
+             else ["<span class=\"hyp_space\">&nbsp;</span>"]*) 
+            map (mapper "<span class=\"hyp_lin\">¡" "</span>") linear @
+            (*if null linear then [] 
+             else ["<span class=\"hyp_space\">&nbsp;</span>"]*) 
+            map (mapper "<span class=\"hyp_ord\">" "</span>") ordered) ^
+        "</div>\n"
       end
 
 end

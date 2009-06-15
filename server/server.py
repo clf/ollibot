@@ -2,7 +2,7 @@
 
 from BaseHTTPServer import HTTPServer
 from BaseHTTPServer import BaseHTTPRequestHandler
-import os.subprocess
+import commands
 
 class myHandler(BaseHTTPRequestHandler):
 
@@ -23,28 +23,55 @@ class myHandler(BaseHTTPRequestHandler):
         self.wfile.write("<p>GET string: a" + self.path + "b</p>" )
         self.wfile.write("""</body></html>""")
 
-    def do_CUSTOM(self,title,subtitles,content):
+    def do_CUSTOM(self,title,subtitles,content,code):
         f = open('server/ollibot.html', 'r')
         s = f.read()
         s = s.replace('<?pagetitle?>',title)
         s = s.replace('<?title?>','<h1>' + title + '</h1>')
-        s = s.replace('<?subtitle?>',subtitles)
+        subtitle = "\n".join(map(lambda s: "<h2>" + s + "</h2>",
+                                 subtitles))
+        s = s.replace('<?subtitle?>',subtitle)
         s = s.replace('<?content?>',content)
+        s = s.replace('<?code?>',code)
         self.wfile.write(s)
 
     def do_GET(self):
-        if("/" == self.path):
+        if("/" == self.path or ".." in self.path or ";" in self.path):
             self.printCustomHTTPResponse(200)
-            self.do_CUSTOM("Main Page","","Hello, world!")
+            self.do_CUSTOM("Main Page","","Hello, world!","")
         elif("/ollibot.css" == self.path):
             self.printCustomTXTResponse(200)
             f = open('server/ollibot.css', 'r')
             self.wfile.write(f.read())
         else:
-            s = subprocess.getoutput("echo \"" + self.path[1:] + "\" " +
+            s1 = commands.getoutput("echo \"" + self.path[1:] + "\" " +
                                      "| sml -m src/web.cm -Dcm.verbose=0")
+            s2 = []
+            for line in s1.split("\n")[1:]:
+                if(line[:1] <> "[" and line[-1:] <> "]"):
+                    s2.append(line)
+            if s2[0][:3] == "%% ":
+                i = 1
+                title = s2[0][3:]
+                subtitle = []
+                for line in s2[1:]:
+                    if(line[:3] <> "%% "):
+                        print "xxx" + line
+                        break
+                    print "ooo" + line
+                    i = i + 1
+                    subtitle.append(line[3:])
+                for line in s2[i:]:
+                    if(line <> ""):
+                        break
+                    i = i + 1
+                s = "<br/>\n".join(s2[i:])
+            else:
+                title = self.path
+                subtitle = []
+                s = "<br/>\n".join(s2)
             self.printCustomHTTPResponse(200)
-            self.do_CUSTOM("Page!","",s)
+            self.do_CUSTOM(title,subtitle,"",s)
 
     def printBrowserHeaders(self):
         keys = self.headers.dict.keys()                                
@@ -73,6 +100,6 @@ class myHandler(BaseHTTPRequestHandler):
                          self.requestline, str(code), str(size), user_agent)
 
 if __name__ == "__main__":
-    server = HTTPServer(('',2122), myHandler)                       
+    server = HTTPServer(('',2000), myHandler)                       
     for lp in range(5000):
         server.handle_request()

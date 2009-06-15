@@ -11,6 +11,7 @@ struct
 
   datatype pos = At of Coord
     | Between of Coord * Coord
+  val at = At
 
   fun initposex s = At {file = s, char = 1, line = 1, abschar = 1}
   val initpos = initposex "?"
