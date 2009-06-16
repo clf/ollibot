@@ -1,135 +1,281 @@
-structure IntSyn :> INT_SYN = struct
 
-open Global
-type cid = int
+structure IntSyn = struct
 
-datatype head = BVar of int | Const of cid
-datatype 'm subst = 
-    SubIdx of int * 'm subst 
-  | SubTrm of 'm * 'm subst 
-  | SubShift of int
-datatype 'm trm_view = 
-    MBase of head * 'm list
-  | MLam of 'm
-  | MVar of string * 'm subst
-datatype trm = FixTrm of trm trm_view
+  open Global
 
-datatype 't typ_view =
-    TBase of cid
-  | TArrow of 't * 't
-datatype typ = FixTyp of typ typ_view
+  datatype perm = Ordered | Linear | Persistent
 
-datatype 'p knd_view =
-    KType of kind
-  | KArrow of typ * 'p
-datatype knd = FixKnd of knd knd_view
+  datatype tp = Prop | Item | Arrow of tp * tp
 
-datatype ('p, 'n) pos_view =
-    PAtom of cid * trm list 
-  | PExist of typ * 'p
-  | PAnd of 'p * 'p
-  | PNeg of 'n
-datatype ('p, 'n) neg_view =
-    NAtom of cid * trm list
-  | NForall of typ * 'n
-  | NArrow of 'p * 'n
-  | NPos of 'p
-datatype pos = FixPos of (pos, neg) pos_view
-     and neg = FixNeg of (pos, neg) neg_view
+  (* A substitution (front list) (Γ ⊢ Δ) substitutes, for each variable in
+   * Δ, some term well-defined in Γ. Therefore, it can be seen as a means of
+   * transporting terms (Δ ⊢ τ) into terms (Γ ⊢ τ). 
+   * 
+   * We could have a substitution be just a list of terms; however, it is
+   * reasonable to allow eta-contracted terms that do not include lambdas
+   * as well. We only allow one particular instance of this, where the
+   * term being be substituted can be contracted to a single variable. *)
 
-datatype dec = 
-    ConDec  of {id: string, def: typ} (* c : At : type   *)
-  | TypDec  of {id: string, def: knd} (* p : Kr : kind   *)
-  | PosDec  of {id: string, def: pos} (* _ : A+ : p/e+   *)
-  | NegDec  of {id: string, def: neg} (* _ : A- : p/e-   *)
-val dec_id = 
- fn ConDec {id,...} => id
-  | TypDec {id,...} => id
-  | PosDec {id,...} => id
-  | NegDec {id,...} => id
+  datatype front = 
+      M of term (* Canonical term *)
+    | R of int (* Bare variable (could be generalized) *)
 
+  (* A term (Γ ⊢ τ) must be intrinsically well-typed in the context Γ *)
 
-structure Cid = struct type ord_key = int val compare = Int.compare 
-                val equal = fn (e1: int,e2) => e1 = e2 end
-structure MapI = SplayMapFn(Cid)
+  and head = Var of int | Const of string
 
-type signat = dec MapI.map
+  and term = 
+      Lambda of string * term 
+    | Root of head * term list
+    | MVar of int * front list
 
-val sgnEmpty = MapI.empty
-val sgnLookup = fn x => (valOf(MapI.find x))
-val sgnAdd = 
-    let val max = ref 0 
-    in fn (signat, dec : dec) => 
-          (max := !max + 1; (MapI.insert(signat,!max,dec), !max))
-    end
+  val Lambda' = fn trm => Lambda("x",trm)
+  val Var' = fn (i, trms) => Root(Var i, trms)
+  val Const' = fn (c, trms) => Root(Const c, trms)
 
-structure M = 
-MakeTyp (struct
-         type t = trm
-         type 'm view = 'm trm_view
-         fun inj obj = FixTrm obj
-         fun prj (FixTrm obj) = obj
-         fun submap f sub = 
-             case sub of 
-               SubIdx(i,sub) => SubIdx(i,submap f sub)
-             | SubTrm(m,sub) => SubTrm(f m, submap f sub)
-             | SubShift i => SubShift i
-         fun map f obj = 
-             case obj of 
-               MBase(h,s) => MBase(h,List.map f s)
-             | MLam(m) => MLam(f m)
-             | MVar(s,sub) => MVar(s, submap f sub)
-         end)
+  datatype neg_prop = 
+      Forall of string * neg_prop
+    | Righti of pos_prop * neg_prop
+    | Lefti of pos_prop * neg_prop
+    | Up of pos_prop
 
-structure T =
-MakeTyp (struct
-         type t = typ
-         type 't view = 't typ_view
-         fun inj obj = FixTyp obj
-         fun prj (FixTyp obj) = obj
-         fun map f obj = 
-             case obj of 
-               TBase cid => TBase cid
-             | TArrow(t1,t2) => TArrow(f t1, f t2)
-         end)
+  and pos_prop =  
+      Exists of string * pos_prop
+    | Fuse of pos_prop * pos_prop
+    | Esuf of pos_prop * pos_prop
+    | Atom of perm * string * term list
+   
+  type rule = Pos.pos * string * neg_prop
+  datatype decl =
+      RULE of rule
+    | EXEC of Pos.pos * int option * pos_prop
+    | TRACE of Pos.pos * int option * pos_prop
 
-structure K = 
-MakeTyp (struct
-         type t = knd
-         type 'k view = 'k knd_view
-         val inj = FixKnd
-         val prj = fn FixKnd knd => knd
-         val map = 
-          fn f =>
-          fn KType k => KType k
-           | KArrow(t,k) => KArrow(t, f k)
-         end)
+  fun typ_to_string typ = 
+      let 
+        fun to_string typ needs_parens = 
+            case typ of
+              Prop => "o"
+            | Item => "i"
+            | Arrow(t1,t2) => 
+              if needs_parens
+              then "(" ^ to_string t1 true ^ " → " ^ to_string t2 false ^ ")"
+              else to_string t1 true ^ " → " ^ to_string t2 false
+      in to_string typ false end
 
-structure PN = 
-MakeTyp2(struct
-         type a = pos
-         type b = neg
-         type ('p, 'n) aview = ('p, 'n) pos_view
-         type ('p, 'n) bview = ('p, 'n) neg_view
-         fun inja pos = FixPos pos
-         fun prja (FixPos pos) = pos             
-         fun injb neg = FixNeg neg
-         fun prjb (FixNeg neg) = neg
-         fun mapa (fpos, fneg) pos = 
-             case pos of 
-               PAtom(cid, ms) => PAtom(cid, ms)
-             | PExist(a, x) => PExist(a, fpos x)
-             | PAnd(x1, x2) => PAnd(fpos x1, fpos x2)
-             | PNeg(y1) => PNeg(fneg y1)
-         fun mapb (fpos, fneg) neg = 
-             case neg of
-               NAtom(cid, ms) => NAtom(cid, ms)
-             | NForall(a, y) => NForall(a, fneg y)
-             | NArrow(x, y) => NArrow(fpos x, fneg y)
-             | NPos(x) => NPos(fpos x)
-         end)
+  fun subst_to_string mvars vars subst = 
+      let 
+        fun front_to_string front = 
+            case front of 
+              M trm => term_to_string_env mvars vars false trm
+            | R i => Names.nth(vars,i)
+      in "[" ^ String.concatWith "," (map front_to_string subst) ^ "]" end
 
-structure P = PN.FullA
-structure N = PN.FullB
+  and term_to_string_env mvars vars needs_parens trm = 
+      let 
+        fun to_string' vars needs_parens trm = 
+            case trm of 
+              Lambda (x,trm0) => 
+              let val x = Names.new_name (mvars @ vars,x) in
+                if needs_parens 
+                then "(λ" ^ x ^ ". " ^
+                     to_string' (x :: vars) false trm0 ^ ")"
+                else "λ" ^ x ^ ". " ^ 
+                     to_string' (x :: vars) false trm0 
+              end
+            | MVar(u,[]) => Names.nth(mvars,u)
+            | Root(Var j,[]) => Names.nth(vars,j)
+            | Root(Const c,[]) => c
+            | MVar(u,subst) =>
+              Names.nth(mvars,u) ^ subst_to_string mvars vars subst
+            | Root(Var j,trms) => 
+              if needs_parens
+              then
+                "(" ^ Names.nth(vars,j) ^ " " ^ args vars trms ^ ")"
+              else Names.nth(vars,j) ^ " " ^ args vars trms
+            | Root(Const c,trms) => 
+              if needs_parens
+              then "(" ^ c ^ " " ^ args vars trms ^ ")"
+              else c ^ " " ^ args vars trms
+        and args vars trms = 
+            String.concatWith " " (map (to_string' vars true) trms)
+      in to_string' vars needs_parens trm end
 
-end
+  fun pos_prop_to_string_env mvars needs_parens trm = 
+      let val to_string = pos_prop_to_string_env
+      in
+        case trm of 
+          Exists (x,trm0) => 
+          let val x = Names.new_name (mvars,x) in
+            if needs_parens
+            then "(∃" ^ x ^ ". " ^
+                 to_string (x :: mvars) false trm0 ^ ")"
+            else "∃" ^ x ^ ". " ^ 
+                 to_string (x :: mvars) false trm0 
+          end
+        | Fuse(trm1,trm2) =>
+          let 
+            val str = 
+                to_string mvars true trm1 ^ " • " ^
+                to_string mvars false trm2
+          in if needs_parens then "(" ^ str ^ ")" else str end
+        | Esuf(trm1,trm2) =>
+          let 
+            val str = 
+                to_string mvars true trm1 ^ " ○ " ^
+                to_string mvars false trm2
+          in if needs_parens then "(" ^ str ^ ")" else str end
+        | Atom(Persistent,a,trms) => 
+          "!" ^ term_to_string_env mvars [] false (Root(Const a,trms))
+        | Atom(Linear,a,trms) => 
+          "¡" ^ term_to_string_env mvars [] false (Root(Const a,trms))
+        | Atom(Ordered,a,trms) => 
+          term_to_string_env mvars [] false (Root(Const a,trms))
+      end
+
+  fun neg_prop_to_string_env mvars needs_parens trm = 
+      let val to_string = neg_prop_to_string_env
+        val to_string_pos = pos_prop_to_string_env
+      in
+        case trm of 
+          Forall (x,trm0) => 
+          let val x = Names.new_name (mvars,x) in
+            if needs_parens
+            then "(∀" ^ x ^ ". " ^
+                 to_string (x :: mvars) false trm0 ^ ")"
+            else "∀" ^ x ^ ". " ^ 
+                 to_string (x :: mvars) false trm0 
+          end
+        | Righti(trm1,trm2) =>
+          let 
+            val str = 
+                to_string_pos mvars false trm1 ^ " ->> " ^ 
+                to_string mvars false trm2
+          in if needs_parens then "(" ^ str ^ ")" else str end
+        | Lefti(trm1,trm2) =>
+          let 
+            val str = 
+                to_string_pos mvars false trm1 ^ " >-> " ^ 
+                to_string mvars false trm2
+          in if needs_parens then "(" ^ str ^ ")" else str end
+        | Up trm => to_string_pos mvars false trm
+      end
+
+  fun decl_to_string (RULE(p,r,trm)) =
+      r ^ " : " ^ neg_prop_to_string_env [] false trm ^ "."
+    | decl_to_string (EXEC(p,n,trm)) =
+      "%exec " ^ (case n of NONE => "*" | SOME n => Int.toString n) ^
+      " " ^ pos_prop_to_string_env [] false trm ^ "."
+    | decl_to_string (TRACE(p,n,trm)) =
+      "%trace " ^ (case n of NONE => "*" | SOME n => Int.toString n) ^
+      " " ^ pos_prop_to_string_env [] false trm ^ "."
+
+  val term_to_string = term_to_string_env [] []
+
+  exception HSubst
+
+  (* weaken_head : (Δ:n) → (τ ∈ Γ) → (τ ∈ Γ,σ) *)
+  fun weaken_head n (Const c) = Const c
+    | weaken_head n (Var i) = Var (i+n)
+
+  (* Given a type, a head, and a partial spine, create a canonical term *)
+  (* eta_expand : τ → (σ ∈ Γ) → (Γ [σ] ⊢ τ) → (Γ ⊢ τ) *)
+  fun eta_expand typ h trms = 
+      let 
+        fun args typ i = case typ of Arrow(t1,t2) => args t2 (i+1) | _ => i
+        fun spine typ i = 
+            case typ of
+              Arrow(t1,t2) => eta_expand_head t1 (Var(i-1)) :: spine t2 (i-1) 
+            | _ => []
+        fun lambdas trm 0 = trm
+          | lambdas trm n = Lambda'(lambdas trm (n-1))
+        val num_args = args typ 0
+        val atomic_trm = Root(weaken_head num_args h, spine typ num_args)
+      in lambdas atomic_trm num_args end
+
+  (* Same as above, but no partial spine *)
+  (* eta_expand_head : Πτ. (τ ∈ Σ ∪ Γ) → (Γ ⊢ τ) *)
+  and eta_expand_head typ h = eta_expand typ h []
+
+  (* weaken: (Γ ⊢ τ) → (Γ,σ ⊢ τ) *)
+  fun weaken trm =
+      let 
+        (* shift_subst: Δ:n → (Γ ⊢ Ψ) → (Γ,σ,Δ ⊢ Ψ *)
+        fun shift_front n front = 
+            case front of 
+              M trm => M (shift n trm)
+            | R i => if i < n then R i else R (i+1)
+
+        (* shift: Δ:n → (Γ ⊢ τ) → (Γ,σ,Δ ⊢ τ) *)
+        and shift n trm = 
+              case trm of
+                Lambda(x,trm0) => Lambda(x, shift (n+1) trm0)
+              | Root(Var i,trms) => 
+                if i < n then Root(Var i, map (shift n) trms)
+                else Root(Var(i+1), map (shift n) trms)
+              | Root(Const c,trms) => Root(Const c, map (shift n) trms)
+              | MVar(u,subst) => MVar(u, map (shift_front n) subst)
+
+      in shift 0 trm end
+
+  (* weaken_subst (Γ ⊢ Ψ) → (Γ,τ ⊢ Ψ) *)
+  fun weaken_subst subst = 
+      let
+        fun weaken_front front = 
+            case front of 
+              M trm => M (weaken trm)
+            | R i => R (i+1)
+      in map weaken_front subst end
+
+  fun weaken_n 0 trm = trm
+    | weaken_n n trm = weaken_n (n-1) (weaken trm) 
+
+  (* hsubst: (Γ,Δ ⊢ τ) → (Γ,τ,Δ ⊢ σ) → (Γ,Δ ⊢ σ) *)
+  fun hsubst (trm,i) trm' = 
+      case trm' of
+        Lambda(x, trm0) => Lambda(x, hsubst (weaken trm, i+1) trm0)
+      | Root(Var j,trms) =>
+        if i = j then hred (trm, map (hsubst (trm,i)) trms)
+        else if i < j then Root(Var (j-1), map (hsubst (trm,i)) trms)
+        else Root(Var j, map (hsubst (trm,i)) trms)
+      | Root(Const c,trms) => Root(Const c,map (hsubst (trm,i)) trms)
+      | MVar(u, subst) =>
+        MVar(u, map (fn (M trm') => M (hsubst (trm,i) trm')
+                      | (R j) => 
+                        if i = j then M trm else if i < j then R (j-1) else R j)
+                    subst)
+
+  (* hred: (Γ ⊢ τ) → (Γ[τ] ⊢ o) → (Γ ⊢ o) *)
+  and hred (trm, trms) = 
+      case (trm, trms) of 
+        (Lambda(_,trm), trm' :: trms) => hred (hsubst (trm',0) trm , trms)
+      | (Root(Var i,trms), []) => Root(Var i,trms)
+      | (Root(Const c,trms), []) => Root(Const c, trms)
+      | (MVar(u,subst),[]) => MVar(u,subst)
+      | (trm,trms) =>
+        raise Err("HSubst: " ^ term_to_string false trm ^ " @ (" ^
+                  String.concatWith "; " (map (term_to_string false) trms))
+
+  (* apply_subst: (subst: Γ ⊢ Ψ) → (trm: Ψ ⊢ τ) → (Γ ⊢ τ) *)
+  fun apply_subst subst trm = 
+      case trm of 
+        Lambda(x, trm0) => Lambda(x, apply_subst (R 0 :: subst) trm0) 
+      | Root(Var j, trms) => 
+        let val trms = map (apply_subst subst) trms in
+          case List.nth(subst, j) of
+            R i => Root(Var i, trms)
+          | M trm => hred (trm,trms)
+        end
+      | Root(Const c, trms) => Root(Const c, map (apply_subst subst) trms)
+      | MVar(u,subst') => MVar(u,compose_subst subst subst')
+
+  (* compose_subst: (subst1: Γ ⊢ Δ) → (subst2: Δ ⊢ Ψ) → (Γ ⊢ Ψ) *)
+  and compose_subst subst1 subst2 = 
+      let
+        fun compose_front front2 = 
+            case front2 of
+              R i => List.nth(subst1, i)
+            | M trm => M (apply_subst subst1 trm)
+      in map compose_front subst2 end
+
+end 

@@ -1,0 +1,19 @@
+%% Call-by-need functions
+%% "Substructural Operational Semantics as Ordered Logic Programming", LICS '09
+%% Robert J. Simmons, Frank Pfenning
+
+
+%% Call-by-need functions (Figure 9)
+
+elam : eval(lam λx. E x) ->> return(lam E).
+
+eapp₁ : eval(app E₁ E₂) ->> comp(app₁ E₂) • eval(E₁).
+eapp₂ : comp(app₁ E₂) • return(lam λx. E₁' x) ->> ∃D₂. eval(E₁' D₂) • ¡susp D₂ E₂.
+
+evar₁ : eval(D) • ¡susp D E ->> comp(bind₁ D) • eval(E).
+evar₂ : comp(bind₁ D) • return(V) ->> return(V) • !bind D V.
+evar₃ : eval(D) • !bind D V ->> return(V).
+
+%trace * eval(app (lam λx.x) (app (lam λy.y) (lam λz.c))).
+
+

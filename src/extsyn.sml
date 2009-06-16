@@ -1,120 +1,108 @@
-structure ExtSyn :> EXT_SYN = struct
-
-datatype head = BVar of int | Const of IntSyn.cid | EVar of string
-
-datatype 't typ_view =
-    TBase of IntSyn.cid     (* No dependent types *)
-  | TArrow of 't * 't       (* A -> B *)
-  | TApprox of Approx.typ   (* Omitted type, determied by unification *)
-datatype typ = FixTyp of typ typ_view
-
-datatype 'm trm_view =
-    MLam of 'm              (* Normal: λx.N *)
-  | MApp of head * 'm list  (* Atomic: Synthesizing constant and applications *)
-  | MRedex of ('m * typ) * 'm list 
-                            (* Atomic: Annotated normal term and applications *)
-  | MUnknown of typ * 'm list
-                            (* Term not mentioned (underscore) *)
-datatype trm = FixTrm of trm trm_view
-
-datatype 'k knd_view =
-    KType of Global.kind    (* type, pers+, pers-, eph+, eph- *)
-  | KPi of typ * 'k         (* Πx:A.K *)
-  | KArrow of typ * 'k      (* A -> K *)
-datatype knd = FixKnd of knd knd_view
-
-datatype 'r rule_view = 
-    RAtom of IntSyn.cid * trm list 
-  | RExist of typ * 'r
-  | RPi of typ * 'r
-  | RAnd of 'r list
-  | RArrow of 'r * 'r
-  | REq of trm * trm
-datatype rule = FixRule of rule rule_view
+(* Ollibot — Robert J. Simmons and Frank Pfenning
+ * Simple type inference and *)
 
 
-structure M = 
-MakeTyp(struct
-        type t = trm
-        type 't view = 't trm_view
-        val inj = FixTrm
-        val prj = fn FixTrm t => t
-        val map =
-         fn f =>
-         fn MLam t => MLam(f t)
-          | MApp(h, ts) => MApp(h, List.map f ts)
-          | MRedex((t, typ), ts) => MRedex((f t, typ), List.map f ts)
-          | MUnknown(typ, ts) => MUnknown(typ, List.map f ts)
-        end)
+structure SimpleType :> 
+          sig
+            type evar
+            type styp
+            datatype styp_view = 
+                     Var of evar | Item | Prop | Arrow of styp * styp
+            exception Unify
+            val unify : styp -> styp -> styp
+            val bind : evar -> styp -> unit
+            val prj : styp -> styp_view
+            val Var' : unit -> styp
+            val Item' : styp
+            val Prop' : styp
+            val Arrow' : styp * styp -> styp
+          end =
+struct
 
-structure T = 
-MakeTyp(struct
-        type t = typ
-        type 't view = 't typ_view
-        val inj = FixTyp
-        val prj = fn FixTyp t => t
-        val map =
-         fn f =>
-         fn TBase cid => TBase cid
-          | TArrow(t1, t2) => TArrow(f t1, f t2)
-          | TApprox approx => TApprox approx
-        end)
+  open Global
 
-structure K = 
-MakeTyp(struct
-        type t = knd
-        type 't view = 't knd_view
-        val inj = FixKnd
-        val prj = fn FixKnd t => t
-        val map = 
-         fn f =>
-         fn KType kind => KType kind
-          | KPi(typ, t) => KPi(typ, f t)
-          | KArrow(typ, t) => KArrow(typ, f t)
-        end)
+  datatype evar = E of styp_view option ref
+  and styp_view = Var of evar | Item | Prop | Arrow of styp_view * styp_view
 
-structure R =
-MakeTyp(struct
-        type t = rule
-        type 't view = 't rule_view
-        val inj = FixRule
-        val prj = fn FixRule t => t
-        val map = 
-         fn f =>
-         fn RAtom(cid, ts) => RAtom(cid, ts)
-          | RExist(typ, t) => RExist(typ, f t)
-          | RPi(typ, t) => RExist(typ, f t)
-          | RAnd(ts) => RAnd(List.map f ts)
-          | RArrow(t1,t2) => RArrow(f t1, f t2)
-          | REq tms => REq tms
-        end)
+  type styp = styp_view
+              
+  fun prj typ = 
+      let
+        fun lookup (v as ref NONE) = Var(E v)
+          | lookup (v as ref (SOME(Var(E v')))) = 
+            let val typ = lookup v' 
+            in v := SOME typ; typ end
+          | lookup (v as ref (SOME typ)) = typ
+      in
+        case typ of
+          Item => Item
+        | Prop => Prop
+        | Arrow(t1,t2) => Arrow(t1,t2)
+        | Var(E v) => lookup v
+      end
 
-val TBase' = T.inj o TBase
-val TArrow' = T.inj o TArrow
-val TApprox' = T.inj o TApprox
-val MLam' = M.inj o MLam
-val MApp' = M.inj o MApp
-val MRedex' = M.inj o MRedex
-val MUnknown' = M.inj o MUnknown
-val KType' = K.inj o KType
-val KPi' = K.inj o KPi
-val KArrow' = K.inj o KArrow
-val RAtom' = R.inj o RAtom
-val RExist' = R.inj o RExist
-val RPi' = R.inj o RPi
-val RAnd' = 
- fn (FixRule(RAnd e1), FixRule(RAnd e2)) => FixRule(RAnd(e1 @ e2))
-  | (FixRule(RAnd e1), e2) => FixRule(RAnd(e1 @ [e2]))
-  | (e1, FixRule(RAnd e2)) => FixRule(RAnd(e1 :: e2))
-  | (e1, e2) => FixRule(RAnd [e1,e2])
-val RArrow' = R.inj o RArrow
-val REq' = R.inj o REq
+  fun bind (E(v as ref NONE)) trm =
+      (case prj trm of
+         Var(E v') => if v = v' then () else v := SOME trm
+       | _ => v := SOME trm)
+    | bind _ _ = raise Match
 
-fun typ_to_apx typ = 
-    case T.prj typ of
-      TBase cid => Approx.Const' cid
-    | TArrow(t1,t2) => Approx.Arrow'(typ_to_apx t1, typ_to_apx t2)
-    | TApprox(apx) => apx
+  val Var' = fn () => Var(E(ref NONE))
+  val Item' = Item
+  val Prop' = Prop
+  val Arrow' = Arrow
 
+  fun occurs_check (e1 : evar) t2 = 
+      case t2 of
+        Var e2 => if e1 = e2 then raise Err("Cannon assign types") else ()
+      | Item => ()
+      | Prop => ()
+      | Arrow(t1,t2) => (occurs_check e1 t1; occurs_check e1 t2)
 
+  exception Unify
+  fun unify t1 t2 = 
+      case (prj t1, prj t2) of
+        (Var e1, t2) => (bind e1 t2; t2)
+      | (t1, Var e2) => (bind e2 t1; t2)
+      | (Item, Item) => Item
+      | (Prop, Prop) => Item
+      | (Arrow(t1,s1),Arrow(t2,s2)) => Arrow(unify t1 t2, unify s1 s2)
+      | _ => raise Unify
+      
+end
+
+structure ExtSyn = struct
+
+  datatype term = 
+      App of Pos.pos * term * term    
+    | Forall of Pos.pos * SimpleType.styp * string * term
+    | Exists of Pos.pos * SimpleType.styp * string * term
+    | Fuse of Pos.pos * term * term
+    | Esuf of Pos.pos * term * term
+    | Righti of Pos.pos * term * term
+    | Lefti of Pos.pos * term * term 
+    | Lambda of Pos.pos * SimpleType.styp * string * term
+    | Id of Pos.pos * string list * string
+    | Bang of Pos.pos * term
+    | Gnab of Pos.pos * term
+
+  fun getpos term = 
+      case term of
+        App(p,_,_) => p
+      | Forall(p,_,_,_) => p    
+      | Exists(p,_,_,_) => p
+      | Fuse(p,_,_) => p
+      | Esuf(p,_,_) => p
+      | Righti(p,_,_) => p
+      | Lefti(p,_,_) => p
+      | Lambda(p,_,_,_) => p
+      | Id(p,_,_) => p
+      | Bang(p,_) => p
+      | Gnab(p,_) => p
+
+  datatype decl = 
+      RULE of Pos.pos * string * term
+    | EXEC of Pos.pos * int option * term
+    | TRACE of Pos.pos * int option * term
+              
 end

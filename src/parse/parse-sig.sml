@@ -21,9 +21,6 @@ sig
     val ## : ('a,'t) parser * (Pos.pos -> ('a,'t) parser) -> 
               ('a,'t) parser
 
-    (* ignore the position information from a parser *)
-    val ignore_pos : ('a,'t) parser -> ('a,'t) parser
-
     (* grab position *)
     val !! : ('a,'t) parser  -> ('a * Pos.pos,'t) parser
 
@@ -48,11 +45,11 @@ sig
     val parse : ('a,'t) parser -> ('t * Pos.pos) Stream.stream -> 
                  'a option
 
-    (* parse a stream and return the remainder of the stream *)
-    val parseonce : ('a,'t) parser -> ('t * Pos.pos) Stream.stream ->
-                    'a option * ('t * Pos.pos) Stream.stream
+    (* parse a stream, also return the remainder of the stream *)
+    val parseWithStream : ('a,'t) parser -> ('t * Pos.pos) Stream.stream -> 
+                ('a * ('t * Pos.pos) Stream.stream) option
 
-    (* transform p s 
+    (* transform p s
 
        parses consecutive maximal prefixes of s with p as many times
        as possible, outputting the results as a stream *)
@@ -73,7 +70,6 @@ sig
     infix  2 wth suchthat return guard when
     infixr 1 ||
   *)
-  (* Higher numbers bind tighter - a >> b || c = (a >> b) || c *)
 
   (* sequential composition *)
   val &&       : ('a,'t) parser * ('b,'t) parser -> ('a * 'b,'t) parser 

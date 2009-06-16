@@ -1,11 +1,22 @@
-structure Global = struct
+(* Ollibot — Robert J. Simmons and Frank Pfenning
+ * Default implementation of the Global structure *)
 
-datatype polar = Pos | Neg
-datatype perm = Lin | Pers
-type kind = (polar * perm) option
+structure Global :> GLOBAL = struct
 
-exception Unimplemented of string
-
-exception Error of string * Pos.pos
-
+  exception Error of Pos.pos option * string 
+  val Err = fn s => Error(NONE,s)
+  val ErrPos = fn (p,s) => Error(SOME p,s)
+                           
+  datatype status = 
+	   OK 
+	 | ABORT  
+	   
+  val versionstring = "OLLIBOT_VERSION"
+                      
+  val print = print
+  val liveprint = ignore
+              	  
 end
+
+structure MapS = 
+RedBlackMapFn(struct type ord_key = string val compare = String.compare end)

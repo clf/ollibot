@@ -1,0 +1,5 @@
+
+gzip the outgoing program? They are kinda enormous after all...
+
+ Accept-Encoding: gzip, deflate
+ Content-Encoding: gzip

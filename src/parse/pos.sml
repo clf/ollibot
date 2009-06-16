@@ -11,6 +11,7 @@ struct
 
   datatype pos = At of Coord
     | Between of Coord * Coord
+  val at = At
 
   fun initposex s = At {file = s, char = 1, line = 1, abschar = 1}
   val initpos = initposex "?"
@@ -110,16 +111,15 @@ struct
       file ^ ":" ^ Int.toString line ^ "." ^ Int.toString char
 
   fun toString (At coord) = coord2string coord
-    | toString (Between (coord1 as {file=f1, char=c1, line=l1, abschar=a1},
+    | toString (Between (coord1 as {file=f1, ...},
                          coord2 as {file, char, line, abschar})) =
         if coord1 = coord2 then coord2string coord1
-        else if char = c1 + 1 andalso abschar = a1 + 1 then coord2string coord1
         else if f1 = file
              then coord2string coord1 ^ "-" ^ 
-                  Int.toString line ^ "." ^ Int.toString char
+                  Int.toString line ^ "." ^ Int.toString (char - 1)
              else coord2string coord1 ^ "-" ^ 
-                  coord2string {file = file, char=char, line=line, 
-                                abschar=abschar}
+                  coord2string {file = file, char=char-1, line=line, 
+                                abschar=abschar-1}
 
   fun getabs (At c) = getabs (Between (c, c))
     | getabs (Between ({abschar=a, ...}, {abschar=b, ...})) = (a, b)

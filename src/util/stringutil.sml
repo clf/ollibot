@@ -227,6 +227,7 @@ struct
 
   (* XXX PERF this could be a lot more efficient. *)
   fun filter f = implode o (List.filter f) o explode
+  fun vconcat vec = Vector.foldr (op ^) "" vec
 
   fun filter f s = 
     let
@@ -283,7 +284,7 @@ struct
                           CharVector.sub (digits, i mod 16)]
 
   fun inlist nil c = false
-    | inlist (h::t) (c : char) = c = h orelse inlist t c
+    | inlist (h :: t) (c : char) = c = h orelse inlist t c
 
   fun harden f esc l s =
       let
@@ -339,8 +340,8 @@ struct
      This hash function is taken from pages 56-57 of
      The Practice of Programming by Kernighan and Pike. *)
   fun hash s : Word.word =
-    CharVector.foldl (fn (c, h) => Word.fromInt (ord c) + Word.* (h, 0w31)) 0w0 s
-
+    CharVector.foldl (fn (c, h) => 
+                      Word.fromInt (ord c) + Word.* (h, 0w31)) 0w0 s
 
   fun all f s =
       let
@@ -397,7 +398,11 @@ struct
           go (size s - 1)
       end
 
-  (* Substring.all in 1997, Substring.full in 2002. 
+  (* PERF: Should do it in a single pass *)
+  fun losespecsides sp s = losespecr sp (losespecl sp s)
+  val trim = losespecsides whitespec
+
+  (* Substring.all in 1997 basis, Substring.full in 2002.
      This works in both, but is perhaps not as fast. *)
   fun ss_all x = Substring.substring(x, 0, size x)
 

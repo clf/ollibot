@@ -1,0 +1,14 @@
+%% Exceptions
+%% "Substructural Operational Semantics as Ordered Logic Programming", LICS '09
+%% Robert J. Simmons, Frank Pfenning
+
+
+%% Exceptions (Figure 10)
+
+etry   : eval(try E₁ E₂) ->> catch(E₂) • eval(E₁).
+eraise : eval(raise) ->> fail.
+epop   : comp(F) • fail ->> fail.
+ecatch : catch(E₂) • fail ->> eval(E₂).
+eret   : catch(E₂) • return(V) ->> return(V).
+
+

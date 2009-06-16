@@ -3,7 +3,7 @@
    Carnegie Mellon University
    Pittsburgh, PA 15213 *)
 
-structure BasicParsing :> BASIC_PARSING =
+structure BasicParsing : BASIC_PARSING =
   (* LL-style parsing combinators. *)
 struct
 
@@ -38,12 +38,6 @@ struct
             (y, Pos.union (posx,posy),pos,ts)
         end
 
-  fun ignore_pos p (pos,ts) = 
-        let val (x,posx,pos,ts) = p (pos,ts)
-        in
-            (x,Pos.rightedge pos,pos,ts) 
-        end
-
   fun (p ## q) (pos,ts) =
         p (pos, ts)
         handle Fail err1 =>
@@ -68,22 +62,16 @@ struct
 
   fun fix f (pos, ts) = f (fix f) (pos, ts)
 
-  fun fst (a,b) = a
-
   fun parsewith s f p ts =
         let val (x,_,_,ts) = p (Pos.initpos, ts)
-        in s x end
+        in s(x,ts) end
         handle Fail err => f err
-
-  fun parseonce p ts =
-        let val (x,_,_,ts) = p (Pos.initpos, ts)
-        in (SOME x,ts) end
-        handle Fail err => (NONE,ts)
 
   fun push ns p (pos, ts) =
       p (Pos.initpos, Stream.append ns ts)
 
-  fun parse p = parsewith SOME (fn _ => NONE) p
+  fun parse p = parsewith (fn (x,s) => SOME x) (fn _ => NONE) p
+  fun parseWithStream p = parsewith SOME (fn _ => NONE) p
 
   fun transform p ts =
     let
