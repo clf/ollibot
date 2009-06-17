@@ -1,0 +1,37 @@
+local
+  util/util.mlb
+  util/stream.mlb
+  parse/parse.mlb
+in
+  structure ListUtil
+  structure Parsing
+  structure Pos
+  structure StringUtil
+  structure Stream
+  structure StreamUtil
+end
+
+local
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+in
+  functor RedBlackMapFn
+end
+
+$(SML_LIB)/basis/basis.mlb
+
+global-sig.sml
+global-echo.sml
+
+extsyn.sml
+parse.sml
+
+names.sml
+intsyn.sml
+
+typerecon.sml
+
+term.sml
+context.sml
+execute.sml
+
+webend.sml
