@@ -15,7 +15,15 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <string.h>
+
+/* Compile didn't work on OS X Tiger because there was no malloc 
+ * there. Should the include always be sys/malloc.h, or is malloc.h 
+ * what is wanted in non-Mac cases? -rjs */
+#ifndef __DARWIN_UNIX03
 #include <malloc.h>
+#else
+#include <sys/malloc.h>
+#endif
 
 int ML_AF_UNIX = AF_UNIX;
 int ML_PF_INET = PF_INET;

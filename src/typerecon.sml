@@ -35,6 +35,8 @@ structure TypeRecon = struct
                  in constmap := MapS.insert(!constmap,s,t); t end)
         fun unify (x,y) = ST.unify x y
 
+        val union = MapS.unionWith (fn (t1,t2) => (unify(t1,t2); t1))
+
         (* vars_and_types(trm, bvar) = (fvar, tp) 
          ** trm - a term in the external syntax
          ** bvar - a map from bound variables to their inferred types 
@@ -47,7 +49,7 @@ structure TypeRecon = struct
                 val (fvar1,tp1) = vars_and_types (trm1, bvar)
                 val (fvar2,tp2) = vars_and_types (trm2, bvar)
                 val tp = ST.Var'()
-                val fvar = MapS.unionWith unify (fvar1,fvar2)
+                val fvar = union (fvar1,fvar2)
               in 
                 ST.unify tp1 (ST.Arrow'(tp2,tp)); (fvar, tp)
               end
@@ -63,7 +65,7 @@ structure TypeRecon = struct
               let (* val _ = print "Fuse\n" *)
                 val (fvar1,tp1) = vars_and_types (trm1, bvar)
                 val (fvar2,tp2) = vars_and_types (trm2, bvar)
-                val fvar = MapS.unionWith unify (fvar1,fvar2)
+                val fvar = union (fvar1,fvar2)
               in
                 unify(tp1, ST.Prop'); unify(tp2, ST.Prop'); (fvar, ST.Prop')
               end
@@ -71,7 +73,7 @@ structure TypeRecon = struct
               let (* val _ = print "Fuse\n" *)
                 val (fvar1,tp1) = vars_and_types (trm1, bvar)
                 val (fvar2,tp2) = vars_and_types (trm2, bvar)
-                val fvar = MapS.unionWith unify (fvar1,fvar2)
+                val fvar = union (fvar1,fvar2)
               in
                 unify(tp1, ST.Prop'); unify(tp2, ST.Prop'); (fvar, ST.Prop')
               end
@@ -79,7 +81,7 @@ structure TypeRecon = struct
               let (* val _ = print "Righti\n" *)
                 val (fvar1,tp1) = vars_and_types (trm1, bvar)
                 val (fvar2,tp2) = vars_and_types (trm2, bvar)
-                val fvar = MapS.unionWith unify (fvar1,fvar2)
+                val fvar = union (fvar1,fvar2)
               in
                 unify(tp1, ST.Prop'); unify(tp2, ST.Prop'); (fvar, ST.Prop')
               end
@@ -87,7 +89,7 @@ structure TypeRecon = struct
               let (* val _ = print "Lefti\n" *)
                 val (fvar1,tp1) = vars_and_types (trm1, bvar)
                 val (fvar2,tp2) = vars_and_types (trm2, bvar)
-                val fvar = MapS.unionWith unify (fvar1,fvar2)
+                val fvar = union (fvar1,fvar2)
               in
                 unify(tp1, ST.Prop'); unify(tp2, ST.Prop'); (fvar, ST.Prop')
               end

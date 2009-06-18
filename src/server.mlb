@@ -47,18 +47,24 @@ server/params.sml
 server/raw-network-sig.sml
 server/raw-network.sml
 
-server/network-sig.sml
-server/network.sml
+server/web.sml
 
-server/util.sml
 
-server/css.sml
-
-server/worlds.sml
-
-server/packetizer-sig.sml
-server/http-packetizer-sig.sml
-server/http.sml
-
-webend.sml
+(*
+ * server/network-sig.sml
+ * server/network.sml
+ * 
+ * server/session-sig.sml
+ * server/session.sml
+ * 
+ * server/util.sml
+ * 
+ * server/css.sml
+ * 
+ * server/worlds.sml
+ * 
+ * server/packetizer-sig.sml
+ * server/http-packetizer-sig.sml
+ * server/http.sml
+*)
 

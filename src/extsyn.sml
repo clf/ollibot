@@ -9,7 +9,7 @@ structure SimpleType :>
             datatype styp_view = 
                      Var of evar | Item | Prop | Arrow of styp * styp
             exception Unify
-            val unify : styp -> styp -> styp
+            val unify : styp -> styp -> unit
             val bind : evar -> styp -> unit
             val prj : styp -> styp_view
             val Var' : unit -> styp
@@ -62,11 +62,11 @@ struct
   exception Unify
   fun unify t1 t2 = 
       case (prj t1, prj t2) of
-        (Var e1, t2) => (bind e1 t2; t2)
-      | (t1, Var e2) => (bind e2 t1; t2)
-      | (Item, Item) => Item
-      | (Prop, Prop) => Item
-      | (Arrow(t1,s1),Arrow(t2,s2)) => Arrow(unify t1 t2, unify s1 s2)
+        (Var e1, t2) => bind e1 t2
+      | (t1, Var e2) => bind e2 t1
+      | (Item, Item) => ()
+      | (Prop, Prop) => ()
+      | (Arrow(t1,s1),Arrow(t2,s2)) => (unify t1 t2; unify s1 s2)
       | _ => raise Unify
       
 end

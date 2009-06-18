@@ -1,0 +1,23 @@
+$(SML_LIB)/basis/basis.mlb
+
+local
+  ../util/util.mlb
+  params-sig.sml
+  params.sml
+in 
+  structure StringUtil
+  structure Params 
+end
+
+local
+  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+in
+  functor SplayMapFn
+end
+
+raw-network-sig.sml
+raw-network.sml
+
+web-sig.sml
+web.sml
+web-default.sml
