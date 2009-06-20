@@ -23,12 +23,12 @@ functor Web(WebHandler : WEB_HANDLER) :> WEB = struct
           fun morecontent (hs: string) (cl: int) (cs: string) =
             case R.recv p of
               "" => (* XXX what do we assume if connection closed? *)
-              (print "closed!\n"; (hs,cs))
+              (print "partial message received\n"; (hs,cs))
             | s' =>
               let val cs = cs ^ s'
               in 
                 if size cs >= cl 
-                then (print "done\n"; (hs,cs)) (* Normal finish *)
+                then (print "message received\n"; (hs,cs)) (* Normal finish *)
                 else morecontent hs cl cs
               end
 
@@ -36,7 +36,7 @@ functor Web(WebHandler : WEB_HANDLER) :> WEB = struct
           fun moreheader s = 
             case R.recv p of
               "" => (* XXX what do we assume if connection closed? *)
-              (print "closed!\n"; (s, ""))
+              (print "partial message received\n"; (s, ""))
             | s' => 
               let val s = s ^ s'
               in case StringUtil.find "\r\n\r\n" s of
@@ -48,7 +48,7 @@ functor Web(WebHandler : WEB_HANDLER) :> WEB = struct
                   val cs = String.substring(s,h,size s-h)
                 in case StringUtil.find cls hs of 
                   NONE => (* Assume no content; should I throw away cs? *)
-                  (print "done\n"; (hs,cs))                
+                  (print "message received\n"; (hs,cs))                
                 | SOME m => 
                   let
                     val m = m + size_cls

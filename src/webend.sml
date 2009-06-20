@@ -3,6 +3,29 @@ structure Frontend = struct
   open Global
   structure I = IntSyn
 
+  fun stoUTF8stream s = 
+      let 
+        val cs = UTF8Util.explode s
+        val cstr = StreamUtil.ltostream cs
+
+        fun readdecl
+
+  fun readdecl (signat, rules, tokens) =
+      case Parsing.parseWithStream Parse.decl_parser tokens of
+        SOME(decl, tokens) =>
+        let
+          val (signat, decl) = TypeRecon.load_decl (signat, decl)
+          val rules = step (rules, decl)
+        in loop (signat, rules, tokens) end
+      | NONE =>
+        (case Stream.force tokens of
+           Stream.Nil => (signat,rules)
+         | Stream.Cons((tok,pos),_) => 
+           raise ErrPos(pos, 
+                        "Could not parse declaration beginning with " ^
+                        Parse.token_to_string tok))
+        
+        
   fun read file = 
       let 
         fun step (rules, decl) =
@@ -39,20 +62,6 @@ structure Frontend = struct
                 end
             end
               
-        fun loop (signat, rules, tokens) =
-            case Parsing.parseWithStream Parse.decl_parser tokens of
-              SOME(decl, tokens) =>
-              let
-                val (signat, decl) = TypeRecon.load_decl (signat, decl)
-                val rules = step (rules, decl)
-              in loop (signat, rules, tokens) end
-            | NONE =>
-              (case Stream.force tokens of
-                 Stream.Nil => Global.OK
-               | Stream.Cons((tok,pos),_) => 
-                 raise ErrPos(pos, 
-                              "Could not parse declaration beginning with " ^
-                              Parse.token_to_string tok))
                  
 
       in loop (MapS.empty, [], Parse.file_to_tokenstream file) end

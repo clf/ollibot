@@ -1,11 +1,13 @@
-%% Solution for combining parallel evaluation and exceptions
-%% "Substructural Operational Semantics as Ordered Logic Programming", LICS '09
-%% Robert J. Simmons, Frank Pfenning
+%% == Solution for combining parallel evaluation and exceptions ==
+%% === Robert J. Simmons, Frank Pfenning ===
 
+%% ''These examples are derived from Figures 5 and 10 in 
+%% [[/lics09|
+%% Substructural Operational Semantics as Ordered Logic Programming]].''
 
-%% In par_exn1.olf, we describe an issue with the parallel evaluation of pairs
-%% combined with exceptions. In this example, we modify the computation frames
-%% to allow exceptions to deal generically with suspended parallel 
+%% In [[par_exn1.olf]], we describe an issue with the parallel evaluation of 
+%% pairs combined with exceptions. In this example, we modify the computation 
+%% frames to allow exceptions to deal generically with suspended parallel 
 %% computations.
 
 

@@ -44,6 +44,7 @@ struct
           Stream.delay step
         end
 
+
     fun ftoUTF8stream f = 
         let 
           val ff = BinIO.openIn f

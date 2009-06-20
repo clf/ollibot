@@ -1,4 +1,5 @@
 local
+  util/utf8.mlb
   util/util.mlb
   util/stream.mlb
   parse/parse.mlb
@@ -9,6 +10,15 @@ in
   structure StringUtil
   structure Stream
   structure StreamUtil
+  structure UTF8Util
+end
+
+local
+  server/web.mlb
+in
+  signature WEB_HANDLER
+  structure DefaultHandler
+  functor Web
 end
 
 local
@@ -21,7 +31,7 @@ end
 $(SML_LIB)/basis/basis.mlb
 
 global-sig.sml
-global-echo.sml
+global.sml
 
 extsyn.sml
 parse.sml
@@ -35,36 +45,6 @@ term.sml
 context.sml
 execute.sml
 
-server/stamp-sig.sml
-server/stamp.sml
-
-server/queue-sig.sml
-server/queue.sml
-
-server/params-sig.sml
-server/params.sml
-
-server/raw-network-sig.sml
-server/raw-network.sml
-
-server/web.sml
-
-
-(*
- * server/network-sig.sml
- * server/network.sml
- * 
- * server/session-sig.sml
- * server/session.sml
- * 
- * server/util.sml
- * 
- * server/css.sml
- * 
- * server/worlds.sml
- * 
- * server/packetizer-sig.sml
- * server/http-packetizer-sig.sml
- * server/http.sml
-*)
-
+webtools.sml
+webhandler.sml
+webloop.sml

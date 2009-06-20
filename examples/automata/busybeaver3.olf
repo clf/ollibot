@@ -1,8 +1,9 @@
-%% 3-state, 2-symbol busy beaver Turing machine
-%% See: http://en.wikipedia.org/wiki/Busy_beaver
-%% 21 steps, 6 1's total
-%% Left moves are treated as special cases
-%% Tape symbol under tape head is to the right of state
+%% == 3-state, 2-symbol busy beaver Turing machine ==
+
+%% * See: [[http://en.wikipedia.org/wiki/Busy_beaver]]
+%% * 21 steps, 6 1's total
+%% * Left moves are treated as special cases
+%% * Tape symbol under tape head is to the right of state
 
 a₀ : a • 0 ->> 1 • b.
 a₁ : a • 1 ->> 1 • h.

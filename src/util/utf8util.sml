@@ -2,10 +2,10 @@ structure UTF8Util :> UTF8_UTIL = struct
 
   open Byte
   open Word8
+  open Word8Vector
   val (op +) = Int.+
   val (op >=) = Int.>=
   infix 5 >>
-  open Word8Vector
   exception UTF8
 
   fun multi n (vec,start,offset) =
@@ -35,13 +35,15 @@ structure UTF8Util :> UTF8_UTIL = struct
           size vec (start + bytes) (n+1)
         end
 
+  fun subvector(vec,start,bytes) = 
+      unpackStringVec(Word8VectorSlice.slice(vec,start,SOME bytes))
+
   fun sub_impl (vec,m) start n =
       if start = length vec then raise Subscript
       else if m = n then 
         let val bytes = numbytes(sub(vec,start))
         in 
-          multi bytes (vec,start,1); 
-          unpackStringVec(Word8VectorSlice.slice(vec,start,SOME bytes)) 
+          multi bytes (vec,start,1); subvector(vec,start,bytes)
         end
       else 
         let val bytes = numbytes(sub(vec,start))
@@ -50,8 +52,17 @@ structure UTF8Util :> UTF8_UTIL = struct
           sub_impl (vec,m) (start + bytes) (n+1)
         end
 
+  fun explode_impl vec start (list : String.string list) : String.string list = 
+      if start = length vec then rev list
+      else 
+        let val bytes = numbytes(sub(vec,start))
+        in
+          explode_impl vec (start + bytes) (subvector(vec,start,bytes) :: list)
+        end
+
   val size = fn s => size (Byte.stringToBytes s) 0 0
   val sub = fn (s,n) => sub_impl (Byte.stringToBytes s,n) 0 0
-
+  val explode = fn s => explode_impl (Byte.stringToBytes s) 0 []
+  val translate = fn f => fn s => String.concat (List.map f (explode s))
 
 end

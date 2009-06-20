@@ -1,6 +1,9 @@
-%% Problems with combining parallel evaluation and exceptions
-%% "Substructural Operational Semantics as Ordered Logic Programming", LICS '09
-%% Robert J. Simmons, Frank Pfenning
+%% == Problems with combining parallel evaluation and exceptions ==
+%% === Robert J. Simmons, Frank Pfenning ===
+
+%% ''These examples are derived from Figures 5 and 10 in 
+%% [[/lics09|
+%% Substructural Operational Semantics as Ordered Logic Programming]].''
 
 
 %% Exceptions as presented in the paper rely on a global property of the
@@ -10,7 +13,7 @@
 %% Therefore, the two cannot be combined without problems, as demonstrated
 %% in this example.
 %%
-%% One possibility for addressing this problem is given in par_exn2.olf
+%% One possibility for addressing this problem is given in [[par_exn2.olf]].
 
 
 %% Parallel evaluation for pairs (Figure 5), plus unit.

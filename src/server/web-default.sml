@@ -1,6 +1,6 @@
 (* A default web handler to start with *)
 
-structure DefaultHandler :> WEB_HANDLER = struct
+structure DefaultHandler = struct
  
   val DEFAULT_PORT = 80
   datatype request_method = GET | POST
@@ -15,17 +15,19 @@ structure DefaultHandler :> WEB_HANDLER = struct
      lookup: string -> string option
     }     
 
-  fun build_reply _ f = 
+  fun not_found_page f = 
       let 
         val print : string -> unit = 
             f (NOTFOUND_404, "text/html; charset=utf-8")
       in 
         print "<html>\n";
         print "<head><title>Page Not Found</title><head>\n";
-        print "<body>No page was found beconse none exist.</body>\n";
+        print "<body>The page you requested was not found.</body>\n";
         print "</http>\n";
         ()
       end
+
+  fun build_reply _ f = not_found_page f
 
 end
 

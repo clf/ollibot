@@ -1,0 +1,37 @@
+== Call-by-need functions ==
+=== Robert J. Simmons, Frank Pfenning ===
+
+''These examples are derived from Figure 9 in 
+[[/lics09|Substructural Operational Semantics as Ordered Logic Programming]].''
+
+This specification of call-by-need functions is a modification of 
+[[cbn-dest.olf | call-by-name with destinations for binding]] that 
+enforces that a function argument will be evaluated at most once, and only 
+when it is needed. The rules for evaluating lambdas and applications are the 
+same as in call-by-name with binding, with the exception that the rule 
+`eapp₂` that returns a function to the application associates the function's 
+argument not with the persistent atomic propostion `!bind D₂ E₂` but with the 
+linear atomic proposition `¡susp D₂ E₂`.
+
+> elam : eval(lam λx. E x) ->> return(lam λx. E x).
+
+> eapp₁ : eval(app E₁ E₂) ->> comp(app₁ E₂) • eval(E₁).
+> eapp₂ : comp(app₁ E₂) • return(lam λx. E₁' x)
+>    ->> ∃D₂. eval(E₁' D₂) • ¡susp D₂ E₂.
+ 
+The real interesting action happens with binding. 
+
+> evar₁ : eval(D) • ¡susp D E ->> comp(bind₁ D) • eval(E).
+> evar₂ : comp(bind₁ D) • return(V) ->> return(V) • !bind D V.
+> evar₃ : eval(D) • !bind D V ->> return(V).
+   
+=== Evaluation examples ===
+
+We first show the evaluation of the simple term `(λx.x)((λy.y)(λz.z))`.
+
+> %trace * eval(app (lam λx.x) (app (lam λy.y) (lam λz.c))).
+
+We can also see that 
+
+> %trace * eval(app (lam λx. app x x) (app (lambda λy. app y y)).
+

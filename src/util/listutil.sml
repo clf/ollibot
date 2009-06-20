@@ -94,6 +94,27 @@ struct
         insert (aa, bb) ls
       end
 
+    fun tokens f xs =
+        let 
+          fun tok xs ys yss = 
+              case xs of 
+                [] => if null ys then rev yss else rev (rev ys :: yss)
+              | x :: xs => 
+                if not (f x)    then tok xs (x :: ys) yss (* Add to token *)
+                else if null ys then tok xs [] yss (* More 'whitespace' *)
+                else                 tok xs [] (rev ys :: yss) (* New token *)
+        in tok xs [] [] end
+
+    fun fields f xs =
+        let 
+          fun tok xs ys yss = 
+              case xs of 
+                [] => rev (rev ys :: yss)
+              | x :: xs => 
+                if not (f x) then tok xs (x :: ys) yss (* Add to token *)
+                else tok xs [] (rev ys :: yss) (* New field *)
+        in tok xs [] [] end
+
     fun combinel f nil = raise ListUtil
       | combinel f (h::t) = foldl f h t
 

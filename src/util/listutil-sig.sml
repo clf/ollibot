@@ -58,6 +58,9 @@ sig
 
     val list : 'a -> 'a list
 
+    val tokens : ('a -> bool) -> 'a list -> 'a list list
+    val fields : ('a -> bool) -> 'a list -> 'a list list
+
     (* choosemap f l
        
        returns [f(l1, [l2...ln]), f(l2, [l1,l3...ln]), ...] *)

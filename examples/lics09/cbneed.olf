@@ -1,9 +1,8 @@
-%% Call-by-need functions
-%% "Substructural Operational Semantics as Ordered Logic Programming", LICS '09
-%% Robert J. Simmons, Frank Pfenning
+%% = Call-by-need functions =
+%% === Robert J. Simmons, Frank Pfenning ===
 
 
-%% Call-by-need functions (Figure 9)
+%% == Call-by-need functions (Figure 9) ==
 
 elam : eval(lam λx. E x) ->> return(lam E).
 
