@@ -22,7 +22,7 @@ structure OllibotWebHandler :> WEB_HANDLER = struct
 
   val header = 
    fn title => 
-( "<html><head><title>Ollibot : " ^ title ^ "</title></head>\n"
+( "<html><head><title>Ollibot: " ^ title ^ "</title></head>\n"
 ^ "<body>\n"
 ^ "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
 ^ "<!DOCTYPE html \n"
