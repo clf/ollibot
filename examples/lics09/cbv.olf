@@ -1,8 +1,7 @@
 %% = Call-by-value functions =
 %% == Robert J. Simmons, Frank Pfenning ==
 
-%% ''This examples is derived from Figure 3 in
-%% [[/lics09/readme.txt |
+%% ''This examples is derived from Figure 3 in [[readme.txt |
 %% Substructural Operational Semantics as Ordered Logic Programming]].''
 
 %% == Call-by-value functions ==

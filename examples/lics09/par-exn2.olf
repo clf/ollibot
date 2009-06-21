@@ -5,7 +5,7 @@
 %% [[/lics09/readme.txt |
 %% Substructural Operational Semantics as Ordered Logic Programming]].''
 
-%% In [[par_exn1.olf]], we describe an issue with the parallel evaluation of 
+%% In [[par-exn1.olf]], we describe an issue with the parallel evaluation of 
 %% pairs combined with exceptions. In this example, we modify the computation 
 %% frames to allow exceptions to deal generically with suspended parallel 
 %% computations.

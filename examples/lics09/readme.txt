@@ -33,7 +33,7 @@ The discussion of exceptions includes a comment that
 the language specification requires latent propositions
 waiting on more than one result, as, for example, in
 parallel evaluation of pairs."'' This problem is illustrated in
-[[par_exn1.olf]], and one possible solution is discussed in
-[[par_exn2.olf]].
+[[par-exn1.olf]], and one possible solution is discussed in
+[[par-exn2.olf]].
 
 

@@ -12,7 +12,7 @@
 %% Therefore, the two cannot be combined without problems, as demonstrated
 %% in this example.
 %%
-%% One possibility for addressing this problem is given in [[par_exn2.olf]].
+%% One possibility for addressing this problem is given in [[par-exn2.olf]].
 
 
 %% == Parallel evaluation for pairs (Figure 5), plus unit ==
