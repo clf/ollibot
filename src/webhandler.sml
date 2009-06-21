@@ -21,7 +21,8 @@ structure OllibotWebHandler :> WEB_HANDLER = struct
       end handle _ => raise NotFound
 
   val header = 
-( "<html><head><title>Page</title></head>\n"
+   fn title => 
+( "<html><head><title>Ollibot : " ^ title ^ "</title></head>\n"
 ^ "<body>\n"
 ^ "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
 ^ "<!DOCTYPE html \n"
@@ -38,14 +39,25 @@ structure OllibotWebHandler :> WEB_HANDLER = struct
 ^ "<body>\n"
 ^ " <div id=\"main\">\n")
 
+  fun get_title content = 
+      let
+        val content =
+            StringUtil.losespecl
+                (fn #"%" => true | #"=" => true | c => StringUtil.whitespec c)
+                content
+        val (title,_) =
+            StringUtil.token
+                (fn #"%" => true | #"=" => true | #"\n" => true | _ => false)
+                content
+      in StringUtil.trim title end
+
   fun txt_page (file,f) =
       let 
         val send : string -> unit = f (OK_200, "text/html; charset=utf-8")
         val content = TextIO.inputAll file
-        val content = Wiki.wikify_content content
       in 
-        send header;
-        send content; 
+        send (header (get_title content));
+        send (Wiki.wikify_content content); 
         send " </div>\n</body>\n</html>\n"
       end
 
@@ -54,7 +66,7 @@ structure OllibotWebHandler :> WEB_HANDLER = struct
         val send : string -> unit = f (OK_200, "text/html; charset=utf-8")
         val content = TextIO.inputAll file
       in 
-        send header;
+        send (header (get_title content));
         WikiCode.wikify_lolf send content; 
         send " </div>\n</body>\n</html>\n"
       end
@@ -64,7 +76,7 @@ structure OllibotWebHandler :> WEB_HANDLER = struct
         val send : string -> unit = f (OK_200, "text/html; charset=utf-8")
         val content = TextIO.inputAll file
       in 
-        send header;
+        send (header (get_title content));
         WikiCode.wikify_olf send content; 
         send " </div>\n</body>\n</html>\n"
       end

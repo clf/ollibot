@@ -2,6 +2,7 @@ Group is
   $/basis.cm
   $/smlnj-lib.cm
 
+  util/utf8.cm
   util/util.cm
   util/stream.cm
   parse/parse.cm
