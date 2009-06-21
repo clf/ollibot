@@ -21,6 +21,13 @@ examples.
 
 == Other examples ==
 
+The discussion of call-by-need talkes about the ''black hole''. An example
+of this appearing when the suspensions used in the call-by-need specification
+are straightforwardly extended to a fixed point operator, as in
+[[cbneed-fix.olf]]. Two ways of dealing with the stuckness that results are 
+[[cbneed-error.olf|raising an exception]] or 
+[[cbneed-nonterm.olf|nontermination]].
+
 The discussion of exceptions includes a comment that 
 ''"Exceptions entail a certain violation of modularity if
 the language specification requires latent propositions

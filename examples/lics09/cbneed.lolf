@@ -1,8 +1,7 @@
 = Call-by-need functions =
 == Robert J. Simmons, Frank Pfenning ==
 
-''This example is derived from Figure 9 in 
-[[/lics09/readme.txt |
+''This example is derived from Figure 9 in [[readme.txt|
 Substructural Operational Semantics as Ordered Logic Programming]].''
 
 This specification of call-by-need functions is a modification of 

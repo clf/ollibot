@@ -1,8 +1,8 @@
-%% 5-state, 2-symbol busy beaver Turing machine (conjectured)
-%% See: http://en.wikipedia.org/wiki/Busy_beaver
-%% 47,176,870 steps, 4098 1's
-%% Left and right moves are treated symmetrically
-%% Tape is extended dynamically
+%% = 5-state, 2-symbol busy beaver Turing machine (conjectured) =
+%% * See: [[http://en.wikipedia.org/wiki/Busy_beaver]]
+%% * 47,176,870 steps, 4098 1's
+%% * Left and right moves are treated symmetrically
+%% * Tape is extended dynamically
 
 a▷0 : a▷ • 0 ->> 1 • b▷.
 0◁a : 0 • ◁a ->> 1 • b▷.
@@ -39,6 +39,6 @@ e▷1 : e▷ • 1 ->> ◁a • 0.
 e▷# : e▷ • # ->>     1 • h▷ • #.
 #◁e : # • ◁e ->> # • 1 • h▷.
 
-%% Next line would take 47,176,870 steps to run to completion
-%trace 200
-  # • a▷ • #.
+%% The next line would take 47,176,870 steps to run to completion if we did
+%% not limit it to 200 steps here.
+%trace 200 # • a▷ • #.

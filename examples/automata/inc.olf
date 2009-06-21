@@ -1,4 +1,4 @@
-%% Incrementing a number in binary representation
+%% = Incrementing a number in binary representation =
 %% # is the end-of-tape marker
 
 r1 : inc • 0 ->> 1.

@@ -1,7 +1,7 @@
-%% 4-state, 2-symbol busy beaver Turing machine
-%% See: http://en.wikipedia.org/wiki/Busy_beaver
-%% 107 steps, 13 1's total
-%% Left and right moves are treated symmetrically
+%% = 4-state, 2-symbol busy beaver Turing machine =
+%% * See: [[http://en.wikipedia.org/wiki/Busy_beaver]]
+%% * 107 steps, 13 1's total
+%% * Left and right moves are treated symmetrically
 
 a▷0 : a▷ • 0 ->> 1 • b▷.
 0◁a : 0 • ◁a ->> 1 • b▷.

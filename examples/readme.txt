@@ -8,7 +8,9 @@ a better description of the directory's contents.
 
 === [[lics09/readme.txt   | LICS 2009 Code]] ===
 
-In this directory
+In this examples based on the paper ''Substructural Operational Semantics
+as Ordered Logic Progamming'' by Pfenning & Simmons (LICS 2009). 
+Includes examples animating all of the figures from that paper.
 
 === [[automata/readme.txt | Automata]] ===
 

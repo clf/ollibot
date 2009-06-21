@@ -1,4 +1,4 @@
-%% DFA determining parity (= num of 1's mod 2)
+%% = DFA determining parity (the number of 1's mod 2) =
 %% No end-of-input marker: we stop in the state
 %% indicating the parity
 
@@ -7,5 +7,6 @@ r2 : even • 1 ->> odd.
 r3 : odd • 0 ->> odd.
 r4 : odd • 1 ->> even.
 
-%trace * 
-  even • 1 • 0 • 1 • 1.
+%% == Example ==
+
+%trace * even • 1 • 0 • 1 • 1.
