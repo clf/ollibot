@@ -7,6 +7,9 @@ signature CONTEXT = sig
 
   val to_string : context -> string
 
+  val to_strings : context ->
+      {persistent: string list, linear: string list, ordered: string list}
+
   val to_web_string : context -> string
 
 end
@@ -24,7 +27,7 @@ structure Context :> CONTEXT = struct
       case trms of 
         [] => pre ^ s ^ post
       | [trm] => pre ^ s ^ "(" ^ Term.to_string trm ^ ")" ^ post
-      | trms => pre ^ s ^ 
+      | trms => pre ^ s ^ " " ^
                 String.concatWith " " (map Term.to_string_parens trms) ^ post
 
   fun to_string (S{ordered,linear,persistent}) = 
@@ -33,9 +36,9 @@ structure Context :> CONTEXT = struct
                                map (mapper "" "") ordered)
       
   fun to_strings (S{ordered,linear,persistent}) = 
-      map (mapper "!" "") persistent @
-      map (mapper "¡" "") linear @ 
-      map (mapper "" "") ordered
+      {persistent = map (mapper "!" "") persistent,
+       linear = map (mapper "¡" "") linear,
+       ordered = map (mapper "" "") ordered}
 
   fun to_web_string (S{ordered,linear,persistent}) = 
       "<div class=\"hyp\">" ^

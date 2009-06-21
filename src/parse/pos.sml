@@ -127,4 +127,7 @@ struct
   fun getcol (At c) = getcol (Between (c, c))
     | getcol (Between ({char=a, ...}, {char=b, ...})) = (a, b)
 
+  fun getline (At({line,...})) = line
+    | getline (Between({line,...},_)) = line
+
 end

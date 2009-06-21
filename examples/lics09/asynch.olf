@@ -34,7 +34,6 @@ econst : eval(const C) ->> return(const C).
 %% The second process is just a dummy to emphasize that the communication is 
 %% nonlocal.
 
-%trace * ∃chan₁. 
-   eval(new λchan₂. app (lam λx. rcv chan₂) (send chan₁ (lam λx. send chan₂ x)))
+%trace * ∃chan₁. eval(new λchan₂. app (lam λx. rcv chan₂) (send chan₁ (lam λx. send chan₂ x)))
    • eval (const unit)
    • eval(app (lam λx. const unit) (app (rcv chan₁) (const ack))).

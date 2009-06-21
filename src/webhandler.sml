@@ -42,7 +42,7 @@ structure OllibotWebHandler :> WEB_HANDLER = struct
       let 
         val send : string -> unit = f (OK_200, "text/html; charset=utf-8")
         val content = TextIO.inputAll file
-        val content = WebTools.wikify_content content
+        val content = Wiki.wikify_content content
       in 
         send header;
         send content; 
@@ -55,7 +55,7 @@ structure OllibotWebHandler :> WEB_HANDLER = struct
         val content = TextIO.inputAll file
       in 
         send header;
-        WebTools.wikify_lolf send content; 
+        WikiCode.wikify_lolf send content; 
         send " </div>\n</body>\n</html>\n"
       end
 
@@ -65,7 +65,7 @@ structure OllibotWebHandler :> WEB_HANDLER = struct
         val content = TextIO.inputAll file
       in 
         send header;
-        WebTools.wikify_olf send content; 
+        WikiCode.wikify_olf send content; 
         send " </div>\n</body>\n</html>\n"
       end
 

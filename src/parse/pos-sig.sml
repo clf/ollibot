@@ -42,4 +42,6 @@ sig
   val getabs : pos -> int * int
 
   val getcol : pos -> int * int
+
+  val getline : pos -> int
 end

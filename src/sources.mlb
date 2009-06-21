@@ -1,4 +1,5 @@
 local
+  util/utf8.mlb
   util/util.mlb
   util/stream.mlb
   parse/parse.mlb
@@ -9,6 +10,7 @@ in
   structure StringUtil
   structure Stream
   structure StreamUtil
+  structure UTF8Util
 end
 
 local
@@ -20,7 +22,7 @@ end
 $(SML_LIB)/basis/basis.mlb
 
 global-sig.sml
-global-echo.sml
+global.sml
 
 extsyn.sml
 parse.sml
@@ -34,4 +36,5 @@ term.sml
 context.sml
 execute.sml
 
-webend.sml
+frontend.sml
+frontendloop.sml

@@ -25,7 +25,6 @@ local
   $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
 in
   functor RedBlackMapFn
-  functor SplayMapFn
 end
 
 $(SML_LIB)/basis/basis.mlb
@@ -45,6 +44,8 @@ term.sml
 context.sml
 execute.sml
 
-webtools.sml
+wiki.sml
+wikicode.sml
+
 webhandler.sml
 webloop.sml

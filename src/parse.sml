@@ -3,6 +3,7 @@ signature PARSE = sig
   type token
   val token_to_string : token -> string
   val file_to_tokenstream : string -> (token * Pos.pos) Stream.stream 
+  val string_to_tokenstream : string -> (token * Pos.pos) Stream.stream
   val decl_parser : (ExtSyn.decl, token) Parsing.parser
 
 end
@@ -32,6 +33,32 @@ structure Parse :> PARSE = struct
       | LAMBDA x => "λ " ^ x | FORALL x => "∀ " ^ x | EXISTS x => "∃ " ^ x
       | ID(path,x) => concat (map (fn x => x ^  ".") path) ^ x 
       | PERCENT x => "%" ^ x | COLON => ":" | WS => ""
+
+  (* Literate transform: remove all non-literate parts from a file *)
+  val transform_tok0 = 
+   fn fs =>
+      let
+        fun newline fs () = 
+            case Stream.force fs of 
+              Stream.Nil => Stream.Nil
+            | Stream.Cons((">",_),fs) => codeline fs ()
+            | _ => textline fs ()
+
+        and textline fs () = 
+            case Stream.force fs of
+              Stream.Nil => Stream.Nil
+            | Stream.Cons(("\n",_),fs) => newline fs ()
+            | Stream.Cons(_,fs) => textline fs ()
+
+        and codeline fs () =
+            case Stream.force fs of
+              Stream.Nil => Stream.Nil
+            | Stream.Cons(("\n",p),fs) => 
+              Stream.Cons(("\n",p),Stream.delay(newline fs))
+            | Stream.Cons((c,p),fs) =>
+              Stream.Cons((c,p),Stream.delay(codeline fs))
+      in Stream.delay(newline fs) end 
+            
 
   (* Transform 1: 
    *** Strip line comments
@@ -221,8 +248,8 @@ structure Parse :> PARSE = struct
                 wth (fn (n,x) => ExtSyn.TRACE(pos,n,x)))
       in alt [rule_parser,exec_parser,trace_parser] end
 
-  fun stream_to_tokenstream f fs = 
-      let 
+  fun markstream f fs = 
+      let
         val pos0 = Pos.initposex f
         fun mark ("\n",pos) = 
             let val pos' = Pos.nextline pos 
@@ -236,14 +263,35 @@ structure Parse :> PARSE = struct
               liveprint c;
               ((c, Pos.union(pos,pos')), pos')
             end
-        val fs1 = StreamUtil.foldstream mark pos0 fs
+      in StreamUtil.foldstream mark pos0 fs end
+
+  fun stream_to_tokenstream f fs = 
+      let 
+        val fs1 = markstream f fs
         val fs2 = transform_tok1 fs1
         val fs3 = transform_tok2 fs2
         val fs4 = transform_tok3 fs3 
       in fs4 end
 
+  fun literate_to_tokenstream f fs = 
+      let
+        val fs0 = markstream f fs
+        val fs1 = transform_tok0 fs0
+        val fs2 = transform_tok1 fs1
+        val fs3 = transform_tok2 fs2
+        val fs4 = transform_tok3 fs3 
+      in fs4 end
+
+  (* Default is to non-literate code *)
   fun file_to_tokenstream f = 
-      stream_to_tokenstream f (StreamUtil.ftoUTF8stream f)
+      case OS.Path.splitBaseExt f of
+        {ext=SOME "lolf",...} => 
+        literate_to_tokenstream f (StreamUtil.ftoUTF8stream f)
+      | _ => stream_to_tokenstream f (StreamUtil.ftoUTF8stream f)
+
+  (* Assumed non-literate code *)
+  fun string_to_tokenstream s =
+      stream_to_tokenstream "" (StreamUtil.ltostream(UTF8Util.explode s))
 
 (*
   fun readfile f = 

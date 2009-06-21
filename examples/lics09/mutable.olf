@@ -1,9 +1,11 @@
-%% Mutable storage
-%% "Substructural Operational Semantics as Ordered Logic Programming", LICS '09
-%% Robert J. Simmons, Frank Pfenning
+%% = Mutable storage =
+%% == Robert J. Simmons, Frank Pfenning ==
 
+%% ''This examples is derived from Figures 3 and 4 in
+%% [[/lics09/readme.txt |
+%% Substructural Operational Semantics as Ordered Logic Programming]].''
 
-%% Call-by-value functions (Figure 3)
+%% == Call-by-value functions ==
 
 vlam : eval(lam λx. E x) ->> return(lam λx. E x).
 
@@ -12,7 +14,7 @@ eapp₂ : comp(app₁ E₂) • return(V₁) ->> comp(app₂ V₁) • eval(E₂
 eapp₃ : comp(app₂ (lam λx.E₀ x)) • return(V₂) ->> eval(E₀ V₂).
 
 
-%% Mutable storage (Figure 4)
+%% == Mutable storage ==
 
 eref₁ : eval(ref E) ->> comp(ref₁) • eval(E).
 eref₂ : comp(ref₁) • return(V) ->> ∃D. return(loc D) • ¡cell D V.
@@ -25,5 +27,8 @@ eset₂ : comp(set₁ E₂) • return(V₁) ->> comp(set₂ V₁) • eval(E₂
 eset₃ : comp(set₂ (loc D)) • return(V₂) • ¡cell D V ->> return(V₂) • ¡cell D V₂.
 
 vloc : eval(loc D) ->> return(loc D).
+
+
+%% == Example trace == 
 
 %trace * eval (set (ref (lam λx. lam λy. y)) (lam λx. lam λy. x)).

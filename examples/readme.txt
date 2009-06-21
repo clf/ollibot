@@ -6,11 +6,11 @@ ordered linear logic.
 The descriptions contain links to some code examples; click on the links for
 a better description of the directory's contents.
 
-=== [[lics09   | LICS 2009 Code]] ===
+=== [[lics09/readme.txt   | LICS 2009 Code]] ===
 
 In this directory
 
-=== [[automata | Automata]] ===
+=== [[automata/readme.txt | Automata]] ===
 
 Contains implementations of several types of automata encoded in a number of
 styles, such as [[automata/parity.olf|determinstic finite automata]] for 

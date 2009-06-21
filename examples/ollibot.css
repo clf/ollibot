@@ -11,42 +11,42 @@
     padding: 10px;
 }
 #main h1 {
-    font: 26pt arial;
+    font: 24pt arial;
     margin-top: 0px;
-    margin-bottom: 0px;
+    margin-bottom: 10px;
     color: #5557FF;
     font-weight: bold;
 }
 #main h2 {
-    font: 22pt arial;
+    font: 16pt arial;
     margin-top: 0px;
     margin-bottom: 0px;
     color: #5557FF;
     font-weight: bold;
 }
 #main h3 {
-    font: 18pt arial;
-    margin-top: 0px;
-    margin-bottom: 0px;
-    color: #5557FF;
-    font-weight: bold;
-}
-#main h4 {
     font: 14pt arial;
     margin-top: 0px;
     margin-bottom: 0px;
     color: #5557FF;
     font-weight: bold;
 }
-#main h5 {
+#main h4 {
     font: 12pt arial;
     margin-top: 0px;
     margin-bottom: 0px;
     color: #5557FF;
     font-weight: bold;
 }
-#main h6 {
+#main h5 {
     font: 10pt arial;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    color: #5557FF;
+    font-weight: bold;
+}
+#main h6 {
+    font: 8pt arial;
     margin-top: 0px;
     margin-bottom: 0px;
     color: #5557FF;
@@ -75,7 +75,9 @@ p {
     color: #FF0000;
     }
 .hyps {
+    font-family: "Courier New",courier,monospace;
     margin-left: 10px;
+    margin-top: -10px;
     border-left: solid;
     border-width: 5px;
     border-color: #0f0;
@@ -97,16 +99,19 @@ p {
     color: #080;
     padding-left: 4px;
     padding-right: 3px;
+    height: 16pt;
     }
 .hyp_lin { 
     float: left;
     color: #600;
     padding-left: 4px;
     padding-right: 3px;
+    height: 16pt;
     }
 .hyp_ord { 
     float: left;
     color: #008;
     padding-left: 4px;
     padding-right: 3px;
+    height: 16pt;
     }

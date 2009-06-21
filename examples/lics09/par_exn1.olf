@@ -1,10 +1,9 @@
-%% == Problems with combining parallel evaluation and exceptions ==
-%% === Robert J. Simmons, Frank Pfenning ===
+%% = Problems with combining parallel evaluation and exceptions =
+%% == Robert J. Simmons, Frank Pfenning ==
 
 %% ''These examples are derived from Figures 5 and 10 in 
-%% [[/lics09|
+%% [[/lics09/readme.txt |
 %% Substructural Operational Semantics as Ordered Logic Programming]].''
-
 
 %% Exceptions as presented in the paper rely on a global property of the
 %% operational semantics, essentially that there is only one control stack
@@ -16,7 +15,7 @@
 %% One possibility for addressing this problem is given in [[par_exn2.olf]].
 
 
-%% Parallel evaluation for pairs (Figure 5), plus unit.
+%% == Parallel evaluation for pairs (Figure 5), plus unit ==
 
 eunit : eval(unit) ->> return(unit).
 
@@ -26,7 +25,7 @@ epair₂ : comp(pair₁) • return(V₁) • return(V₂) ->> return(pair V₁ 
 elet₁ : eval(split E (λx₁.λx₂. E' x₁ x₂)) ->> comp(split₁ E') • eval(E).
 elet₂ : eval(split₁ (λx₁.λx₂. E' x₁ x₂)) • return(pair V₁ V₂) ->> eval(E' V₁ V₂).
 
-%% Exceptions (Figure 10)
+%% == Exceptions (Figure 10) ==
 
 etry   : eval(try E₁ E₂) ->> catch(E₂) • eval(E₁).
 eraise : eval(raise) ->> fail.
