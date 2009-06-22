@@ -48,6 +48,8 @@
 
 %% === Modal types ===
 
+%% "Publishing 
+
 ♢i-p : %% here-push
   @ W • eval(here M) ->>
   @ W • eval(M) • comp(here □).
@@ -61,6 +63,10 @@
 ♢e-r : %% letd-reduce
   @ W • return(there W' L) • comp(letdia □ λω.λx.N ω x) ->>
   @ W • eval(N W' L).
+
+lookup : 
+  @ W • eval(L) • !bind W L V ->>
+  @ W • return(V).
 
 %% The authors used the non-let version of box elimination, though they
 %% mention that using a `letbox` constructor (like the `letdia` constructor)
