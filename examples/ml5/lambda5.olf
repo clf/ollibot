@@ -48,7 +48,9 @@
 
 %% === Modal types ===
 
-%% "Publishing 
+%% "Publishing" a value `V` in the table at world `W` is done by
+%% creating a persistent atomic proposition `!bind W L V`, where `L` is
+%% a fresh parameter.
 
 ♢i-p : %% here-push
   @ W • eval(here M) ->>
@@ -64,13 +66,17 @@
   @ W • return(there W' L) • comp(letdia □ λω.λx.N ω x) ->>
   @ W • eval(N W' L).
 
+%% The lookup rule requires that the the current world and the location both
+%% match; this corresponds to the notion that we can only dereference addresses
+%% in our own local table.
+
 lookup : 
   @ W • eval(L) • !bind W L V ->>
   @ W • return(V).
 
 %% The authors used the non-let version of box elimination, though they
-%% mention that using a `letbox` constructor (like the `letdia` constructor)
-%% could alternatively be used.
+%% mention that a `letbox` constructor (like the `letdia` constructor)
+%% could have alternatively been used.
 
 □e-p : %% unbox-push
   @ W • eval(unbox M) ->>
@@ -82,8 +88,9 @@ lookup :
 
 %% === Communication ===
 
-%% Communication is split into two steps; the first creates a mobile message,
-%% and the second connects that mobile message at the correct position.
+%% Each rule for remote communication is split into two steps; the first 
+%% creates a mobile message, and the second connects that mobile message at
+%% the correct position.
 
 ret₁ : %% return (first part)
   @ W' • return(V) • comp-return(W) ->>
