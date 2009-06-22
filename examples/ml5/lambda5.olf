@@ -81,7 +81,7 @@ lookup :
 
 □e-p : %% unbox-push
   @ W • eval(unbox M) ->>
-  @ W • eval(M) • comp(unblox □).
+  @ W • eval(M) • comp(unbox □).
 □e-r : %% unbox-reduce
   @ W • return(box λw.M w) ->>
   @ W • return(M W).
