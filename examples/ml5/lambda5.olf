@@ -24,9 +24,10 @@
 
 %% === Values ===
 
-%% These don't seem to be mentioned in the tech report or LICS paper, which
-%% seems to be an omission; outright values do exist in the language and are
-%% not just published in the table; the rule `⊃e-r` requires this.
+%% These rules are not necessary in the system presented by Murphy et al: in
+%% effect, they do not distinguish between `eval` and `return`. Because we
+%% do, it is necessary to have a rule that switches from evaluating to
+%% returning when an immediate value is reached.
 
 ⊃i-v : @ W • eval(lam λx.M x) ->> @ W • return(lam λx.M x).
 ♢i-v : @ W • eval(there W L) ->> @ W • return(there W L).
