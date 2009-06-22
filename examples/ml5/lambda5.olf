@@ -1,0 +1,109 @@
+%% = Operational semantics for Lambda 5 =
+%% == Paper: Tom Murphy VII, Karl Crary, Robert Harper, Frank Pfenning ==
+%% == Ollibot code: Robert J. Simmons ==
+
+%% This is a straightforward transcription of Figure 8 from ''A Symmetric
+%% Modal Lambda Calculus for Distributed Computing'' (Tech report 
+%% CMU-CS-04-105). It is also presented in the same form in the paper
+%% of the same name published in LICS 2004 (it is Figure 6).
+
+%% We will represent different "locations" with atomic propositions `@ W` in
+%% the context. Unline the examples from [[/lics09/readme.txt | the LICS 2009
+%% paper]] by Simmons & Pfenning, the stack will grow out to the right of an
+%% active proposition, instead of to the left. 
+
+%% == Operational Semantics == 
+
+%% The rules are given abbreviated names, but are otherwise comparable to 
+%% Figure 8 in ''A Symmetric Modal Lambda Calculus for Distributed Computing.''
+%% Abbreviations `e` and `i` mean elimination and introduction, respectively; 
+%% `p` means ''push'', `s` means ''swap'', `r` means ''reduce'', 
+%% and `v` means ''value''. The names given in the tech report are mentioned
+%% in comments to the left.
+
+
+%% === Values ===
+
+%% These don't seem to be mentioned in the tech report or LICS paper, which
+%% seems to be an omission; outright values do exist in the language and are
+%% not just published in the table; the rule `⊃e-r` requires this.
+
+⊃i-v : @ W • eval(lam λx.M x) ->> @ W • return(lam λx.M x).
+♢i-v : @ W • eval(there W L) ->> @ W • return(there W L).
+□i-v : @ W • eval(box λω.M ω) ->> @ W • return(box λω.M ω).
+
+
+%% === Basic types ===
+
+⊃e-p : %% app-push
+  @ W • eval(app M N) ->>
+  @ W • eval(M) • comp(app □ N).
+⊃e-s : %% app-flip
+  @ W • return(V) • comp(app □ N) ->>
+  @ W • eval(N) • comp(app V □).
+⊃e-r : %% app-reduce
+  @ W • return(V) • comp(app (lam λx.M x) □) ->>
+  @ W • eval(M V).
+
+
+%% === Modal types ===
+
+♢i-p : %% here-push
+  @ W • eval(here M) ->>
+  @ W • eval(M) • comp(here □).
+♢i-r : %% here-reduce
+  @ W • return(V) • comp(here □) ->>
+  @ W • ∃L. return(there W L) • !bind W L V. %% Bindings are located
+
+♢e-p : %% letd-push
+  @ W • eval(letdia M λω.λx.N ω x) ->>
+  @ W • eval(M) • comp(letdia □ λω.λx.N ω x).
+♢e-r : %% letd-reduce
+  @ W • return(there W' L) • comp(letdia □ λω.λx.N ω x) ->>
+  @ W • eval(N W' L).
+
+%% The authors used the non-let version of box elimination, though they
+%% mention that using a `letbox` constructor (like the `letdia` constructor)
+%% could alternatively be used.
+
+□e-p : %% unbox-push
+  @ W • eval(unbox M) ->>
+  @ W • eval(M) • comp(unblox □).
+□e-r : %% unbox-reduce
+  @ W • return(box λw.M w) ->>
+  @ W • return(M W).
+
+
+%% === Communication ===
+
+%% Communication is split into two steps; the first creates a mobile message,
+%% and the second connects that mobile message at the correct position.
+
+ret₁ : %% return (first part)
+  @ W' • return(V) • comp-return(W) ->>
+  @ W' • ¡msg-return W V.
+ret₂ : %% return (second part)
+  @ W • ¡msg-return W V ->>
+  @ W • return(V).
+
+%% The two expressions `fetch W M` and `get W M` have the same operational
+%% semantics but different typing rules (in particular, `fetch` requires
+%% its subexpression to be of box type, and `get` requires its subexpression to
+%% be of diamond type). In Tom Murphy's thesis work, this was generalized
+%% to to a single `get` expression, which requires its subexpression to have
+%% some ''mobile'' type; among the mobile types are boxed types and 
+
+fetch₁ : %% fetch-push (first part)
+ @ W • eval(fetch W' M) ->> 
+ @ W • ¡msg-send W W' M.
+fetch₂ : %% fetch-push (second part)
+ @ W' • ¡msg-send W W' M ->>
+ @ W' • eval(M) • comp-return(W).
+
+get₁ : %% get-push (first part)
+ @ W • eval(get W' M) ->> 
+ @ W • ¡msg-send W W' M.
+get₂ : %% get-push (second part)
+ @ W' • ¡msg-send W W' M ->>
+ @ W' • eval(M) • comp-return(W).
+
