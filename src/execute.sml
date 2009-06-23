@@ -219,66 +219,54 @@ structure Execute :> EXECUTE = struct
 
 
   (* Right focus *)
-  fun match_atom (ctx as (U,L,O), evars) (perm,a,trms) = 
+  fun match_atom (perm,a,trms) cont (ctx as (U,L,O), evars) = 
       let 
-        fun seek (nomatch,[]) _ = raise MatchFail
-          | seek (nomatch, (b,gtrms) :: unknownmatch) (a:string,trms) =
-            let
-              val () = if a <> b then raise MatchFail else ()
-              val evars = match_terms evars (gtrms,trms)
-            in
-              (List.revAppend(nomatch,unknownmatch), evars)
-            end
-            handle MatchFail => 
-                   seek ((b,gtrms) :: nomatch, unknownmatch) (a,trms)
+        fun ordered _ _ evars = cont((U,L,tl O), evars)
+        fun linear L1 L2 evars = cont((U,List.revAppend(L1,L2),O), evars)
+        fun persistent _ _ evars = cont((U,L,O), evars)
+
+        fun run cont (didn't_match,might_match) = 
+            case might_match of
+              [] => raise MatchFail
+            | (b, gtrms) :: might_match =>
+              let 
+                val () = if a <> b then raise MatchFail else ()
+                val evars = match_terms evars (gtrms,trms)
+              in cont didn't_match might_match evars end 
+              handle MatchFail => 
+                     run cont ((b, gtrms) :: didn't_match, might_match)
+        fun check cont G = run cont ([],G)
       in
         case perm of
-          I.Ordered =>
-          let 
-            val (a,trms') = hd O
-            val O = tl O
-            val evars = match_terms evars (trms', trms)
-          in ((U,L,O),evars) end
-        | I.Linear => 
-          let
-            val (L, evars) = seek ([],L) (a,trms)
-          in ((U,L,O),evars) end
-        | I.Persistent => 
-          let
-            val (_, evars) = seek([],U) (a,trms)
-          in (ctx,evars) end
+          I.Ordered => check ordered [hd O]
+        | I.Linear => check linear L
+        | I.Persistent => check persistent U
       end
       (* handle exn => raise exn *)
 
 
-  fun match_pos trm (ctx,evars) cont = 
-      let in
+  fun match_pos trm cont (state as (ctx,evars)) = 
+      let fun pop cont = fn (ctx,evars) => cont (ctx,tl evars)
+      in
         case trm of 
-          I.Exists(_,trm) => 
-          let val (ctx,evars) = match_pos (ctx, NONE :: evars) trm
-          in cont (ctx, tl evars) end
-        | I.Fuse(trm1,trm2) =>
-          match_pos trm1 (ctx,evars) (match_pos trm2)
-        | I.Esuf(trm1,trm2) =>
-          match_pos trm1 (ctx,evars) (match_pos trm2)
-        | I.Atom atom => match_atom (ctx,evars) atom cont
+          I.Exists(_,trm1) => match_pos trm1 (pop cont) (ctx, NONE :: evars) 
+        | I.Fuse(trm1,trm2) => match_pos trm1 (match_pos trm2 cont) state
+        | I.Esuf(trm1,trm2) => match_pos trm1 (match_pos trm2 cont) state 
+        | I.Atom atom => match_atom atom cont (ctx,evars)
       end
       (* handle exn => raise exn *)
 
   (* Left focus *)
-  fun match_neg trm (ctx,evars) = 
+  fun match_neg trm (state as (ctx,evars)) = 
       let in
         case trm of 
           I.Forall(_,trm) => match_neg trm (ctx,NONE :: evars) 
-        | I.Righti(trm1,trm2) => match_pos (ctx,evars) trm1 (match_neg trm2)
-        | I.Lefti(trm1,trm2) => match_pos (ctx,evars) trm1) (match_neg trm2)
+        | I.Righti(trm1,trm2) => match_pos trm1 (match_neg trm2) state
+        | I.Lefti(trm1,trm2) => match_pos trm1 (match_neg trm2) state
         | I.Up(conc) => (ctx,evars,conc)
       end
       (* handle exn => raise exn *)
 
-  fun focus2 (S{persistent=U,linear=L,ordered=O}, rules) = 
-      let
-        fun focusrule (
 
   fun focus (S{persistent=U,linear=L,ordered=O}, rules) = 
       let 
@@ -288,7 +276,7 @@ structure Execute :> EXECUTE = struct
             let 
               val (OL,O,OR) = get_ordered_neg (OL,OR) neg_prop
               val ((U,L,O),evars,conc) = 
-                  match_neg ((U,L,O), []) neg_prop
+                  match_neg neg_prop ((U,L,O), [])
               val (U',L',O') = conc_left evars conc
             in
               if not(null O)
