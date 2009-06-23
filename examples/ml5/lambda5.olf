@@ -105,7 +105,7 @@ ret₂ : %% return (second part)
 %% its subexpression to be of box type, and `get` requires its subexpression to
 %% be of diamond type). In Tom Murphy's thesis work, this was generalized
 %% to to a single `get` expression, which requires its subexpression to have
-%% some ''mobile'' type; among the mobile types are boxed types and 
+%% some ''mobile'' type; among the mobile types are box and diamond types.
 
 fetch₁ : %% fetch-push (first part)
  @ W • eval(fetch W' M) ->> 
@@ -121,3 +121,39 @@ get₂ : %% get-push (second part)
  @ W' • ¡msg-send W W' M ->>
  @ W' • eval(M) • comp-return(W).
 
+
+%% == Example traces ==
+
+%% First, we show a "round trip" - a valid value being passed from the
+%% client to the server, and then back to the client.
+
+%trace * @ server • @ client • eval(get server (get client (box λω. lam λx.x))).
+
+%% We can escalate this as much as we want... this trace stops after 
+%% 17 steps at the point where the client is finally prepared to return
+%% the value to the server. Both the client and the server have four 
+%% local stacks at this point that are waiting to receive a value 
+%% (from anywhere; it is up to the typing invariant ensures that it is from 
+%% the "right place") and send the recieved item on to somewhere else.
+
+%trace 17 @ server • 
+          @ client • eval(get server 
+                           (get client 
+                             (get server
+                               (get client 
+                                 (get server
+                                   (get client
+                                     (get server
+                                       (get client (box λω. lam λx.x))))))))).
+
+%% Multiple worlds are not necessary, here is a one-world trace where the
+%% client continually gets from itself.
+
+%trace *
+  @ client • eval(get client (get client (get client (box λω. lam λx.x)))).
+
+%% We can have more than two worlds, as this example with worlds `a`, `b`,
+%% and `c` shows.
+
+%trace * 
+  @ a • eval(get b (get c (get b (get a (box λω. lam λx.x))))) • @ b • @ c.

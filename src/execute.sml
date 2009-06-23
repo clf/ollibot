@@ -40,7 +40,13 @@ structure Execute :> EXECUTE = struct
         | I.Root(I.Var i,trms) => T.Var'(i,map (pull_term evars) trms)
         | I.Root(I.Const c,trms) => T.Const'(c,map (pull_term evars) trms)
         | I.MVar(u,subst) => 
-          T.apply_subst (pull_subst evars subst) (valOf(List.nth(evars,u)))
+          let
+            val arg = valOf(List.nth(evars,u))
+                handle Option => 
+                       raise Err ("Evar " ^ Int.toString u ^ " not ground!")
+          in
+            T.apply_subst (pull_subst evars subst) (valOf(List.nth(evars,u)))
+          end
       (* end
       handle exn => raise exn *)
 
@@ -245,30 +251,34 @@ structure Execute :> EXECUTE = struct
       (* handle exn => raise exn *)
 
 
-  fun match_pos (ctx,evars) trm = 
+  fun match_pos trm (ctx,evars) cont = 
       let in
         case trm of 
           I.Exists(_,trm) => 
           let val (ctx,evars) = match_pos (ctx, NONE :: evars) trm
-          in (ctx, tl evars) end
+          in cont (ctx, tl evars) end
         | I.Fuse(trm1,trm2) =>
-          match_pos (match_pos (ctx,evars) trm1) trm2
+          match_pos trm1 (ctx,evars) (match_pos trm2)
         | I.Esuf(trm1,trm2) =>
-          match_pos (match_pos (ctx,evars) trm1) trm2
-        | I.Atom atom => match_atom (ctx,evars) atom
+          match_pos trm1 (ctx,evars) (match_pos trm2)
+        | I.Atom atom => match_atom (ctx,evars) atom cont
       end
       (* handle exn => raise exn *)
 
   (* Left focus *)
-  fun match_neg (ctx,evars) trm = 
+  fun match_neg trm (ctx,evars) = 
       let in
         case trm of 
-          I.Forall(_,trm) => match_neg (ctx,NONE :: evars) trm
-        | I.Righti(trm1,trm2) => match_neg (match_pos (ctx,evars) trm1) trm2
-        | I.Lefti(trm1,trm2) => match_neg (match_pos (ctx,evars) trm1) trm2
+          I.Forall(_,trm) => match_neg trm (ctx,NONE :: evars) 
+        | I.Righti(trm1,trm2) => match_pos (ctx,evars) trm1 (match_neg trm2)
+        | I.Lefti(trm1,trm2) => match_pos (ctx,evars) trm1) (match_neg trm2)
         | I.Up(conc) => (ctx,evars,conc)
       end
       (* handle exn => raise exn *)
+
+  fun focus2 (S{persistent=U,linear=L,ordered=O}, rules) = 
+      let
+        fun focusrule (
 
   fun focus (S{persistent=U,linear=L,ordered=O}, rules) = 
       let 
@@ -289,7 +299,7 @@ structure Execute :> EXECUTE = struct
             end
             handle MatchFail => NONE
                  | Option =>
-                   raise ErrPos(p,"Rule " ^ r ^ " not range restricted!")
+                   raise ErrPos(p,"OPTION!!!")
 
         (* Try to focus at a particular place on any rule *)
         fun focuspos (U,L,OL,OR) rules = 

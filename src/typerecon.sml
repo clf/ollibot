@@ -296,21 +296,21 @@ structure TypeRecon = struct
               let in
                 case e2i_term (trm, vars) of
                   ((PT_Root(I.Const a),trms), I.Prop) => 
-                  I.Atom(I.Persistent,a,trms)
+                  I.Atom(I.Persistent,a,rev trms)
                 | _ => raise Err("Banged not positive proposition\n")
               end
             | E.Gnab(p,trm) =>
               let in
                 case e2i_term (trm, vars) of
                   ((PT_Root(I.Const a),trms), I.Prop) => 
-                  I.Atom(I.Linear,a,trms)
+                  I.Atom(I.Linear,a,rev trms)
                 | _ => raise Err("Gnabed not positive proposition\n")
               end
             | trm =>
               let in
                 case e2i_term (trm, vars) of
                   ((PT_Root(I.Const a),trms), I.Prop) => 
-                  I.Atom(I.Ordered,a,trms)
+                  I.Atom(I.Ordered,a,rev trms)
                 | _ => raise Err("Subterm not positive proposition\n")
               end
 
