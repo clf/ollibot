@@ -3,10 +3,8 @@
 
 == Compiling Ollibot ==
 
-Compiling Ollibot requires a recent version of MLton, which can be obtained
-from http://mlton.org/ 
-
-You can use make to compile either the ollibot command-line interface, web
+Compiling Ollibot requires a recent version of MLton and SML of New Jersey.
+You can use make to compile either the Ollibot command-line interface, web
 interface, or both.
 
 Make only the command-line interface:
