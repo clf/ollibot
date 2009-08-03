@@ -38,5 +38,3 @@ term.sml
 context.sml
 execute.sml
 
-frontend.sml
-frontendloop.sml

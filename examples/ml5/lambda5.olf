@@ -4,7 +4,8 @@
 
 %% This is a straightforward transcription of Figure 8 from ''A Symmetric
 %% Modal Lambda Calculus for Distributed Computing'' (Tech report 
-%% CMU-CS-04-105). It is also presented in the same form in the paper
+%% CMU-CS-04-105) into substructural operational semantics as described
+%% by Simmons & Pfenning. It is also presented in the same form in the paper
 %% of the same name published in LICS 2004 (it is Figure 6).
 
 %% We will represent different "locations" with atomic propositions `@ W` in
@@ -58,7 +59,7 @@
   @ W • eval(M) • comp(here □).
 ♢i-r : %% here-reduce
   @ W • return(V) • comp(here □) ->>
-  @ W • ∃L. return(there W L) • !bind W L V. %% Bindings are located
+  @ W • ∃L. return(there W L) • !bind W L V. %% Bindings are located at a world
 
 ♢e-p : %% letd-push
   @ W • eval(letdia M λω.λx.N ω x) ->>

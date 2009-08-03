@@ -5,58 +5,60 @@ structure WikiCode = struct
   structure I = IntSyn
   val concatlines = String.concatWith "\n"
 
-  type state = I.tp MapS.map * I.rule list
-
   (* === PART 1: PARSING AND UPDATING (all Ollibot, no HTML) === *)
 
-  fun load_code (state,s) =
+  fun load_code (st : Signat.state,s) =
       let 
         val tokens = Parse.string_to_tokenstream s
         fun step (rules, decl) =
             case decl of 
               I.RULE rule => (rule :: rules) | _ => rules
-        fun loop ((signat,rules), tokens) = 
+        fun loop (st, tokens) = 
             case Parsing.parseWithStream Parse.decl_parser tokens of
               SOME(decl, tokens) =>
               let
-                val (signat, decl) = TypeRecon.load_decl (signat, decl)
-                val rules = step (rules, decl)
-              in loop ((signat, rules), tokens) end
+                val st = MorphSignat.update (MorphSignat.recon(decl, st))
+              in loop (st, tokens) end
             | NONE =>
               (case Stream.force tokens of
-                 Stream.Nil => (signat,rules)
+                 Stream.Nil => st
                | Stream.Cons((tok,pos),_) => 
                  raise ErrPos(pos, 
                               "Could not parse declaration beginning with " ^
                               Parse.token_to_string tok))
-      in loop (state,tokens) end
+      in loop (st, tokens) end
 
-  fun load_exec ((signat,rules), s) = 
+  fun load_exec (st : Signat.state, s) = 
       let 
         val tokens = Parse.string_to_tokenstream s
       in
         case Parsing.parseWithStream Parse.decl_parser tokens of
           SOME(decl, tokens) =>
           let
-            val (signat, decl) = TypeRecon.load_decl (signat, decl)
-          in 
-            case decl of 
-              I.RULE rule => ((signat,rule :: rules),([],0))
-            | I.EXEC (p,n,pos_prop) => 
-              let val (ctx,n) = Execute.execute(pos_prop, rules, n)
-              in ((signat, rules),([ctx],n)) end
-            | I.TRACE (p,n_opt,pos_prop) => 
+            (* Perform type reconstruction; record any new constants *)
+            val (decl, st) = MorphSignat.recon(decl, st) 
+                             
+            (* Load declaration into signature *)
+            val st = MorphSignat.update (decl, st)
+          in
+            (* Run any executable content of declaration *)
+            case decl of
+              I.EXEC (_,n_opt,pos_prop) => 
+              let val (ctx,n) = Execute.execute(pos_prop, st, n_opt)
+              in (st,([ctx],n)) end
+            | I.TRACE (_,n_opt,pos_prop) => 
               let fun loop (trace, n, 0) ctxs = (rev ctxs,n)
                     | loop (trace, n, m) ctxs =
-                        case Stream.force trace of
-                          Stream.Nil => (rev ctxs,n)
-                        | Stream.Cons(ctx, trace) =>
-                          loop (trace, n, m-1) (ctx :: ctxs)
+                      case Stream.force trace of
+                        Stream.Nil => (rev ctxs,n)
+                      | Stream.Cons(ctx, trace) =>
+                        loop (trace, n, m-1) (ctx :: ctxs)
                 val n : int = case n_opt of NONE => 500 
                                           | SOME n => 
                                             if n > 500 then 500 else n
-                val trace = Execute.trace(pos_prop, rules)
-              in ((signat,rules), loop (trace,n,n+1) []) end
+                val trace = Execute.trace(pos_prop, st)
+              in (st, loop (trace, n, n + 1) []) end
+            | _ => (st, ([],0))
           end
         | NONE => raise Err("Could not read a declaration!")
       end
@@ -85,38 +87,38 @@ structure WikiCode = struct
           trace_to_code cs (line :: lines)
         end
 
-  fun process_code (state : state,code) = 
+  fun process_code (st : Signat.state,code) = 
       let val codet = "<div class=\"code\">\n" ^ preformat code ^ "</div>\n"
       in
-        (load_code(state,code), codet)
+        (load_code(st,code), codet)
         handle Global.Error(NONE,msg) => 
-               (state, 
+               (st, 
                 codet ^ "\n<div class=\"error\">Error: " ^ msg ^ "</div>\n")
              | Global.Error(SOME p,msg) => 
-               (state, 
+               (st, 
                 codet ^ "\n<div class=\"error\">Error: " ^ msg ^ 
                 " on line " ^ Int.toString(Pos.getline p) ^ "</div>\n")
              | exn => 
-               (state, 
+               (st, 
                 codet ^ "\n<div class=\"error\">Unexpected error " ^
                 exnName exn ^ ": " ^ exnMessage exn ^ "</div>\n")
       end
 
-  fun process_exec (state,code) = 
+  fun process_exec (st : Signat.state,code) = 
       let val codet = "<div class=\"code\">\n" ^ preformat code ^ "</div>\n"
       in let 
-          val (state,(ctxs,n)) = load_exec(state,code)
+          val (st,(ctxs,n)) = load_exec(st,code)
           val trace = trace_to_code (map Context.to_strings ctxs) []
-        in (state, codet ^ trace) end
+        in (st, codet ^ trace) end
          handle Global.Error(NONE,msg) => 
-                (state, 
+                (st, 
                  codet ^ "\n<div class=\"error\">Error: " ^ msg ^ "</div>\n")
               | Global.Error(SOME p,msg) => 
-                (state, 
+                (st, 
                  codet ^ "\n<div class=\"error\">Error: " ^ msg ^ 
                  " on line " ^ Int.toString(Pos.getline p) ^ "</div>\n")
               | exn => 
-                (state, 
+                (st, 
                  codet ^ "\n<div class=\"error\">Unexpected error " ^
                  exnName exn ^ ": " ^ exnMessage exn ^ "</div>\n")
       end
@@ -152,41 +154,41 @@ structure WikiCode = struct
               | line :: rest => (decl @ [line], rest)
             end
 
-        fun run state [] = ()
-          | run state (lines as line :: _) =
+        fun run st [] = ()
+          | run st (lines as line :: _) =
             if StringUtil.matchhead "%" (StringUtil.trim line)
             then (if StringUtil.matchhead "%%" (StringUtil.trim line)
-                  then run_text state lines
-                  else run_percentdecl state lines)
+                  then run_text st lines
+                  else run_percentdecl st lines)
             else if StringUtil.trim line = ""
-            then run_text state lines
-            else run_code state lines
+            then run_text st lines
+            else run_code st lines
 
-        and run_code state lines = 
+        and run_code st lines = 
             let
               val (code,lines) = collect_code lines
-              val (state,output) = 
-                  process_code(state, StringUtil.trim(concatlines code))
-            in send output; run state lines end
+              val (st,output) = 
+                  process_code(st, StringUtil.trim(concatlines code))
+            in send output; run st lines end
 
-        and run_text state lines = 
+        and run_text st lines = 
             let
               val (text,lines) = collect_text lines
               val trimpercent =
                   StringUtil.losespecl 
                       (fn c => StringUtil.whitespec c orelse c = #"%") 
               val text = concatlines (map trimpercent text)
-            in send (wikify_content text); run state lines end
+            in send (wikify_content text); run st lines end
 
-        and run_percentdecl state lines = 
+        and run_percentdecl st lines = 
             let 
               val (decl,lines) = collect_percentdecl lines
-              val (state,output) = 
-                  process_exec(state, StringUtil.trim(concatlines decl))
-            in send output; run state lines end
+              val (st,output) = 
+                  process_exec(st, StringUtil.trim(concatlines decl))
+            in send output; run st lines end
 
       in
-        run (MapS.empty, []) lines
+        run Signat.empty lines
       end
 
   fun wikify_lolf (send : string -> unit) content = 
@@ -223,38 +225,38 @@ structure WikiCode = struct
               | line :: rest => (decl @ [line], rest)
             end
 
-        fun run state [] = ()
-          | run state (lines as line :: _) =
+        fun run (st : Signat.state) [] = ()
+          | run st (lines as line :: _) =
             if not (StringUtil.matchhead ">" line)
-            then run_text state lines
+            then run_text st lines
             else if StringUtil.matchhead "%"
                        (StringUtil.trim (String.extract(line,1,NONE)))
-            then run_percentdecl state lines
-            else run_code state lines
+            then run_percentdecl st lines
+            else run_code st lines
 
         and gather code = 
             concatlines (map (fn line => (String.extract(line,2,NONE))) code)
 
-        and run_code state lines = 
+        and run_code (st : Signat.state) lines = 
             let
               val (code,lines) = collect_code lines
-              val (state,output) = process_code(state, gather code)
-            in send output; run state lines end
+              val (st,output) = process_code(st, gather code)
+            in send output; run st lines end
 
-        and run_text state lines = 
+        and run_text (st : Signat.state) lines = 
             let
               val (text,lines) = collect_text lines
               val text = concatlines text
-            in send (wikify_content text); run state lines end
+            in send (wikify_content text); run st lines end
 
-        and run_percentdecl state lines = 
+        and run_percentdecl (st : Signat.state) lines = 
             let 
               val (decl,lines) = collect_percentdecl lines
-              val (state,output) = process_exec(state, gather decl)
-            in send output; run state lines end
+              val (st,output) = process_exec(st, gather decl)
+            in send output; run st lines end
 
       in
-        run (MapS.empty, []) lines
+        run Signat.empty lines
       end
 
 
