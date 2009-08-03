@@ -42,3 +42,4 @@ e▷# : e▷ • # ->>     1 • h▷ • #.
 %% The next line would take 47,176,870 steps to run to completion if we did
 %% not limit it to 200 steps here.
 %trace 200 # • a▷ • #.
+%exec 4000 # • a▷ • #.

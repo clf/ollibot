@@ -20,6 +20,7 @@ in
 end
 
 $(SML_LIB)/basis/basis.mlb
+$(SML_LIB)/basis/sml-nj.mlb
 
 global-sig.sml
 global.sml
@@ -29,9 +30,10 @@ parse.sml
 
 names.sml
 intsyn.sml
-
 typerecon.sml
 
+signat.sml
+morphsignat.sml
 term.sml
 context.sml
 execute.sml

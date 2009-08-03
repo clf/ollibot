@@ -1,9 +1,9 @@
 signature EXECUTE = sig
 
   val trace :
-      IntSyn.pos_prop * IntSyn.rule list -> Context.context Stream.stream
+      IntSyn.pos_prop * Signat.state -> Context.context Stream.stream
   val execute : 
-      IntSyn.pos_prop * IntSyn.rule list * int option -> Context.context * int
+      IntSyn.pos_prop * Signat.state * int option -> Context.context * int
 
 end
 
@@ -16,16 +16,34 @@ structure Execute :> EXECUTE = struct
   structure I = IntSyn
   structure T = Term
    
-  datatype consume = Left | Right
+  type atom = string * T.term list
   exception MatchFail
   exception Unimplemented
   exception Invariant
 
+  (* == Some preliminary functions == *)
 
   val gensymb = 
       let val r = ref 0 
       in fn () => (r := !r + 1; "d" ^ Int.toString (!r)) end
  
+  val eqatom : atom -> atom -> bool = 
+   fn (a,  trms) =>
+   fn (a', trms') =>
+      a = a' andalso ListPair.all T.eq (trms,trms')
+
+  (* insertNoDup : atom list * atom list -> atom list * bool
+   * Takes every item in the second list and inserts it into the first list
+   * if it didn't already exist. Returns "true" if there was something new
+   * in the second list. *)
+  fun insertNoDup (U,newU) = 
+      let fun loop U [] notsat = (U,notsat)
+            | loop U (atom :: newU) notsat = 
+              if List.exists (eqatom atom) U
+              then loop U newU notsat
+              else loop (atom :: U) newU true
+      in loop U newU false end
+
   (* == PART 1: TERM MATCHING == *)
   (* Currently done very simplisticly, needs to be extended 
    * at least to handle a non-identity pattern substitution
@@ -189,6 +207,8 @@ structure Execute :> EXECUTE = struct
 
   (* == PART 3: FOCUSED PROOF SEARCH == *)
   (* Traverse rules to match the context and derive conclusions *)
+  (* Stateless except for the ans in match_neg that is permitted to store 
+   * solutions in order to do find-all-possibilities saturating search. *)
  
   (* Left inversion *)
   fun conc_left evars trm = 
@@ -242,8 +262,6 @@ structure Execute :> EXECUTE = struct
         | I.Linear => check linear L
         | I.Persistent => check persistent U
       end
-      (* handle exn => raise exn *)
-
 
   fun match_pos trm cont (state as (ctx,evars)) = 
       let fun pop cont = fn (ctx,evars) => cont (ctx,tl evars)
@@ -254,40 +272,36 @@ structure Execute :> EXECUTE = struct
         | I.Esuf(trm1,trm2) => match_pos trm1 (match_pos trm2 cont) state 
         | I.Atom atom => match_atom atom cont (ctx,evars)
       end
-      (* handle exn => raise exn *)
 
   (* Left focus *)
-  fun match_neg trm (state as (ctx,evars)) = 
+  fun match_neg trm ans (state as (ctx,evars)) = 
       let in
         case trm of 
-          I.Forall(_,trm) => match_neg trm (ctx,NONE :: evars) 
-        | I.Righti(trm1,trm2) => match_pos trm1 (match_neg trm2) state
-        | I.Lefti(trm1,trm2) => match_pos trm1 (match_neg trm2) state
-        | I.Up(conc) => (ctx,evars,conc)
+          I.Forall(_,trm) => match_neg trm ans (ctx,NONE :: evars) 
+        | I.Righti(trm1,trm2) => match_pos trm1 (match_neg trm2 ans) state
+        | I.Lefti(trm1,trm2) => match_pos trm1 (match_neg trm2 ans) state
+        | I.Up(conc) => ans (ctx,evars,conc)
       end
-      (* handle exn => raise exn *)
-
 
   fun focus (S{persistent=U,linear=L,ordered=O}, rules) = 
       let 
 
         (* Try to focus at a particular place on a particular rule *)
-        fun focusrule (U,L,OL,OR) (p,r,neg_prop) =
+        fun focusrule (U,L,OL,OR) neg_prop =
             let 
               val (OL,O,OR) = get_ordered_neg (OL,OR) neg_prop
               val ((U,L,O),evars,conc) = 
-                  match_neg neg_prop ((U,L,O), [])
+                  match_neg neg_prop (fn x => x) ((U,L,O), [])
               val (U',L',O') = conc_left evars conc
             in
               if not(null O)
-              then raise ErrPos(p, "Prefocusing error (internal), rule " ^ r)
-              else SOME(S{persistent = U' @ U,
+              then raise Err "Prefocusing error (internal)"
+              else SOME(S{persistent = #1 (insertNoDup(U,U')),
                           linear = L' @ L, 
                           ordered = rev OL @ O' @ OR})
             end
             handle MatchFail => NONE
-                 | Option =>
-                   raise ErrPos(p,"OPTION!!!")
+                 | exn => raise Err "Unexpected exception in focus (internal)"
 
         (* Try to focus at a particular place on any rule *)
         fun focuspos (U,L,OL,OR) rules = 
@@ -301,35 +315,71 @@ structure Execute :> EXECUTE = struct
         focuspos (U,L,[],O) rules
       end
 
-  fun trace (pos_prop, rules) = 
+  (* == PART 4: SATURATING PROOF SEARCH == *)
+  
+  fun immediate_consequence (U, rules) = 
+      let 
+        val answers : atom list list ref = ref []
+        fun ans (_,evars,conc) = 
+            let val (U,_,_) = conc_left evars conc 
+            in answers := U :: !answers; raise MatchFail
+            end
+        fun loop [] = List.concat (!answers)
+          | loop (neg_prop :: rules) = 
+            match_neg neg_prop ans ((U,[],[]), [])
+            handle MatchFail => loop rules
+      in loop rules end
+
+  fun saturate (S{persistent=U,linear=L,ordered=O}, rules) = 
       let
+        fun loop U = 
+            let 
+              val newfacts = immediate_consequence (U, rules)
+              val (U',changed) = insertNoDup(U,newfacts)
+            in if changed then loop U' else U' end
+      in S{persistent=loop U, linear=L, ordered=O} end 
+
+  (* == PART 5: EXECUTION == *)
+  fun trace (pos_prop, st : Signat.state) = 
+      let
+        val saturating_rules = #saturating_rules st
+        val linear_rules = #linear_rules st
+        fun complete ctx = saturate(ctx,saturating_rules)
         val (U,L,O) = conc_left [] pos_prop
-        val ctx = S{persistent=U, linear=L, ordered=O}
+        val ctx = complete(S{persistent=U, linear=L, ordered=O})
         fun stream ctx () =
-            case focus(ctx, rules) of
+            case focus(ctx, linear_rules) of
               NONE => Nil
-            | SOME ctx' => Cons(ctx', delay (stream ctx'))
+            | SOME ctx' => 
+              let val ctx'' = complete ctx' 
+              in Cons(ctx'', delay (stream ctx'')) end
       in
         delay(fn () => Cons(ctx, delay(stream ctx)))
       end
 
-  fun execute (pos_prop, rules, stop) = 
+  fun execute (pos_prop, st : Signat.state, stop) = 
       let
+        val saturating_rules = #saturating_rules st
+        fun complete ctx = saturate(ctx,saturating_rules)
         val (U,L,O) = conc_left [] pos_prop
-        val ctx = S{persistent=U, linear=L, ordered=O}
+        val ctx = complete(S{persistent=U, linear=L, ordered=O})
 
         (* Loop until no more steps can be taken *)
         fun loop n ctx = 
-            case focus(ctx, rules) of
-              NONE => (ctx,n)
-            | SOME ctx => loop (n+1) ctx
+            let val ctx = complete ctx in
+              case focus(ctx, #linear_rules st) of
+                NONE => (ctx,n)
+              | SOME ctx' => loop (n+1) ctx'
+            end
 
         (* Loop for a maximum number of steps *)
-        fun loopFor m 0 ctx = (ctx,m)
+        fun loopFor m 0 ctx = (complete ctx,m)
           | loopFor m n ctx = 
-            case focus(ctx, rules) of
-              NONE => (ctx,m-n)
-            | SOME ctx => loopFor m (n-1) ctx
+            let val ctx = complete ctx in
+              case focus(ctx, #linear_rules st) of
+                NONE => (ctx,m-n)
+              | SOME ctx => loopFor m (n-1) ctx
+            end
       in
         (case stop of NONE => loop 0 | SOME m => loopFor m m) ctx
       end
