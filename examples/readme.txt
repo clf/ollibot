@@ -25,3 +25,4 @@ A formalization of ''A Symmetric Modal Lambda Calculus for Distributed
 Computing'' by Murphy et al., which describes a mobile programming langauge.
 A subsequent version of this langauge was implemented in Tom Murphy VII's
 thesis work as a distributed web programming langauge.
+
