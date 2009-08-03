@@ -11,7 +11,7 @@ structure Global :> GLOBAL = struct
 	   OK 
 	 | ABORT  
 	   
-  val versionstring = "OLLIBOT_VERSION"
+  val versionstring = "0.1"
                       
   val print = print
   val liveprint = ignore

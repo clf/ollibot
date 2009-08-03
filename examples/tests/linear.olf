@@ -10,3 +10,7 @@ r : ¡has X Y • ¡has Y Z • ¡has Z X ->> !cycle X Y Z.
 
 %trace * ¡has a b • ¡has b c • ¡has c a • ¡has b b₁ • ¡has b₁ b₂ • ¡has b₂ b.
 %trace * ¡has a b • ¡has a c • ¡has c b • ¡has b a.
+
+r : ¡item X • ¡item Y • !matching X Y ->> !matching X Y.
+
+%trace * ¡item a • ¡item b • ¡item c • ¡item d • ¡item e • ¡item f • !matching a f • !matching e c • !matching b d.

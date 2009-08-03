@@ -18,3 +18,10 @@ Contains implementations of several types of automata encoded in a number of
 styles, such as [[automata/parity.olf|determinstic finite automata]] for 
 evaluating parity, [[automata/parens.olf|push-down automata]] for checking
 matching parentheses, and several types of turing machines.
+
+=== [[ml5/lambda5.olf | Lambda 5]] ===
+
+A formalization of ''A Symmetric Modal Lambda Calculus for Distributed 
+Computing'' by Murphy et al., which describes a mobile programming langauge.
+A subsequent version of this langauge was implemented in Tom Murphy VII's
+thesis work as a distributed web programming langauge.

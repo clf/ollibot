@@ -1,4 +1,17 @@
-structure Names = struct
+signature NAMES = sig
+
+  (* Takes a list of names and an (optional?) suggestion, returns 
+   * a name that is not in the list *)
+  val new_name : (string list * string) -> string
+  val new_name_opt : (string list * string option) -> string
+
+  (* Either pulls the nth name out of a list, or makes up a new one (does not
+   * raise an error) *)
+  val nth : (string list * int) -> string
+
+end
+
+structure Names :> NAMES = struct
 
   fun new_name (vars,x) =
       let 

@@ -1,17 +1,4 @@
-local
-  util/utf8.mlb
-  util/util.mlb
-  util/stream.mlb
-  parse/parse.mlb
-in
-  structure ListUtil
-  structure Parsing
-  structure Pos
-  structure StringUtil
-  structure Stream
-  structure StreamUtil
-  structure UTF8Util
-end
+sources.mlb 
 
 local
   server/web.mlb
@@ -21,28 +8,7 @@ in
   functor Web
 end
 
-local
-  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
-in
-  functor RedBlackMapFn
-end
-
-$(SML_LIB)/basis/basis.mlb
-
-global-sig.sml
-global.sml
-
-extsyn.sml
-parse.sml
-
-names.sml
-intsyn.sml
-
-typerecon.sml
-
-term.sml
-context.sml
-execute.sml
+sources.mlb
 
 wiki.sml
 wikicode.sml

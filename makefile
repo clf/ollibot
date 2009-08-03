@@ -13,4 +13,4 @@ server-mlton:
 	-mlton -default-ann 'allowFFI true' -default-ann 'sequenceNonUnit warn' -output bin/olliserver escape-src/server.mlb src/server/raw-network.c
 
 commandline-mlton:
-	-mlton -default-ann 'sequenceNonUnit warn' -output bin/ollibot escape-src/sources.mlb 
+	-mlton -default-ann 'sequenceNonUnit warn' -output bin/ollibot escape-src/commandline.mlb 
