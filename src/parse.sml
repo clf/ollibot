@@ -78,11 +78,19 @@ structure Parse :> PARSE = struct
             fn " " => true | "\t" => true | "\n" => true | _ => false
         val idpart = repeat1 (satisfy sep) wth concat
         val linecomment = 
-            literal "%" >> literal "%" >> 
-            repeat (satisfy (fn "\n" => false | _ => true)) >> literal "\n" >>
+            literal "%" >> (literal "%" || literal " ") >> 
+            repeati (satisfy (fn "\n" => false | _ => true)) >> literal "\n" >>
             succeed " "
+        fun multicomment ps = 
+            !!(string["%","{"]) -- (fn (_,p) => multicommentRest p ps)
+        and multicommentRest p ps = 
+            alt [multicomment (p :: ps),
+                 string["}","%"] -- (fn _ => case ps of [] => succeed " " 
+                                                      | (p' :: ps) => multicommentRest p' ps),
+                 any -- (fn _ => multicommentRest p ps),
+                 done () -- (fn _ => raise ErrPos(p,"Non-terminated multiline comment")) ]
         val tokenparser = 
-            alt [linecomment, 
+            alt [linecomment, multicomment [],
                  literal ".", literal "(", literal ")", literal ",",
                  literal "!",
                  literal "λ", literal "∀", literal "∃", 
