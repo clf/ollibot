@@ -160,14 +160,14 @@ structure TypeRecon = struct
             in 
               ST.unify tp ST.Prop'; 
               if MapS.isEmpty fv then E.EXEC(p,n,trm)
-              else raise Match (* XXX needs error message *)
+              else raise Err "This %exec includes free variables, this is not allowed."
             end
           | learntypes (E.TRACE(p,n,trm)) = 
             let val (fv, tp) = vars_and_types(trm,MapS.empty)
             in 
               ST.unify tp ST.Prop'; 
               if MapS.isEmpty fv then E.TRACE(p,n,trm)
-              else raise Match (* XXX needs error message *)
+              else raise Err "This %trace include free variables, this is not allowed." 
             end
 
         val closed_decl = learntypes decl
