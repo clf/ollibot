@@ -1,0 +1,6 @@
+nickel, nickel, nickel, nickel, nickel -o quarter.
+nickel, nickel -o dime.
+quarter -o dime, dime, nickel.
+dime, dime, dime, dime, dime -o quarter, quarter.
+
+%trace 25 quarter, quarter, quarter.

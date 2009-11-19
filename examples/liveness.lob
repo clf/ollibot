@@ -1,0 +1,3 @@
+!item(A), !item(B), A <> B -o !pair A B.
+
+%trace * !item(1), !item(2), !item(3).
