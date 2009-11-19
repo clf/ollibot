@@ -31,7 +31,7 @@ structure Context :> CONTEXT = struct
                 String.concatWith " " (map Term.to_string_parens trms) ^ post
 
   fun to_string (S{ordered,linear,persistent}) = 
-      String.concatWith ", " (map (mapper "!" "") persistent @
+      String.concatWith ",\n   " (map (mapper "!" "") persistent @
                                map (mapper "" "") linear @
                                map (mapper "?" "") ordered)
       
