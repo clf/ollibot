@@ -1,9 +1,0 @@
-r : !path X Y • !path Y Z ->> !path X Z.
-
-%trace * !path a b  • !path b c  • !path c d  • !path d e  • !path e f.
-%exec * !path a b  • !path b c  • !path c d  • !path d e  • !path e f.
-
-r2 : ¡at(s(N)) ->> ¡at(N) • !path (s N) N.
-
-%trace * ¡at(s(s(s(s(s(s(s(z)))))))).
-%exec * ¡at(s(s(s(s(s(s(s(z)))))))).

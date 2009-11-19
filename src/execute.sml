@@ -136,14 +136,7 @@ structure Execute :> EXECUTE = struct
   fun get_ordered_atom O (perm,a:string,trms) =
       (* let in *)
         case perm of
-          I.Ordered => 
-          let
-            val (b,gtrms) = hd O
-                handle Empty => raise MatchFail
-          in 
-            if a = b then ([(a,gtrms)], tl O) else raise MatchFail
-          end
-        | _ => ([], O)
+          _ => ([], O)
       (* end
       handle exn => raise exn *)
 
@@ -153,15 +146,13 @@ structure Execute :> EXECUTE = struct
         case trm of
           I.Exists(_,trm) => get_ordered_left OL trm
         | I.Atom atom => get_ordered_atom OL atom
-        | I.Fuse(trm1,trm2) =>
+        | I.Eq atom => ([], OL)
+        | I.Neq atom => ([], OL)
+        | I.Unit => ([], OL)
+        | I.Conj(trm1,trm2) =>
           let 
             val (O2,OL) = get_ordered_left OL trm2
             val (O1,OL) = get_ordered_left OL trm1
-          in (O1 @ O2, OL) end
-        | I.Esuf(trm1,trm2) => 
-          let 
-            val (O1,OL) = get_ordered_left OL trm1
-            val (O2,OL) = get_ordered_left OL trm2
           in (O1 @ O2, OL) end
       (* end
       handle exn => raise exn *)
@@ -171,15 +162,13 @@ structure Execute :> EXECUTE = struct
         case trm of
           I.Exists(_,trm) => get_ordered_right OR trm
         | I.Atom atom => get_ordered_atom OR atom
-        | I.Fuse(trm1,trm2) =>
+        | I.Eq atom => ([], OR)
+        | I.Neq atom => ([], OR)
+        | I.Unit => ([], OR)
+        | I.Conj(trm1,trm2) =>
           let 
             val (O1,OR) = get_ordered_right OR trm1
             val (O2,OR) = get_ordered_right OR trm2
-          in (O1 @ O2, OR) end
-        | I.Esuf(trm1,trm2) => 
-          let 
-            val (O2,OR) = get_ordered_right OR trm2
-            val (O1,OR) = get_ordered_right OR trm1
           in (O1 @ O2, OR) end
       (* end
       handle exn => raise exn *)
@@ -189,14 +178,9 @@ structure Execute :> EXECUTE = struct
       (* let in *)
         case trm of 
           I.Forall(_,trm) => get_ordered_neg (OL,OR) trm
-        | I.Righti(trm1,trm2) =>
+        | I.Lolli(trm1,trm2) =>
           let 
             val (OA,OR) = get_ordered_right OR trm1
-            val (OL,OB,OR) = get_ordered_neg (OL,OR) trm2
-          in (OL,OA @ OB,OR) end
-        | I.Lefti(trm1, trm2) =>
-          let 
-            val (OA,OL) = get_ordered_left OL trm1
             val (OL,OB,OR) = get_ordered_neg (OL,OR) trm2
           in (OL,OA @ OB,OR) end
         | I.Up(conc) => (OL,[],OR)
@@ -216,16 +200,14 @@ structure Execute :> EXECUTE = struct
         (* XXX CAN ONLY HANDLE NEW CONSTANTS OF BASE TYPE! *)
         (* XXX Not checking for namespace conflicts... *)
         I.Exists(_,trm) => conc_left (SOME(T.Const'(gensymb(),[]))::evars) trm
-      | I.Fuse(trm1,trm2) => 
+      | I.Eq(_,_) => raise Err "Cannot have equalities in the conclusion" 
+      | I.Neq(_,_) => raise Err "Cannot have equalities in the conclusion" 
+      | I.Unit => ([], [], [])
+      | I.Conj(trm1,trm2) => 
         let 
           val (U1,L1,O1) = conc_left evars trm1
           val (U2,L2,O2) = conc_left evars trm2
         in (U1 @ U2, L1 @ L2, O1 @ O2) end
-      | I.Esuf(trm1,trm2) => 
-        let 
-          val (U1,L1,O1) = conc_left evars trm1
-          val (U2,L2,O2) = conc_left evars trm2
-        in (U1 @ U2, L1 @ L2, O2 @ O1) end
       | I.Atom(perm,a,trms) =>
         let
           val trms = map (pull_term evars) trms
@@ -234,7 +216,6 @@ structure Execute :> EXECUTE = struct
           case perm of 
             I.Persistent => ([trm],[],[])
           | I.Linear     => ([],[trm],[])
-          | I.Ordered    => ([],[],[trm])
         end
 
 
@@ -258,8 +239,7 @@ structure Execute :> EXECUTE = struct
         fun check cont G = run cont ([],G)
       in
         case perm of
-          I.Ordered => check ordered [hd O]
-        | I.Linear => check linear L
+          I.Linear => check linear L
         | I.Persistent => check persistent U
       end
 
@@ -268,8 +248,12 @@ structure Execute :> EXECUTE = struct
       in
         case trm of 
           I.Exists(_,trm1) => match_pos trm1 (pop cont) (ctx, NONE :: evars) 
-        | I.Fuse(trm1,trm2) => match_pos trm1 (match_pos trm2 cont) state
-        | I.Esuf(trm1,trm2) => match_pos trm1 (match_pos trm2 cont) state 
+        | I.Unit => cont(ctx,evars)
+        | I.Conj(trm1,trm2) => match_pos trm1 (match_pos trm2 cont) state
+        | I.Eq(t1,t2) => if T.eq(pull_term evars t1, pull_term evars t2)
+                         then cont(ctx,evars) else raise MatchFail
+        | I.Neq(t1,t2) => if T.eq(pull_term evars t1, pull_term evars t2)
+                         then raise MatchFail else cont(ctx,evars) 
         | I.Atom atom => match_atom atom cont (ctx,evars)
       end
 
@@ -278,8 +262,7 @@ structure Execute :> EXECUTE = struct
       let in
         case trm of 
           I.Forall(_,trm) => match_neg trm ans (ctx,NONE :: evars) 
-        | I.Righti(trm1,trm2) => match_pos trm1 (match_neg trm2 ans) state
-        | I.Lefti(trm1,trm2) => match_pos trm1 (match_neg trm2 ans) state
+        | I.Lolli(trm1,trm2) => match_pos trm1 (match_neg trm2 ans) state
         | I.Up(conc) => ans (ctx,evars,conc)
       end
 

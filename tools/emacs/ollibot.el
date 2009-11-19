@@ -15,7 +15,8 @@ encoding and text input mode."
 ;; Make the universal change to presume that all subprocess communication UTF-8
 ;; This could be problematic on, for instance, unix systems, so it would be
 ;; better if we worked out subprocess communication and used that instead.
-(setq-default default-process-coding-system (cons 'utf-8 'utf-8))
+;;(setq-default default-process-coding-system (cons 'utf-8 'utf-8))
+;;(setq-default default-process-coding-system (cons 'ascii 'ascii))
 
 ;; Set up the quail input-method for Ollibot
 (require 'quail)
@@ -44,7 +45,7 @@ The purpose of this input method is to edit .olf programs."
  ("\\fuse" ?•)
  ("\\esuf" ?◦)
 
- ;; Everything else is cut and pasted from 
+ ;; Everything else is originally cut and pasted from 
  ;; /Applications/Emacs.app/Contents/Resources/leim/quail/latin-ltx.el
  ("!`" ?¡)
  ("\\pounds" ?£) ;; ("{\\pounds}" ?£)
@@ -901,8 +902,9 @@ The purpose of this input method is to edit .olf programs."
  ("\\Bbb{P}" ?ℙ)			; Also sometimes \mathbb.
  ("\\Bbb{R}" ?ℝ)
  ("\\Bbb{Z}" ?ℤ)
- ("--" ?–)
- ("---" ?—)
+;;; Annoying when you want to make long dashes
+;;; ("--" ?–)
+;;; ("---" ?—)
  ("~" ? )				; nbsp
  ("\\mu" ?μ)
  ("\\rho" ?ρ)

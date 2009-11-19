@@ -31,21 +31,21 @@ structure Context :> CONTEXT = struct
                 String.concatWith " " (map Term.to_string_parens trms) ^ post
 
   fun to_string (S{ordered,linear,persistent}) = 
-      String.concatWith " • " (map (mapper "!" "") persistent @
-                               map (mapper "¡" "") linear @
-                               map (mapper "" "") ordered)
+      String.concatWith ", " (map (mapper "!" "") persistent @
+                               map (mapper "" "") linear @
+                               map (mapper "?" "") ordered)
       
   fun to_strings (S{ordered,linear,persistent}) = 
       {persistent = map (mapper "!" "") persistent,
-       linear = map (mapper "¡" "") linear,
-       ordered = map (mapper "" "") ordered}
+       linear = map (mapper "" "") linear,
+       ordered = map (mapper "?" "") ordered}
 
   fun to_web_string (S{ordered,linear,persistent}) = 
       "<div class=\"hyp\">" ^
-      String.concatWith ("<span class=\"hyp_space\">•</span>")
+      String.concatWith ("<span class=\"hyp_space\">, </span>")
            (map (mapper "<span class=\"hyp_pers\">!" "</span>") persistent @
-            map (mapper "<span class=\"hyp_lin\">¡" "</span>") linear @
-            map (mapper "<span class=\"hyp_ord\">" "</span>") ordered) ^
+            map (mapper "<span class=\"hyp_lin\">" "</span>") linear @
+            map (mapper "<span class=\"hyp_ord\">?" "</span>") ordered) ^
         "</div>\n"
 
 end

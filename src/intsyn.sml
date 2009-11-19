@@ -3,7 +3,7 @@ structure IntSyn = struct
 
   open Global
 
-  datatype perm = Ordered | Linear | Persistent
+  datatype perm = Linear | Persistent
 
   datatype tp = Prop | Item | Arrow of tp * tp
 
@@ -35,15 +35,16 @@ structure IntSyn = struct
 
   datatype neg_prop = 
       Forall of string * neg_prop
-    | Righti of pos_prop * neg_prop
-    | Lefti of pos_prop * neg_prop
+    | Lolli of pos_prop * neg_prop
     | Up of pos_prop
 
   and pos_prop =  
       Exists of string * pos_prop
-    | Fuse of pos_prop * pos_prop
-    | Esuf of pos_prop * pos_prop
+    | Unit
+    | Conj of pos_prop * pos_prop
     | Atom of perm * string * term list
+    | Neq of term * term
+    | Eq of term * term
    
   type rule = Pos.pos * string * neg_prop
   datatype decl =
@@ -113,24 +114,25 @@ structure IntSyn = struct
             else "∃" ^ x ^ ". " ^ 
                  to_string (x :: mvars) false trm0 
           end
-        | Fuse(trm1,trm2) =>
+        | Unit => "()"
+        | Conj(trm1,trm2) =>
           let 
             val str = 
-                to_string mvars true trm1 ^ " • " ^
+                to_string mvars true trm1 ^ ", " ^
                 to_string mvars false trm2
           in if needs_parens then "(" ^ str ^ ")" else str end
-        | Esuf(trm1,trm2) =>
-          let 
-            val str = 
-                to_string mvars true trm1 ^ " ○ " ^
-                to_string mvars false trm2
-          in if needs_parens then "(" ^ str ^ ")" else str end
+        | Atom(Persistent,a,[trm]) => 
+          "!" ^ a ^ "(" ^ term_to_string_env mvars [] false trm ^ ")"
         | Atom(Persistent,a,trms) => 
           "!" ^ term_to_string_env mvars [] false (Root(Const a,trms))
+        | Atom(Linear,a,[trm]) => 
+          a ^ "(" ^ term_to_string_env mvars [] false trm ^ ")"
         | Atom(Linear,a,trms) => 
-          "¡" ^ term_to_string_env mvars [] false (Root(Const a,trms))
-        | Atom(Ordered,a,trms) => 
           term_to_string_env mvars [] false (Root(Const a,trms))
+        | Eq(t1, t2) => 
+          term_to_string_env mvars [] true t1 ^ " == " ^ term_to_string_env mvars [] true t2
+        | Neq(t1, t2) => 
+          term_to_string_env mvars [] true t1 ^ " <> " ^ term_to_string_env mvars [] true t2
       end
 
   fun neg_prop_to_string_env mvars needs_parens trm = 
@@ -140,29 +142,24 @@ structure IntSyn = struct
         case trm of 
           Forall (x,trm0) => 
           let val x = Names.new_name (mvars,x) in
-            if needs_parens
+            to_string (x :: mvars) false trm0
+(*            if needs_parens
             then "(∀" ^ x ^ ". " ^
                  to_string (x :: mvars) false trm0 ^ ")"
             else "∀" ^ x ^ ". " ^ 
-                 to_string (x :: mvars) false trm0 
-          end
-        | Righti(trm1,trm2) =>
+                 to_string (x :: mvars) false trm0 *)
+          end 
+        | Lolli(trm1,trm2) =>
           let 
             val str = 
-                to_string_pos mvars false trm1 ^ " ->> " ^ 
-                to_string mvars false trm2
-          in if needs_parens then "(" ^ str ^ ")" else str end
-        | Lefti(trm1,trm2) =>
-          let 
-            val str = 
-                to_string_pos mvars false trm1 ^ " >-> " ^ 
+                to_string_pos mvars false trm1 ^ " -o " ^ 
                 to_string mvars false trm2
           in if needs_parens then "(" ^ str ^ ")" else str end
         | Up trm => to_string_pos mvars false trm
       end
 
   fun decl_to_string (RULE(p,r,trm)) =
-      r ^ " : " ^ neg_prop_to_string_env [] false trm ^ "."
+      neg_prop_to_string_env [] false trm ^ "."
     | decl_to_string (EXEC(p,n,trm)) =
       "%exec " ^ (case n of NONE => "*" | SOME n => Int.toString n) ^
       " " ^ pos_prop_to_string_env [] false trm ^ "."

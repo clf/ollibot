@@ -69,7 +69,8 @@ structure TypeRecon = struct
               let (* val _ = print "Lambda\n" *)
                 val (fvar0,tp0) = vars_and_types (trm0, MapS.insert(bvar,x,tp))
               in unifypos(p,tp0,ST.Prop'); (fvar0, ST.Prop') end
-            | E.Fuse(p,trm1,trm2) =>
+            | E.Unit(p) => (MapS.empty, ST.Prop')
+            | E.Conj(p,trm1,trm2) =>
               let (* val _ = print "Fuse\n" *)
                 val (fvar1,tp1) = vars_and_types (trm1, bvar)
                 val (fvar2,tp2) = vars_and_types (trm2, bvar)
@@ -79,17 +80,7 @@ structure TypeRecon = struct
                 unifypos(p,tp2,ST.Prop'); 
                 (fvar, ST.Prop')
               end
-            | E.Esuf(p,trm1,trm2) =>
-              let (* val _ = print "Fuse\n" *)
-                val (fvar1,tp1) = vars_and_types (trm1, bvar)
-                val (fvar2,tp2) = vars_and_types (trm2, bvar)
-                val fvar = union (p,fvar1,fvar2)
-              in
-                unifypos(p,tp1,ST.Prop'); 
-                unifypos(p,tp2, ST.Prop'); 
-                (fvar, ST.Prop')
-              end
-            | E.Righti(p,trm1,trm2) =>
+            | E.Lolli(p,trm1,trm2) =>
               let (* val _ = print "Righti\n" *)
                 val (fvar1,tp1) = vars_and_types (trm1, bvar)
                 val (fvar2,tp2) = vars_and_types (trm2, bvar)
@@ -97,16 +88,6 @@ structure TypeRecon = struct
               in
                 unifypos(p,tp1,ST.Prop'); 
                 unifypos(p,tp2,ST.Prop');
-                (fvar, ST.Prop')
-              end
-            | E.Lefti(p,trm1,trm2) =>
-              let (* val _ = print "Lefti\n" *)
-                val (fvar1,tp1) = vars_and_types (trm1, bvar)
-                val (fvar2,tp2) = vars_and_types (trm2, bvar)
-                val fvar = union (p,fvar1,fvar2)
-              in
-                unifypos(p,tp1,ST.Prop');
-                unifypos(p,tp2,ST.Prop'); 
                 (fvar, ST.Prop')
               end
             | E.Lambda(p,tp,x,trm0) =>
@@ -135,12 +116,25 @@ structure TypeRecon = struct
                 unifypos(p,tp1,ST.Prop'); 
                 (fvar1, ST.Prop')
               end
-            | E.Gnab(p,trm1) =>
-              let (* val _ = print "Gnab\n" *)
+            | E.Eq(p,trm1,trm2) =>
+              let (* val _ = print "Bang\n" *)
                 val (fvar1,tp1) = vars_and_types (trm1, bvar)
+                val (fvar2,tp2) = vars_and_types (trm2, bvar)
+                val fvar = union (p,fvar1,fvar2)
               in
-                unifypos(p,tp1,ST.Prop');
-                (fvar1, ST.Prop')
+                unifypos(p,tp1,ST.Item'); 
+                unifypos(p,tp2,ST.Item'); 
+                (fvar, ST.Prop')
+              end
+            | E.Neq(p,trm1,trm2) =>
+              let (* val _ = print "Bang\n" *)
+                val (fvar1,tp1) = vars_and_types (trm1, bvar)
+                val (fvar2,tp2) = vars_and_types (trm2, bvar)
+                val fvar = union (p,fvar1,fvar2)
+              in
+                unifypos(p,tp1,ST.Item'); 
+                unifypos(p,tp2,ST.Item'); 
+                (fvar, ST.Prop')
               end
 
 
@@ -261,30 +255,21 @@ structure TypeRecon = struct
                            => raise ErrPos(p,"Could not infer type of argument")
                 val trm = e2i_neg(trm, (V_MVar,x,tp) :: vars)
               in I.Forall(x,trm) end
-            | E.Righti(p,trm1,trm2) =>
+            | E.Lolli(p,trm1,trm2) =>
               let
                 val trm1 = e2i_pos(trm1,vars)
                 val trm2 = e2i_neg(trm2,vars)
-              in I.Righti(trm1,trm2) end
-            | E.Lefti(p,trm1,trm2) =>
-              let
-                val trm1 = e2i_pos(trm1,vars)
-                val trm2 = e2i_neg(trm2,vars)
-              in I.Lefti(trm1,trm2) end
+              in I.Lolli(trm1,trm2) end
             | trm => I.Up(e2i_pos (trm,vars))
 
         and e2i_pos (trm, vars) = 
             case trm of
-              E.Fuse(p,trm1,trm2) => 
+              E.Unit(p) => I.Unit
+            | E.Conj(p,trm1,trm2) => 
               let
                 val trm1 = e2i_pos(trm1,vars)
                 val trm2 = e2i_pos(trm2,vars)
-              in I.Fuse(trm1,trm2) end
-            | E.Esuf(p,trm1,trm2) => 
-              let
-                val trm1 = e2i_pos(trm1,vars)
-                val trm2 = e2i_pos(trm2,vars)
-              in I.Esuf(trm1,trm2) end
+              in I.Conj(trm1,trm2) end
             | E.Exists(p,tp,x,trm) =>
               let
                 val tp = is_groundST tp
@@ -297,20 +282,19 @@ structure TypeRecon = struct
                 case e2i_term (trm, vars) of
                   ((PT_Root(I.Const a),trms), I.Prop) => 
                   I.Atom(I.Persistent,a,rev trms)
-                | _ => raise Err("Banged not positive proposition\n")
+                | _ => raise ErrPos(p,"Banged not positive proposition\n")
               end
-            | E.Gnab(p,trm) =>
-              let in
-                case e2i_term (trm, vars) of
-                  ((PT_Root(I.Const a),trms), I.Prop) => 
-                  I.Atom(I.Linear,a,rev trms)
-                | _ => raise Err("Gnabed not positive proposition\n")
-              end
+            | E.Eq(p,t1,t2) =>
+              I.Eq(partial_to_canonical(e2i_term(t1, vars)),
+                   partial_to_canonical(e2i_term(t2, vars)))
+            | E.Neq(p,t1,t2) => 
+              I.Neq(partial_to_canonical(e2i_term(t1, vars)),
+                    partial_to_canonical(e2i_term(t2, vars)))
             | trm =>
               let in
                 case e2i_term (trm, vars) of
                   ((PT_Root(I.Const a),trms), I.Prop) => 
-                  I.Atom(I.Ordered,a,rev trms)
+                  I.Atom(I.Linear,a,rev trms)
                 | _ => raise Err("Subterm not positive proposition\n")
               end
 

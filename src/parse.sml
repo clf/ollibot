@@ -20,16 +20,16 @@ structure Parse :> PARSE = struct
   infixr 1 ||
 
   datatype token = 
-      PERIOD | LPAREN | RPAREN | FUSE 
-    | RIGHTI | LEFTI | BANG | GNAB
+      PERIOD | LPAREN | RPAREN | CONJ 
+    | LOLLI | BANG | NEQ | EQ
     | LAMBDA of string | FORALL of string | EXISTS of string 
     | ID of string list * string 
     | PERCENT of string | COLON | WS
 
   fun token_to_string token = 
       case token of 
-        PERIOD => "." | LPAREN => "(" | RPAREN => ")" | FUSE => "•"
-      | RIGHTI => "->>" | LEFTI => ">->" | BANG => "!" | GNAB => "¡"
+        PERIOD => "." | LPAREN => "(" | RPAREN => ")" | CONJ => ","
+      | LOLLI => "-o" | BANG => "!" | NEQ => "<>" | EQ => "==" 
       | LAMBDA x => "λ " ^ x | FORALL x => "∀ " ^ x | EXISTS x => "∃ " ^ x
       | ID(path,x) => concat (map (fn x => x ^  ".") path) ^ x 
       | PERCENT x => "%" ^ x | COLON => ":" | WS => ""
@@ -68,8 +68,8 @@ structure Parse :> PARSE = struct
   val transform_tok1 = 
       let
         val sep = 
-            fn "." => false | "(" => false | ")" => false | "•" => false 
-             | "!" => false | "¡" => false
+            fn "." => false | "(" => false | ")" => false | "," => false 
+             | "!" => false
              | "λ" => false | "∀" => false | "∃" => false 
              | "\\" => false | "%" => false | ":" => false
              | " " => false | "\t" => false | "\n" => false
@@ -83,8 +83,8 @@ structure Parse :> PARSE = struct
             succeed " "
         val tokenparser = 
             alt [linecomment, 
-                 literal ".", literal "(", literal ")", literal "•",
-                 literal "!", literal "¡",
+                 literal ".", literal "(", literal ")", literal ",",
+                 literal "!",
                  literal "λ", literal "∀", literal "∃", 
                  literal "\\", literal "%", literal ":",
                  repeat1 (satisfy ws) >> succeed " ", idpart]
@@ -108,14 +108,14 @@ structure Parse :> PARSE = struct
             alt [literal "." >> succeed PERIOD,
                  literal "(" >> succeed LPAREN,
                  literal ")" >> succeed RPAREN,
-                 literal "•" >> succeed FUSE,
+                 literal "," >> succeed CONJ,
                  literal "!" >> succeed BANG,
-                 literal "¡" >> succeed GNAB,
                  literal "%" >> any wth PERCENT,
                  literal ":" >> succeed COLON,
                  literal " " >> succeed WS,
-                 literal "->>" >> succeed RIGHTI,
-                 literal ">->" >> succeed LEFTI,
+                 literal "-o" >> succeed LOLLI,
+                 literal "<>" >> succeed NEQ,
+                 literal "==" >> succeed EQ,
                  literal "λ" >> (white >> any << white << literal "." 
                                        ## (fn pos => not "λ" pos)) wth LAMBDA,
                  literal "∀" >> (white >> any << white << literal "." 
@@ -140,21 +140,21 @@ structure Parse :> PARSE = struct
   (* Main parser *)
   val decl_parser =
       let 
-        fun fuse pos ((trm1,pos1),(trm2,pos2)) =
+        fun conj pos ((trm1,pos1),(trm2,pos2)) =
             let val pos = Pos.union(Pos.union(pos,pos1),pos2)
-            in (ExtSyn.Fuse(pos,trm1,trm2),pos) end
+            in (ExtSyn.Conj(pos,trm1,trm2),pos) end
         fun bang pos ((trm1,pos1)) = 
             let val pos = Pos.union(pos,pos1)
             in (ExtSyn.Bang(pos,trm1),pos) end
-        fun gnab pos ((trm1,pos1)) = 
-            let val pos = Pos.union(pos,pos1)
-            in (ExtSyn.Gnab(pos,trm1),pos) end
-        fun righti pos ((trm1,pos1),(trm2,pos2)) =
+        fun lolli pos ((trm1,pos1),(trm2,pos2)) =
             let val pos = Pos.union(Pos.union(pos,pos1),pos2)
-            in (ExtSyn.Righti(pos,trm1,trm2),pos) end
-        fun lefti pos ((trm1,pos1),(trm2,pos2)) =
+            in (ExtSyn.Lolli(pos,trm1,trm2),pos) end
+        fun neq pos ((trm1,pos1),(trm2,pos2)) =
             let val pos = Pos.union(Pos.union(pos,pos1),pos2)
-            in (ExtSyn.Lefti(pos,trm1,trm2),pos) end
+            in (ExtSyn.Neq(pos,trm1,trm2),pos) end
+        fun eq pos ((trm1,pos1),(trm2,pos2)) =
+            let val pos = Pos.union(Pos.union(pos,pos1),pos2)
+            in (ExtSyn.Eq(pos,trm1,trm2),pos) end
         fun lambda ((x,pos),(trm,pos')) = 
             let val pos = Pos.union(pos,pos') 
             in (ExtSyn.Lambda(pos,SimpleType.Var'(),x,trm),pos) end
@@ -166,13 +166,14 @@ structure Parse :> PARSE = struct
             in (ExtSyn.Exists(pos,SimpleType.Var'(),x,trm),pos) end
         val fixityitem_parser = 
         get (fn pos => 
+          (literal LPAREN && literal RPAREN) wth (fn _ => Atm(ExtSyn.Unit(pos),pos)) ||
           maybe (fn tok =>
             case tok of 
-              FUSE => SOME(Opr(Infix(Right,6,fuse pos)))
-            | RIGHTI => SOME(Opr(Infix(Right,4,righti pos)))
-            | LEFTI => SOME(Opr(Infix(Right,4,lefti pos)))
+              CONJ => SOME(Opr(Infix(Right,6,conj pos)))
+            | LOLLI => SOME(Opr(Infix(Right,4,lolli pos)))
+            | NEQ => SOME(Opr(Infix(Non,8,neq pos)))
+            | EQ => SOME(Opr(Infix(Non,8,eq pos)))
             | BANG => SOME(Opr(Prefix(10, bang pos)))
-            | GNAB => SOME(Opr(Prefix(10, gnab pos)))
             | ID (path,x) => SOME(Atm(ExtSyn.Id(pos,path,x),pos))
             | LAMBDA _ => NONE
             | FORALL _ => NONE
@@ -225,12 +226,12 @@ structure Parse :> PARSE = struct
                         raise ErrPos(pos,"Expected '.', found '"
                                        ^ token_to_string tok)))
         val rule_parser = 
-            get (fn pos => 
+            (* get (fn pos => 
               maybe (fn ID([],x) => SOME(x,pos) | _ => NONE))
             << maybe (fn COLON => SOME() | _ => NONE)
-            && !! exp_parser << force_period 
-                wth (fn ((x,pos),(trm,pos')) => 
-                        ExtSyn.RULE(Pos.union(pos,pos'), x, trm))
+            && *) !! exp_parser << force_period 
+                wth (fn (trm,pos') => 
+                        ExtSyn.RULE(pos', "-", trm))
         val numparser =
          fn ID([],"*") => SOME(NONE)
           | ID([],id) => 
@@ -246,7 +247,7 @@ structure Parse :> PARSE = struct
               maybe (fn PERCENT("trace") => SOME() | _ => NONE)
               >> maybe numparser && exp_parser << force_period 
                 wth (fn (n,x) => ExtSyn.TRACE(pos,n,x)))
-      in alt [rule_parser,exec_parser,trace_parser] end
+      in alt [exec_parser,trace_parser,rule_parser] end
 
   fun markstream f fs = 
       let

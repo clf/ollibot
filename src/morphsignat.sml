@@ -23,17 +23,17 @@ structure MorphSignat :> MORPH_SIGNAT = struct
   fun allpers_neg prop = 
       case prop of 
         I.Forall(_,prop) => allpers_neg prop
-      | I.Righti(prop1,prop2) => allpers_pos prop1 andalso allpers_neg prop2
-      | I.Lefti(prop1,prop2) => allpers_pos prop1 andalso allpers_neg prop2
+      | I.Lolli(prop1,prop2) => allpers_pos prop1 andalso allpers_neg prop2
       | I.Up(prop) => allpers_pos prop
   and allpers_pos prop = 
       case prop of
         I.Exists(_,prop) => allpers_pos prop
-      | I.Fuse(prop1,prop2) => allpers_pos prop1 andalso allpers_pos prop2
-      | I.Esuf(prop1,prop2) => allpers_pos prop1 andalso allpers_pos prop2
+      | I.Unit => true
+      | I.Conj(prop1,prop2) => allpers_pos prop1 andalso allpers_pos prop2
+      | I.Eq(_,_) => true
+      | I.Neq(_,_) => true
       | I.Atom(I.Persistent,_,_) => true
       | I.Atom(I.Linear,_,_) => false
-      | I.Atom(I.Ordered,_,_) => false
 
   (* Check for range restriction *)
   fun checkstrict_neg prop = ()
