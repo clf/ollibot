@@ -116,10 +116,10 @@ struct
         if coord1 = coord2 then coord2string coord1
         else if f1 = file
              then coord2string coord1 ^ "-" ^ 
-                  Int.toString line ^ "." ^ Int.toString (char - 1)
+                  Int.toString line ^ "." ^ Int.toString char
              else coord2string coord1 ^ "-" ^ 
-                  coord2string {file = file, char=char-1, line=line, 
-                                abschar=abschar-1}
+                  coord2string {file = file, char=char, line=line, 
+                                abschar=abschar}
 
   fun getabs (At c) = getabs (Between (c, c))
     | getabs (Between ({abschar=a, ...}, {abschar=b, ...})) = (a, b)

@@ -358,9 +358,12 @@ structure TypeRecon = struct
                 val trm = partial_to_canonical (ptrm,tp2) 
               in ((PT_Term(I.Lambda(x,trm)), []), I.Arrow(tp1,tp2)) end
             | E.Conj(p,_,_) =>
-              raise ErrPos(p, "Expected a term, but got two things connected by a comma.\n(Did you write \"a(b,c)\" instead of \"a b c\"?)")
-
-            | _ => raise ErrPos(E.getpos trm, "Not a term")
+              raise ErrPos(p, "Expected a term, but got things connected by a comma.\n(Did you write \"a(b,c)\" instead of \"a b c\"?)")
+            | E.Unit(p) =>
+              raise ErrPos(p, "Unit '()' encountered where term was expected."
+               ^"\n(To write a term with no arguments write 'a' not 'a()'.)")
+            | _ => raise ErrPos(E.getpos trm, 
+                                "Expected a term, found a proposition.")
             
         fun e2i_decl trm = 
             let in
