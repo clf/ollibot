@@ -40,47 +40,53 @@ structure MorphSignat :> MORPH_SIGNAT = struct
   fun checkstrict_neg prop = ()
 
   (* Check for consistent use of exponentials *)
-  fun checkexp_pos prop (pers,linear) =
+  fun checkexp_pos (p,prop) (pers,linear) =
     case prop of
-      I.Exists(_,prop) => checkexp_pos prop (pers,linear)
+      I.Exists(_,prop) => checkexp_pos (p,prop) (pers,linear)
     | I.Unit => (pers,linear)
     | I.Neq _ => (pers,linear)
     | I.Eq _ => (pers,linear)
-    | I.Conj(p1, p2) => checkexp_pos p2 (checkexp_pos p1 (pers,linear))
+    | I.Conj(p1, p2) => checkexp_pos (p,p2) (checkexp_pos (p,p1) (pers,linear))
     | I.Atom(I.Persistent,a,_) =>
       if SetS.member(pers,a) then (pers,linear)
       else if SetS.member(linear,a) 
-      then raise Err("Predicate " ^ a ^ " has a persistent use, was previously linear.")
+      then raise ErrPos(p,"Predicate \"" ^ a ^ 
+                          "\" has a persistent use, was previously linear.")
       else (SetS.add(pers,a),linear)
     | I.Atom(I.Linear,a,_) =>
       if SetS.member(linear,a) then (pers,linear)
       else if SetS.member(pers,a) 
-      then raise Err("Predicate " ^ a ^ " has a linear use, was previously persistent.")
+      then raise ErrPos(p,"Predicate \"" ^ a ^ 
+                          "\" has a linear use, was previously persistent.")
       else (pers,SetS.add(linear,a))
 
-  fun checkexp_neg prop (pers,linear) = 
+  fun checkexp_neg (p,prop) (pers,linear) = 
     case prop of
-      I.Forall(_,prop) => checkexp_neg prop (pers,linear)
-    | I.Lolli(p1, p2) => checkexp_neg p2 (checkexp_pos p1 (pers,linear))
-    | I.Up(prop) => checkexp_pos prop (pers,linear)
+      I.Forall(_,prop) => checkexp_neg (p,prop) (pers,linear)
+    | I.Lolli(p1, p2) => checkexp_neg (p,p2) (checkexp_pos (p,p1) (pers,linear))
+    | I.Up(prop) => checkexp_pos (p,prop) (pers,linear)
 
   fun update (decl, st) = 
     case decl of
-      I.RULE (rule as (_,_,prop)) => 
+      I.RULE (rule as (p,_,prop)) => 
       let
-        val (pers,linear) = checkexp_neg prop (#pers_preds st, #linear_preds st)
-        val st = st w'rules (rule :: #rules st) w'pers_preds pers w'linear_preds linear
+        val (pers,linear) = 
+            checkexp_neg (p,prop) (#pers_preds st, #linear_preds st)
+        val st = st w'rules (rule :: #rules st)
+                    w'pers_preds pers w'linear_preds linear
       in
         checkstrict_neg prop;
         if allpers_neg prop 
         then st w'saturating_rules (prop :: #saturating_rules st)
         else st w'linear_rules (prop :: #linear_rules st)
       end
-    | I.EXEC (_,_,prop) => 
-      let val (pers,linear) = checkexp_pos prop (#pers_preds st, #linear_preds st)
+    | I.EXEC (p,_,prop) => 
+      let val (pers,linear) = 
+              checkexp_pos (p,prop) (#pers_preds st, #linear_preds st)
       in st w'pers_preds pers w'linear_preds linear end
-    | I.TRACE (_,_,prop) => 
-      let val (pers,linear) = checkexp_pos prop (#pers_preds st, #linear_preds st)
+    | I.TRACE (p,_,prop) => 
+      let val (pers,linear) = 
+              checkexp_pos (p,prop) (#pers_preds st, #linear_preds st)
       in st w'pers_preds pers w'linear_preds linear end
       
 end
