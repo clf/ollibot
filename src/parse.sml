@@ -268,8 +268,8 @@ structure Parse :> PARSE = struct
            (fn (_,p1) =>
          numparser ##! "Number or '*' expected as first argument to %exec." --
            (fn n =>
-         (!! exp_parser << force_period ##! 
-             "No second argument given for %exec (maybe try '()'?)") --
+         (exp_parser << force_period ##! 
+             "No second argument given for %exec (maybe try '()'?)") --!
            (fn (x,p2) =>
          (succeed(ExtSyn.EXEC(Pos.union(p1,p2),n,x))))))
         val trace_parser = 
@@ -277,12 +277,12 @@ structure Parse :> PARSE = struct
            (fn (_,p1) =>
          numparser ##! "Number or '*' expected as first argument to %trace." --
            (fn n =>
-         (!! exp_parser << force_period ##! 
-             "No second argument given for %trace (maybe try '()'?)") --
+         (exp_parser << force_period ##! 
+             "No second argument given for %exec (maybe try '()'?)") --!
            (fn (x,p2) =>
          (succeed(ExtSyn.TRACE(Pos.union(p1,p2),n,x))))))
       in alt [exec_parser,trace_parser,rule_parser] end
-
+ 
   fun markstream f fs = 
       let
         val pos0 = Pos.initposex f
