@@ -34,16 +34,21 @@ structure TypeRecon = struct
                  let val t = ST.Var'()
                  in constmap := MapS.insert(!constmap,s,t); t end)
         fun unify (x,y) = ST.unify x y
-        fun unifypos (p,x,y) = 
-            ST.unify x y 
-            handle ST.Unify => 
-                   raise ErrPos(p,"Incompatible types for subterms") 
+        fun unifypos (p,x,y,msg) = 
+            let val msg = case msg of NONE => "Incompatible types" | SOME msg => msg
+            in
+              ST.unify x y 
+              handle ST.Unify => raise ErrPos(p,msg) 
+            end
 
         val union = 
             fn (p,fvar1,fvar2) =>
-               MapS.unionWith (fn (t1,t2) => (unify(t1,t2); t1)) (fvar1,fvar2)
-               handle ST.Unify => 
-                      raise ErrPos(p,"Incompatible types for free variables") 
+               MapS.unionWithi 
+                   (fn (x,t1,t2) => (unify(t1,t2) 
+                                   handle ST.Unify => 
+                                          raise ErrPos(p,"Incompatible types for " ^ x);
+                                     t1))
+                   (fvar1,fvar2)
 
         (* vars_and_types(trm, bvar) = (fvar, tp) 
          ** trm - a term in the external syntax
@@ -56,19 +61,30 @@ structure TypeRecon = struct
               let (* val _ = print "App\n" *)
                 val (fvar1,tp1) = vars_and_types (trm1, bvar)
                 val (fvar2,tp2) = vars_and_types (trm2, bvar)
+                val tp_arg = ST.Var'()
                 val tp = ST.Var'()
                 val fvar = union (p,fvar1,fvar2)
               in 
-                unifypos(p,tp1,ST.Arrow'(tp2,tp)); (fvar, tp)
+                unifypos(p,tp1,ST.Arrow'(tp_arg,tp),
+                  SOME "Can't perform that application (missing period?)");
+                unifypos(p,tp2,tp_arg,
+                  SOME "Argument has wrong type (did you write \"a(b,c)\" instead of \"a b c\"?)");
+                (fvar, tp)
               end
             | E.Forall(p,tp,x,trm0) =>
               let (* val _ = print "Lambda\n" *)
                 val (fvar0,tp0) = vars_and_types (trm0, MapS.insert(bvar,x,tp))
-              in unifypos(p,tp0,ST.Prop'); (fvar0, ST.Prop') end
+              in 
+                unifypos(p,tp0,ST.Prop',NONE);
+                (fvar0, ST.Prop') 
+              end
             | E.Exists(p,tp,x,trm0) =>
               let (* val _ = print "Lambda\n" *)
                 val (fvar0,tp0) = vars_and_types (trm0, MapS.insert(bvar,x,tp))
-              in unifypos(p,tp0,ST.Prop'); (fvar0, ST.Prop') end
+              in
+                unifypos(p,tp0,ST.Prop',NONE);
+                (fvar0, ST.Prop')
+              end
             | E.Unit(p) => (MapS.empty, ST.Prop')
             | E.Conj(p,trm1,trm2) =>
               let (* val _ = print "Fuse\n" *)
@@ -76,8 +92,10 @@ structure TypeRecon = struct
                 val (fvar2,tp2) = vars_and_types (trm2, bvar)
                 val fvar = union (p,fvar1,fvar2)
               in
-                unifypos(p,tp1,ST.Prop');
-                unifypos(p,tp2,ST.Prop'); 
+                unifypos(p,tp1,tp2,SOME "Two conjoined arguments were not the same");
+                unifypos(p,tp1,ST.Prop',
+                  SOME("Conjunction \",\" only for propositions, " ^ 
+                       "(did you write \"a(b,c)\" instead of \"a b c\"?)?")); 
                 (fvar, ST.Prop')
               end
             | E.Lolli(p,trm1,trm2) =>
@@ -86,8 +104,10 @@ structure TypeRecon = struct
                 val (fvar2,tp2) = vars_and_types (trm2, bvar)
                 val fvar = union (p,fvar1,fvar2)
               in
-                unifypos(p,tp1,ST.Prop'); 
-                unifypos(p,tp2,ST.Prop');
+                unifypos(p,tp1,ST.Prop',
+                  SOME "Left-hand side of \"-o\" was not a proposition as expected"); 
+                unifypos(p,tp2,ST.Prop',
+                  SOME "Right-hand side of \"-o\" was not a proposition as expected");
                 (fvar, ST.Prop')
               end
             | E.Lambda(p,tp,x,trm0) =>
@@ -113,7 +133,7 @@ structure TypeRecon = struct
               let (* val _ = print "Bang\n" *)
                 val (fvar1,tp1) = vars_and_types (trm1, bvar)
               in
-                unifypos(p,tp1,ST.Prop'); 
+                unifypos(p,tp1,ST.Prop',NONE); 
                 (fvar1, ST.Prop')
               end
             | E.Eq(p,trm1,trm2) =>
@@ -122,8 +142,8 @@ structure TypeRecon = struct
                 val (fvar2,tp2) = vars_and_types (trm2, bvar)
                 val fvar = union (p,fvar1,fvar2)
               in
-                unifypos(p,tp1,ST.Item'); 
-                unifypos(p,tp2,ST.Item'); 
+                unifypos(p,tp1,tp2,SOME "Subterms tested for equality not the same"); 
+                unifypos(p,tp1,ST.Item',SOME "Subterms tested for equality not individuals"); 
                 (fvar, ST.Prop')
               end
             | E.Neq(p,trm1,trm2) =>
@@ -132,8 +152,8 @@ structure TypeRecon = struct
                 val (fvar2,tp2) = vars_and_types (trm2, bvar)
                 val fvar = union (p,fvar1,fvar2)
               in
-                unifypos(p,tp1,ST.Item'); 
-                unifypos(p,tp2,ST.Item'); 
+                unifypos(p,tp1,tp2,SOME "Subterms tested for inequality not the same"); 
+                unifypos(p,tp1,ST.Item',SOME "Subterms tested for equality not individuals"); 
                 (fvar, ST.Prop')
               end
 
@@ -159,15 +179,25 @@ structure TypeRecon = struct
             let val (fv, tp) = vars_and_types(trm,MapS.empty)
             in 
               ST.unify tp ST.Prop'; 
-              if MapS.isEmpty fv then E.EXEC(p,n,trm)
-              else raise Err "This %exec includes free variables, this is not allowed."
+              case MapS.numItems fv of
+                0 => E.EXEC(p,n,trm)
+              | 1 => raise ErrPos(p,"This %exec has free variable \"" ^ 
+                                    #1(valOf(MapS.firsti fv)) ^ ".\" This is not allowed.")
+              | n => raise ErrPos(p,"This %exec has " ^ Int.toString n ^
+                                    " free variables (e.g. \"" ^ #1(valOf(MapS.firsti fv)) ^ 
+                                    "\"). This is not allowed.")
             end
           | learntypes (E.TRACE(p,n,trm)) = 
             let val (fv, tp) = vars_and_types(trm,MapS.empty)
             in 
               ST.unify tp ST.Prop'; 
-              if MapS.isEmpty fv then E.TRACE(p,n,trm)
-              else raise Err "This %trace include free variables, this is not allowed." 
+              case MapS.numItems fv of
+                0 => E.TRACE(p,n,trm)
+              | 1 => raise ErrPos(p,"This %trace has a free variable \"" ^ 
+                                    #1(valOf(MapS.firsti fv)) ^ "\". This is not allowed.")
+              | n => raise ErrPos(p,"This %trace has " ^ Int.toString n ^
+                                    " free variables (e.g. \"" ^ #1(valOf(MapS.firsti fv)) ^ 
+                                    "\"). This is not allowed.")
             end
 
         val closed_decl = learntypes decl

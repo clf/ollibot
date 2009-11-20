@@ -246,15 +246,13 @@ structure Parse :> PARSE = struct
             (case Int.fromString id of NONE => NONE | SOME i => SOME(SOME i))
           | _ => NONE
         val exec_parser = 
-            get (fn pos => 
-              maybe (fn PERCENT("exec") => SOME() | _ => NONE)
-              >> maybe numparser && exp_parser << force_period 
-                wth (fn (n,x) => ExtSyn.EXEC(pos,n,x)))
+              !!(maybe (fn PERCENT("exec") => SOME() | _ => NONE)
+              >> maybe numparser && exp_parser << force_period)
+                wth (fn ((n,x),pos) => ExtSyn.EXEC(pos,n,x))
         val trace_parser = 
-            get (fn pos => 
-              maybe (fn PERCENT("trace") => SOME() | _ => NONE)
-              >> maybe numparser && exp_parser << force_period 
-                wth (fn (n,x) => ExtSyn.TRACE(pos,n,x)))
+              !!(maybe (fn PERCENT("trace") => SOME() | _ => NONE)
+              >> maybe numparser && exp_parser << force_period)
+                wth (fn ((n,x),pos) => ExtSyn.TRACE(pos,n,x))
       in alt [exec_parser,trace_parser,rule_parser] end
 
   fun markstream f fs = 

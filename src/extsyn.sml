@@ -16,6 +16,10 @@ structure SimpleType :>
             val Item' : styp
             val Prop' : styp
             val Arrow' : styp * styp -> styp
+
+            (* Debugging only! *)
+            val isItem : styp -> bool
+            val isProp : styp -> bool
           end =
 struct
 
@@ -68,6 +72,9 @@ struct
       | (Prop, Prop) => ()
       | (Arrow(t1,s1),Arrow(t2,s2)) => (unify t1 t2; unify s1 s2)
       | _ => raise Unify
+
+  val isItem = fn Item => true | _ => false
+  val isProp = fn Prop => true | _ => false
       
 end
 
