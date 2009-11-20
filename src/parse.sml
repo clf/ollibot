@@ -15,7 +15,7 @@ structure Parse :> PARSE = struct
   
   infixr 4 << >>
   infixr 3 &&
-  infix  2 -- ##
+  infix  2 -- ## --!
   infix  2 wth suchthat return guard when
   infixr 1 ||
 
@@ -33,6 +33,16 @@ structure Parse :> PARSE = struct
       | LAMBDA x => "λ " ^ x | FORALL x => "∀ " ^ x | EXISTS x => "∃ " ^ x
       | ID(path,x) => concat (map (fn x => x ^  ".") path) ^ x 
       | PERCENT x => "%" ^ x | COLON => ":" | WS => ""
+
+  fun err_expected_tok expected = 
+      any --! 
+          (fn (t,p) =>
+              raise ErrPos(p,"Expected '" ^ token_to_string expected ^
+                             "' found '" ^ token_to_string t ^ "'."))
+      || done() --! 
+          (fn ((),p) =>
+              raise ErrPos(p,"Expected '" ^ token_to_string expected ^
+                             "' found end of file."))
 
   (* Literate transform: remove all non-literate parts from a file *)
   val transform_tok0 = 
@@ -142,7 +152,8 @@ structure Parse :> PARSE = struct
               Stream.Nil => Stream.Nil
             | Stream.Cons((WS,_),s) => filter s ()
             | Stream.Cons((tok,pos : Pos.pos),s) => 
-              Stream.Cons ((tok,pos),Stream.delay (filter s))
+        ((*print("TOK : "^token_to_string tok^" @ "^Pos.toString pos^"\n");*)
+              Stream.Cons ((tok,pos),Stream.delay (filter s)))
       in fn s => Stream.delay (filter s) end
  
   (* Main parser *)
@@ -172,37 +183,36 @@ structure Parse :> PARSE = struct
         fun exists ((x,pos),(trm,pos')) = 
             let val pos = Pos.union(pos,pos') 
             in (ExtSyn.Exists(pos,SimpleType.Var'(),x,trm),pos) end
+        val unit_parser = 
+          string [LPAREN, RPAREN] --!
+             (fn (_,pos) =>
+          succeed(Atm(ExtSyn.Unit(pos),pos)))
         val fixityitem_parser = 
-        get (fn pos => 
-          (literal LPAREN && literal RPAREN) wth (fn _ => Atm(ExtSyn.Unit(pos),pos)) ||
-          maybe (fn tok =>
-            case tok of 
-              CONJ => SOME(Opr(Infix(Right,6,conj pos)))
-            | LOLLI => SOME(Opr(Infix(Right,4,lolli pos)))
-            | NEQ => SOME(Opr(Infix(Non,8,neq pos)))
-            | EQ => SOME(Opr(Infix(Non,8,eq pos)))
-            | BANG => SOME(Opr(Prefix(10, bang pos)))
-            | ID (path,x) => SOME(Atm(ExtSyn.Id(pos,path,x),pos))
-            | LAMBDA _ => NONE
-            | FORALL _ => NONE
-            | EXISTS _ => NONE
-            | PERIOD => NONE
-            | LPAREN => NONE
-            | RPAREN => NONE
-            | tok => 
-              raise ErrPos(pos,"Unexpected token: " ^ token_to_string tok)))
+          lookahead (!! any) (fn (_,pos) =>
+            maybe (fn tok => 
+              case tok of 
+                CONJ => SOME(Opr(Infix(Right,6,conj pos)))
+              | LOLLI => SOME(Opr(Infix(Right,4,lolli pos)))
+              | NEQ => SOME(Opr(Infix(Non,8,neq pos)))
+              | EQ => SOME(Opr(Infix(Non,8,eq pos)))
+              | BANG => SOME(Opr(Prefix(10, bang pos)))
+              | ID (path,x) => SOME(Atm(ExtSyn.Id(pos,path,x),pos))
+              | LAMBDA _ => NONE
+              | FORALL _ => NONE
+              | EXISTS _ => NONE
+              | PERIOD => NONE
+              | LPAREN => NONE
+              | RPAREN => NONE
+              | tok => 
+                raise ErrPos(pos,"Unexpected token: " ^ token_to_string tok)))
         val exp_parser = fix
         (fn exp_parser =>
             let
               val parens_parser = 
-                  get (fn pos => 
-                    maybe (fn LPAREN => SOME() | tok => NONE))
-                  >> !! exp_parser <<
-                  get (fn pos => 
-                    maybe (fn RPAREN => SOME() 
-                            | tok => raise ErrPos(pos,"Expected ')', found '"
-                                                      ^ token_to_string tok)))
-                  wth Atm
+                literal LPAREN >>
+                !! exp_parser <<
+                (literal RPAREN || err_expected_tok RPAREN)
+
               val lambda_parser = 
                   get (fn pos =>
                     maybe (fn (LAMBDA x) => SOME (x,pos) | _ => NONE) 
@@ -217,22 +227,28 @@ structure Parse :> PARSE = struct
                         && !! exp_parser wth (Atm o exists))
             in 
               parsefixityadj
-                  (alt [fixityitem_parser,
-                        parens_parser,
+                  (alt [unit_parser,
+                        fixityitem_parser,
+                        parens_parser wth Atm,
                         lambda_parser,
                         forall_parser,
                         exists_parser])
                   Left
                   (fn ((trm1,pos1),(trm2,pos2)) =>
-                      let val pos = Pos.union(pos1,pos2) 
+                      let
+                        (* val _ = print ("A " ^ Pos.toString pos1 ^
+                                       " - B " ^ Pos.toString pos2 ^ "\n") *)
+                        val pos = Pos.union(pos1,pos2) 
                       in (ExtSyn.App(pos,trm1,trm2),pos) end)
             end wth (fn (trm,pos) => trm))
         val force_period = 
-            get (fn pos => 
-              maybe (fn PERIOD => SOME() 
-                      | tok => 
-                        raise ErrPos(pos,"Expected '.', found '"
-                                       ^ token_to_string tok)))
+            literal PERIOD ||
+            !! any -- (fn (tok,pos) =>
+                          raise ErrPos(pos, "Expected '.', found '"
+                                            ^ token_to_string tok ^ "'.")) ||
+            !! (done()) -- (fn ((),pos) =>
+                               raise ErrPos(pos, "Expected '.', " 
+                                                 ^ "found end of file."))
         val rule_parser = 
             (* get (fn pos => 
               maybe (fn ID([],x) => SOME(x,pos) | _ => NONE))
@@ -246,9 +262,11 @@ structure Parse :> PARSE = struct
             (case Int.fromString id of NONE => NONE | SOME i => SOME(SOME i))
           | _ => NONE
         val exec_parser = 
-              !!(maybe (fn PERCENT("exec") => SOME() | _ => NONE)
-              >> maybe numparser && exp_parser << force_period)
-                wth (fn ((n,x),pos) => ExtSyn.EXEC(pos,n,x))
+         ((!!(literal(PERCENT "exec")) wth #2) && maybe numparser) --
+           (fn (p1,n) =>
+         (!! exp_parser << force_period) --
+           (fn (x,p2) =>
+         (succeed(ExtSyn.EXEC(Pos.union(p1,p2),n,x)))))
         val trace_parser = 
               !!(maybe (fn PERCENT("trace") => SOME() | _ => NONE)
               >> maybe numparser && exp_parser << force_period)

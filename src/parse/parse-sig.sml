@@ -75,6 +75,9 @@ sig
   val &&       : ('a,'t) parser * ('b,'t) parser -> ('a * 'b,'t) parser 
   (* alternation *)
   val ||       : ('a,'t) parser * ('a,'t) parser -> ('a,'t) parser 
+ 
+  val --!      : ('a,'t) parser * (('a * Pos.pos) -> ('b,'t) parser)
+                   -> ('b,'t) parser
 
   (* apply function to success value *)
   val wth      : ('a,'t) parser * ('a -> 'b) -> ('b,'t) parser 

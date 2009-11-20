@@ -99,12 +99,14 @@ struct
 
   infixr 4 << >>
   infixr 3 &&
-  infix  2 -- ##
+  infix  2 -- ## --!
   infix  2 wth suchthat return guard when
   infixr 1 ||
 
   fun p && q = p -- (fn x => q -- (fn y => succeed (x,y)))
   fun p || q = p ## (fn _ => q)
+
+  fun p --! f = !! p -- f
 
   fun p wth f      = p -- succeed o f
   fun p suchthat g = p -- (fn x => if g x then succeed x else fail)
@@ -258,11 +260,6 @@ struct
   fun parsefixity p =
       (repeat1 p) -- (fn ys => resolvefixity ys)
 
-(*
-  fun parsefixityadj p assoc adj =
-      (repeat1 p) -- (resolvefixityadj adj assoc)
-*)
-
   fun parsefixityadjn 0 p assoc adj = fail
     | parsefixityadjn n p assoc adj = 
       ((repeatn n p) -- (resolvefixityadj adj assoc)) 
@@ -272,6 +269,6 @@ struct
       ((repeat1 p) -- (resolvefixityadj adj assoc)) 
           || (lookahead (repeat1 p) 
               (fn parts => 
-               parsefixityadjn (List.length parts) p assoc adj))
-      
+               parsefixityadjn (List.length parts) p assoc adj))      
+
 end

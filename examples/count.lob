@@ -1,3 +1,4 @@
+
 count z -o ().
 
 count (s A), pos N -o count A, pos (s N).
@@ -10,10 +11,15 @@ count (times (s A) B) -o count (times A B), count B.
 
 count (times (plus A B) C) -o count (times A C), count (times B C).
 
+
+
 count (times (times A B) C) -o count (times A (times B C)).
 
 
 %trace * count (plus (times (plus (s(s(s(s(z))))) (s(s(s(z))))) (s (s z))) (s z)), pos(z).
+
+
+
 
 
 
