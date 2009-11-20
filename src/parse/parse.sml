@@ -145,10 +145,10 @@ struct
 
   fun repeatn n p =
     let
-      fun rep 0 () = succeed ()
-        | rep n () = second p ($(rep (n - 1)))
+      fun rep 0 ls () = succeed (rev ls)
+        | rep n ls () = p -- (fn l => $(rep (n - 1) (l :: ls)))
     in
-      $(rep n)
+      $(rep n [])
     end
 
   fun repeati p = fix (fn rep => p >> rep || succeed ())
@@ -258,7 +258,20 @@ struct
   fun parsefixity p =
       (repeat1 p) -- (fn ys => resolvefixity ys)
 
+(*
   fun parsefixityadj p assoc adj =
       (repeat1 p) -- (resolvefixityadj adj assoc)
+*)
 
+  fun parsefixityadjn 0 p assoc adj = fail
+    | parsefixityadjn n p assoc adj = 
+      ((repeatn n p) -- (resolvefixityadj adj assoc)) 
+          || (parsefixityadjn (n - 1) p assoc adj)
+
+  fun parsefixityadj p assoc adj =
+      ((repeat1 p) -- (resolvefixityadj adj assoc)) 
+          || (lookahead (repeat1 p) 
+              (fn parts => 
+               parsefixityadjn (List.length parts) p assoc adj))
+      
 end

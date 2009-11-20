@@ -119,7 +119,7 @@ sig
   (* one or more *)
   val repeat1  : ('a,'t) parser -> ('a list,'t) parser 
   (* exact number *)
-  val repeatn  : int -> ('a, 't) parser -> (unit, 't) parser
+  val repeatn  : int -> ('a, 't) parser -> ('a list, 't) parser
   (* avoid building result *)
   val repeati  : ('a, 't) parser -> (unit, 't) parser
 

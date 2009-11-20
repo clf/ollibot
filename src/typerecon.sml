@@ -66,7 +66,8 @@ structure TypeRecon = struct
                 val fvar = union (p,fvar1,fvar2)
               in 
                 unifypos(p,tp1,ST.Arrow'(tp_arg,tp),
-                  SOME "Can't perform that application (missing period?)");
+                  SOME("Can't perform that application " ^ 
+                       "(missing period or comma?)"));
                 unifypos(p,tp2,tp_arg,
                   SOME "Argument has wrong type (did you write \"a(b,c)\" instead of \"a b c\"?)");
                 (fvar, tp)
