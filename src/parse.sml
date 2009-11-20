@@ -15,9 +15,11 @@ structure Parse :> PARSE = struct
   
   infixr 4 << >>
   infixr 3 &&
-  infix  2 -- ## --!
+  infix  2 -- ## --! ##!
   infix  2 wth suchthat return guard when
   infixr 1 ||
+
+  fun p ##! s = p ## (fn p => raise ErrPos(p,s))
 
   datatype token = 
       PERIOD | LPAREN | RPAREN | CONJ 
@@ -256,21 +258,29 @@ structure Parse :> PARSE = struct
             && *) !! exp_parser << force_period 
                 wth (fn (trm,pos') => 
                         ExtSyn.RULE(pos', "-", trm))
-        val numparser =
-         fn ID([],"*") => SOME(NONE)
+        val numparser = maybe
+         (fn ID([],"*") => SOME(NONE)
           | ID([],id) => 
             (case Int.fromString id of NONE => NONE | SOME i => SOME(SOME i))
-          | _ => NONE
+          | _ => NONE)
         val exec_parser = 
-         ((!!(literal(PERCENT "exec")) wth #2) && maybe numparser) --
-           (fn (p1,n) =>
-         (!! exp_parser << force_period) --
+         literal(PERCENT "exec") --! 
+           (fn (_,p1) =>
+         numparser ##! "Number or '*' expected as first argument to %exec." --
+           (fn n =>
+         (!! exp_parser << force_period ##! 
+             "No second argument given for %exec (maybe try '()'?)") --
            (fn (x,p2) =>
-         (succeed(ExtSyn.EXEC(Pos.union(p1,p2),n,x)))))
+         (succeed(ExtSyn.TRACE(Pos.union(p1,p2),n,x))))))
         val trace_parser = 
-              !!(maybe (fn PERCENT("trace") => SOME() | _ => NONE)
-              >> maybe numparser && exp_parser << force_period)
-                wth (fn ((n,x),pos) => ExtSyn.TRACE(pos,n,x))
+         literal(PERCENT "trace") --! 
+           (fn (_,p1) =>
+         numparser ##! "Number or '*' expected as first argument to %trace." --
+           (fn n =>
+         (!! exp_parser << force_period ##! 
+             "No second argument given for %trace (maybe try '()'?)") --
+           (fn (x,p2) =>
+         (succeed(ExtSyn.TRACE(Pos.union(p1,p2),n,x))))))
       in alt [exec_parser,trace_parser,rule_parser] end
 
   fun markstream f fs = 

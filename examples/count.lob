@@ -1,4 +1,4 @@
-
+%exec * ()
 count z -o ().
 
 count (s A), pos N -o count A, pos (s N).
