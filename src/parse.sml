@@ -271,7 +271,7 @@ structure Parse :> PARSE = struct
          (!! exp_parser << force_period ##! 
              "No second argument given for %exec (maybe try '()'?)") --
            (fn (x,p2) =>
-         (succeed(ExtSyn.TRACE(Pos.union(p1,p2),n,x))))))
+         (succeed(ExtSyn.EXEC(Pos.union(p1,p2),n,x))))))
         val trace_parser = 
          literal(PERCENT "trace") --! 
            (fn (_,p1) =>
