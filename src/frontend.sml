@@ -91,7 +91,8 @@ structure Frontend = struct
                | Stream.Cons((tok,pos),_) => 
                  raise ErrPos(pos, 
                               "Could not parse declaration beginning with " ^
-                              Parse.token_to_string tok))
+                              Parse.token_to_string tok ^ 
+                              ".\nPerhaps a missing/extra comma?"))
 
       in loop (Signat.empty, Parse.file_to_tokenstream file) end
 

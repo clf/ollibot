@@ -90,7 +90,7 @@ structure Parse :> PARSE = struct
                  any -- (fn _ => multicommentRest p ps),
                  done () -- (fn _ => raise ErrPos(p,"Non-terminated multiline comment")) ]
         val tokenparser = 
-            alt [linecomment, multicomment [],
+            alt [linecomment, string["%","\n"] >> succeed " ", multicomment [],
                  literal ".", literal "(", literal ")", literal ",",
                  literal "!",
                  literal "λ", literal "∀", literal "∃", 
