@@ -312,7 +312,7 @@ structure TypeRecon = struct
                 case e2i_term (trm, vars) of
                   ((PT_Root(I.Const a),trms), I.Prop) => 
                   I.Atom(I.Persistent,a,rev trms)
-                | _ => raise ErrPos(p,"Banged not positive proposition\n")
+                | _ => raise ErrPos(p,"It is only possible to apply \"!\" to a proposition\n")
               end
             | E.Eq(p,t1,t2) =>
               I.Eq(partial_to_canonical(e2i_term(t1, vars)),
@@ -325,7 +325,7 @@ structure TypeRecon = struct
                 case e2i_term (trm, vars) of
                   ((PT_Root(I.Const a),trms), I.Prop) => 
                   I.Atom(I.Linear,a,rev trms)
-                | _ => raise Err("Subterm not positive proposition\n")
+                | _ => raise Err("Positive proposition expected, not found\n")
               end
 
         and e2i_term (trm, vars) = 

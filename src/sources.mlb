@@ -17,6 +17,7 @@ local
   $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
 in
   functor RedBlackMapFn
+  functor RedBlackSetFn
 end
 
 $(SML_LIB)/basis/basis.mlb

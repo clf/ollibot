@@ -15,6 +15,6 @@ count (times (times A B) C) -o count (times A (times B C)).
 
 %trace * count (plus (times (plus (s(s(s(s(z))))) (s(s(s(z))))) (s (s z))) (s z)), pos(z).
 
-err A B -o ().
 
-%trace * err A b.
+
+
