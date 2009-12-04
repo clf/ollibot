@@ -6,16 +6,16 @@ signature SIGNAT = sig
         linear_preds : SetS.set,
         pers_preds : SetS.set,
         rules : IntSyn.rule list,
-        linear_rules : IntSyn.neg_prop list,
-        saturating_rules : IntSyn.neg_prop list
+        linear_rules : (Pos.pos * IntSyn.neg_prop) list,
+        saturating_rules : (Pos.pos * IntSyn.neg_prop) list
        }
   val empty : state
   val w'constants : (state * IntSyn.tp MapS.map) -> state
   val w'linear_preds : (state * SetS.set) -> state
   val w'pers_preds : (state * SetS.set) -> state
   val w'rules : (state * IntSyn.rule list) -> state
-  val w'linear_rules : (state * IntSyn.neg_prop list) -> state
-  val w'saturating_rules : (state * IntSyn.neg_prop list) -> state
+  val w'linear_rules : (state * (Pos.pos * IntSyn.neg_prop) list) -> state
+  val w'saturating_rules : (state * (Pos.pos * IntSyn.neg_prop) list) -> state
 
 end
 
@@ -26,8 +26,8 @@ structure Signat :> SIGNAT = struct
         linear_preds : SetS.set,
         pers_preds : SetS.set,
         rules : IntSyn.rule list,
-        linear_rules : IntSyn.neg_prop list,
-        saturating_rules : IntSyn.neg_prop list}
+        linear_rules : (Pos.pos * IntSyn.neg_prop) list,
+        saturating_rules : (Pos.pos * IntSyn.neg_prop) list}
   val empty  = 
       {constants = MapS.empty, 
        linear_preds = SetS.empty,

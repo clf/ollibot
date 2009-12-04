@@ -1,4 +1,3 @@
-%exec * ()
 count z -o ().
 
 count (s A), pos N -o count A, pos (s N).
@@ -7,7 +6,7 @@ count (plus A B) -o count A, count B.
 
 count (times z B) -o ().
 
-count (times (s A) B) -o count (times A B), count B.
+count (times (s A) B) -o count (times A B), count C.
 
 count (times (plus A B) C) -o count (times A C), count (times B C).
 

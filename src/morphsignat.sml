@@ -77,8 +77,8 @@ structure MorphSignat :> MORPH_SIGNAT = struct
       in
         checkstrict_neg prop;
         if allpers_neg prop 
-        then st w'saturating_rules (prop :: #saturating_rules st)
-        else st w'linear_rules (prop :: #linear_rules st)
+        then st w'saturating_rules ((p,prop) :: #saturating_rules st)
+        else st w'linear_rules ((p,prop) :: #linear_rules st)
       end
     | I.EXEC (p,_,prop) => 
       let val (pers,linear) = 

@@ -61,7 +61,7 @@ structure Execute :> EXECUTE = struct
           let
             val arg = valOf(List.nth(evars,u))
                 handle Option => 
-                       raise Err ("Evar " ^ Int.toString u ^ " not ground!")
+                       raise Err ("Execution error: rule was not range restriction.")
           in
             T.apply_subst (pull_subst evars subst) (valOf(List.nth(evars,u)))
           end
@@ -270,7 +270,7 @@ structure Execute :> EXECUTE = struct
       let 
 
         (* Try to focus at a particular place on a particular rule *)
-        fun focusrule (U,L,OL,OR) neg_prop =
+        fun focusrule (U,L,OL,OR) (p,neg_prop) =
             let 
               val (OL,O,OR) = get_ordered_neg (OL,OR) neg_prop
               val ((U,L,O),evars,conc) = 
@@ -284,6 +284,7 @@ structure Execute :> EXECUTE = struct
                           ordered = rev OL @ O' @ OR})
             end
             handle MatchFail => NONE
+                 | Error(_,msg) => raise ErrPos(p,msg)
                  | exn => raise Err "Unexpected exception in focus (internal)"
 
         (* Try to focus at a particular place on any rule *)
@@ -308,9 +309,10 @@ structure Execute :> EXECUTE = struct
             in answers := U :: !answers; raise MatchFail
             end
         fun loop [] = List.concat (!answers)
-          | loop (neg_prop :: rules) = 
+          | loop ((p,neg_prop) :: rules) = 
             match_neg neg_prop ans ((U,[],[]), [])
             handle MatchFail => loop rules
+                 | Error(_,msg) => raise ErrPos(p,msg)
       in loop rules end
 
   fun saturate (S{persistent=U,linear=L,ordered=O}, rules) = 
