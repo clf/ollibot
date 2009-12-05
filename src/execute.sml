@@ -61,7 +61,7 @@ structure Execute :> EXECUTE = struct
           let
             val arg = valOf(List.nth(evars,u))
                 handle Option => 
-                       raise Err ("Execution error: rule was not range restriction.")
+                       raise Err ("Execution error: rule was not range restricted.")
           in
             T.apply_subst (pull_subst evars subst) (valOf(List.nth(evars,u)))
           end

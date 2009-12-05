@@ -45,23 +45,23 @@ struct
         | Var(E v) => lookup v
       end
 
-  fun bind (E(v as ref NONE)) trm =
-      (case prj trm of
-         Var(E v') => if v = v' then () else v := SOME trm
-       | _ => v := SOME trm)
-    | bind _ _ = raise Match
+  fun occurs_check (e1 : evar) t2 = 
+      case prj t2 of
+        Var e2 => if e1 = e2 then raise Err("Cannot assign types") else ()
+      | Item => ()
+      | Prop => ()
+      | Arrow(t1,t2) => (occurs_check e1 t1; occurs_check e1 t2)
+
+  fun bind (e1 as E(v as ref NONE)) t2 =
+      (case prj t2 of
+         Var(E v') => if v = v' then () else v := SOME t2
+       | _ => (occurs_check e1 t2; v := SOME t2))
+    | bind _ _ = raise Err "Internal: bind called on invalid term"
 
   val Var' = fn () => Var(E(ref NONE))
   val Item' = Item
   val Prop' = Prop
-  val Arrow' = Arrow
-
-  fun occurs_check (e1 : evar) t2 = 
-      case t2 of
-        Var e2 => if e1 = e2 then raise Err("Cannon assign types") else ()
-      | Item => ()
-      | Prop => ()
-      | Arrow(t1,t2) => (occurs_check e1 t1; occurs_check e1 t2)
+  val Arrow' = Arrow        
 
   exception Unify
   fun unify t1 t2 = 
@@ -72,7 +72,7 @@ struct
       | (Prop, Prop) => ()
       | (Arrow(t1,s1),Arrow(t2,s2)) => (unify t1 t2; unify s1 s2)
       | _ => raise Unify
-
+                           
   val isItem = fn Item => true | _ => false
   val isProp = fn Prop => true | _ => false
       
