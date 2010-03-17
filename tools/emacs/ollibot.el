@@ -42,8 +42,23 @@ The purpose of this input method is to edit .olf programs."
  ("\\bang" ?!)
  
  ;; Connectives
+ ("\\lolli" ?⊸)
+ ("\\righti" ?↠)
+ ("\\lefti" ?↣)
  ("\\fuse" ?•)
  ("\\esuf" ?◦)
+ ("\\r" ?→)
+ ("\\l" ?←)
+
+ ;; Equalities
+ ("\\<" ?⟨)
+ ("\\>" ?⟩)
+ ("\\<<" ?⟪)
+ ("\\>>" ?⟫)
+ ("\\[[" ?⟦)
+ ("\\]]" ?⟧)
+ ("\\_(" ?₍)
+ ("\\_)" ?₎)
 
  ;; Everything else is originally cut and pasted from 
  ;; /Applications/Emacs.app/Contents/Resources/leim/quail/latin-ltx.el
@@ -368,8 +383,6 @@ The purpose of this input method is to edit .olf programs."
  ("^{SM}" ?℠)
  ("^{TEL}" ?℡)
  ("^{TM}" ?™)
- ("_(" ?₍)
- ("_)" ?₎)
  ("_+" ?₊)
  ("_-" ?₋)
  ("_0" ?₀)
