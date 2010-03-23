@@ -1,0 +1,43 @@
+%% Regular lambda calculus with worlds
+
+e/var  : @ W • eval X • !bind X W V
+            ->> @ W • return V.
+e/lam  : eval (lam λx. M x)
+            ->> return (lam λx.M x).
+e/app1 : eval (app M N)
+            ->> eval M • cont (app₁ N).
+e/app2 : return V • cont (app₁ N)
+            ->> eval N • cont (app₂ V).
+e/app3 : @ W • return V • cont (app₂ (lam λx. M x)) 
+            ->> ∃x. !bind x W V' •
+                @ W • eval (M x).
+
+%% Box rules
+
+e/wlam : eval (wlam W λα. M α)
+            ->> return (wlam W λα. M α).
+%% By typing invariant, we already know what's to the right: (@ W)
+
+e/wap1 : @ W' • eval (wapp M W ≤ W')
+            ->> @ W • eval M • cont (wapp₁ W ≤ W').
+%% We actually don't even need to store the W on the stack!
+
+e/wap2 : @ W • return (wlam W λα. M α) • cont (wapp₁ W ≤ W')
+            ->> @ W' • eval (M W').
+
+%% Diamond rules
+
+e/dia1 : @ W • return (dia W ≤ W' M)
+            ->> @ W' • eval M • cont (dia₁ W ≤ W').
+%% Same point: we don't need to store W' on the stack.
+
+e/dia2 : @ W' • return V • cont (dia₁ W ≤ W')
+            ->> ∃loc. !bind loc V W' • 
+                @ W • eval (dia W ≤ W' loc).
+
+e/let1 : @ W'' • eval (letdia W M λα.λx.N α x)
+            ->> @ W • eval M • cont (letdia₁ W'' W λα.λx.N α x).
+%% And again, no need to store W. But we *DO* have to store W'' somewhere.
+
+e/let2 : @ W • return (dia W ≤ W' Loc) • cont (letdia₁ W'' W λα.λx.N α x)
+            ->> @ W'' • eval (N W' Loc).      
