@@ -142,6 +142,14 @@ structure TypeRecon = struct
                 unifypos(p,tp1,ST.Prop');
                 (fvar1, ST.Prop')
               end
+            | E.Not(p,trm1) =>
+              let (* val _ = print "Bang\n" *)
+                val (fvar1,tp1) = vars_and_types (trm1, bvar)
+              in
+                unifypos(p,tp1,ST.Prop'); 
+                (fvar1, ST.Prop')
+              end
+            | E.One p => (MapS.empty, ST.Prop')
 
 
         (* Print a partially inferred type *)
@@ -306,6 +314,14 @@ structure TypeRecon = struct
                   I.Atom(I.Linear,a,rev trms)
                 | _ => raise Err("Gnabed not positive proposition\n")
               end
+            | E.Not(p,trm) =>
+              let in
+                case e2i_term (trm, vars) of
+                  ((PT_Root(I.Const a),trms), I.Prop) => 
+                  I.NegAtom(a,rev trms)
+                | _ => raise Err("Negated not positive proposition\n")
+              end
+            | E.One p => I.One
             | trm =>
               let in
                 case e2i_term (trm, vars) of

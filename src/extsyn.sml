@@ -83,6 +83,8 @@ structure ExtSyn = struct
     | Lefti of Pos.pos * term * term 
     | Lambda of Pos.pos * SimpleType.styp * string * term
     | Id of Pos.pos * string list * string
+    | One of Pos.pos 
+    | Not of Pos.pos * term
     | Bang of Pos.pos * term
     | Gnab of Pos.pos * term
 
@@ -97,6 +99,8 @@ structure ExtSyn = struct
       | Lefti(p,_,_) => p
       | Lambda(p,_,_,_) => p
       | Id(p,_,_) => p
+      | One p => p
+      | Not(p,_) => p
       | Bang(p,_) => p
       | Gnab(p,_) => p
 

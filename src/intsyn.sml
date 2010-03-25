@@ -43,7 +43,9 @@ structure IntSyn = struct
       Exists of string * pos_prop
     | Fuse of pos_prop * pos_prop
     | Esuf of pos_prop * pos_prop
+    | One
     | Atom of perm * string * term list
+    | NegAtom of string * term list
    
   type rule = Pos.pos * string * neg_prop
   datatype decl =
@@ -125,12 +127,15 @@ structure IntSyn = struct
                 to_string mvars true trm1 ^ " ○ " ^
                 to_string mvars false trm2
           in if needs_parens then "(" ^ str ^ ")" else str end
+        | One => "1"
         | Atom(Persistent,a,trms) => 
           "!" ^ term_to_string_env mvars [] false (Root(Const a,trms))
         | Atom(Linear,a,trms) => 
           "¡" ^ term_to_string_env mvars [] false (Root(Const a,trms))
         | Atom(Ordered,a,trms) => 
           term_to_string_env mvars [] false (Root(Const a,trms))
+        | NegAtom(a,trms) => 
+          "¬" ^ term_to_string_env mvars [] false (Root(Const a,trms))
       end
 
   fun neg_prop_to_string_env mvars needs_parens trm = 

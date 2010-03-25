@@ -31,9 +31,11 @@ structure MorphSignat :> MORPH_SIGNAT = struct
         I.Exists(_,prop) => allpers_pos prop
       | I.Fuse(prop1,prop2) => allpers_pos prop1 andalso allpers_pos prop2
       | I.Esuf(prop1,prop2) => allpers_pos prop1 andalso allpers_pos prop2
+      | I.One => true
       | I.Atom(I.Persistent,_,_) => true
       | I.Atom(I.Linear,_,_) => false
       | I.Atom(I.Ordered,_,_) => false
+      | I.NegAtom(_,_) => true
 
   (* Check for range restriction *)
   fun checkstrict_neg prop = ()

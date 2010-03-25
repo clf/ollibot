@@ -23,24 +23,26 @@ structure Parse :> PARSE = struct
 
   datatype token = 
       PERIOD | LPAREN | RPAREN 
-    | BANG | GNAB | COMMA | EQ | NEQ
+    | BANG | GNAB | NEG | ONE
+    | COMMA | EQ | NEQ
     | RIGHTI | LEFTI | FUSE
     | LOLLI | TENSOR
-    | ARROW | CONJ | NEG
+    | ARROW | CONJ 
+    | PERCENT of string | COLON | WS
     | LAMBDA of string | FORALL of string | EXISTS of string 
     | ID of string list * string 
-    | PERCENT of string | COLON | WS
 
   fun token_to_string token = 
       case token of 
         PERIOD => "." | LPAREN => "(" | RPAREN => ")" 
-      | BANG => "!" | GNAB => "¡" | COMMA => "," | EQ => "==" | NEQ => "<>"
+      | BANG => "!" | GNAB => "¡" | NEG => "¬" | ONE => "1"
+      | COMMA => "," | EQ => "==" | NEQ => "<>"
       | RIGHTI => "->>" | LEFTI => ">->" | FUSE => "•"
       | LOLLI => "->>" | TENSOR => "⊗" 
-      | ARROW => "->" | CONJ => "∧" | NEG => "¬" 
+      | ARROW => "->" | CONJ => "∧" 
+      | PERCENT x => "%" ^ x | COLON => ":" | WS => ""
       | LAMBDA x => "λ " ^ x | FORALL x => "∀ " ^ x | EXISTS x => "∃ " ^ x
       | ID(path,x) => concat (map (fn x => x ^  ".") path) ^ x 
-      | PERCENT x => "%" ^ x | COLON => ":" | WS => ""
 
   fun err_expected_tok expected = 
       any --! 
@@ -204,9 +206,24 @@ structure Parse :> PARSE = struct
             alt [literal "." >> succeed PERIOD,
                  literal "(" >> succeed LPAREN,
                  literal ")" >> succeed RPAREN,
-                 literal "•" >> succeed FUSE,
                  literal "!" >> succeed BANG,
                  literal "¡" >> succeed GNAB,
+                 literal "¬" >> succeed NEG,
+                 literal "1" >> succeed ONE,
+                 literal "," >> succeed COMMA,
+                 literal "==" >> succeed EQ,
+                 literal "<>" >> succeed NEQ,
+                 literal "↠" >> succeed RIGHTI,
+                 literal "->>" >> succeed RIGHTI,
+                 literal "↣" >> succeed LEFTI,
+                 literal ">->" >> succeed LEFTI,
+                 literal "•" >> succeed FUSE,
+                 literal "-o" >> succeed LOLLI,
+                 literal "⊸" >> succeed LOLLI,
+                 literal "⊗" >> succeed TENSOR,
+                 literal "->" >> succeed ARROW,
+                 literal "→" >> succeed ARROW,
+                 literal "∧" >> succeed CONJ,
                  literal "%" >> any wth PERCENT,
                  literal ":" >> succeed COLON,
                  literal " " >> succeed WS,
@@ -236,21 +253,26 @@ structure Parse :> PARSE = struct
   (* Main parser *)
   val decl_parser =
       let 
-        fun fuse pos ((trm1,pos1),(trm2,pos2)) =
-            let val pos = Pos.union(Pos.union(pos,pos1),pos2)
-            in (ExtSyn.Fuse(pos,trm1,trm2),pos) end
         fun bang pos ((trm1,pos1)) = 
             let val pos = Pos.union(pos,pos1)
             in (ExtSyn.Bang(pos,trm1),pos) end
         fun gnab pos ((trm1,pos1)) = 
             let val pos = Pos.union(pos,pos1)
             in (ExtSyn.Gnab(pos,trm1),pos) end
+        fun neg pos ((trm1,pos1)) = 
+            let val pos = Pos.union(pos,pos1)
+            in (ExtSyn.Not(pos,trm1),pos) end
+
         fun righti pos ((trm1,pos1),(trm2,pos2)) =
             let val pos = Pos.union(Pos.union(pos,pos1),pos2)
             in (ExtSyn.Righti(pos,trm1,trm2),pos) end
         fun lefti pos ((trm1,pos1),(trm2,pos2)) =
             let val pos = Pos.union(Pos.union(pos,pos1),pos2)
             in (ExtSyn.Lefti(pos,trm1,trm2),pos) end
+        fun fuse pos ((trm1,pos1),(trm2,pos2)) =
+            let val pos = Pos.union(Pos.union(pos,pos1),pos2)
+            in (ExtSyn.Fuse(pos,trm1,trm2),pos) end
+
         fun lambda ((x,pos),(trm,pos')) = 
             let val pos = Pos.union(pos,pos') 
             in (ExtSyn.Lambda(pos,SimpleType.Var'(),x,trm),pos) end
@@ -269,6 +291,8 @@ structure Parse :> PARSE = struct
             | LEFTI => SOME(Opr(Infix(Right,4,lefti pos)))
             | BANG => SOME(Opr(Prefix(10, bang pos)))
             | GNAB => SOME(Opr(Prefix(10, gnab pos)))
+            | NEG => SOME(Opr(Prefix(10, neg pos)))
+            | ONE => SOME(Atm(ExtSyn.One pos, pos))
             | ID (path,x) => SOME(Atm(ExtSyn.Id(pos,path,x),pos))
             | LAMBDA _ => NONE
             | FORALL _ => NONE

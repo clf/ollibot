@@ -61,7 +61,7 @@ structure Execute :> EXECUTE = struct
           let
             val arg = valOf(List.nth(evars,u))
                 handle Option => 
-                       raise Err ("Evar " ^ Int.toString u ^ " not ground!")
+                  raise Err ("Execution error: rule was not range restricted.")
           in
             T.apply_subst (pull_subst evars subst) (valOf(List.nth(evars,u)))
           end
@@ -133,26 +133,22 @@ structure Execute :> EXECUTE = struct
    * it is obvious based only on the predicates that we will fail (i.e. if 
    * need an eval(E) but there is a comp(F) there). *)
 
-  fun get_ordered_atom O (perm,a:string,trms) =
-      (* let in *)
-        case perm of
-          I.Ordered => 
-          let
-            val (b,gtrms) = hd O
-                handle Empty => raise MatchFail
-          in 
-            if a = b then ([(a,gtrms)], tl O) else raise MatchFail
-          end
-        | _ => ([], O)
-      (* end
-      handle exn => raise exn *)
-
+  fun get_ordered_atom O (a:string,trms) =
+      let
+        val (b,gtrms) = hd O
+            handle Empty => raise MatchFail
+      in 
+        if a = b then ([(a,gtrms)], tl O) else raise MatchFail
+      end
                                 
   fun get_ordered_left OL trm = 
       (* let in *)
         case trm of
           I.Exists(_,trm) => get_ordered_left OL trm
-        | I.Atom atom => get_ordered_atom OL atom
+        | I.One => ([],OL)
+        | I.Atom (I.Ordered,a,trms) => get_ordered_atom OL (a,trms)
+        | I.Atom (_,a,trms) => ([],OL)
+        | I.NegAtom atom => ([],OL)
         | I.Fuse(trm1,trm2) =>
           let 
             val (O2,OL) = get_ordered_left OL trm2
@@ -170,7 +166,10 @@ structure Execute :> EXECUTE = struct
       (* let in *)
         case trm of
           I.Exists(_,trm) => get_ordered_right OR trm
-        | I.Atom atom => get_ordered_atom OR atom
+        | I.One => ([],OR)
+        | I.Atom (I.Ordered,a,trms) => get_ordered_atom OR (a,trms)
+        | I.Atom (_,a,trms) => ([],OR)
+        | I.NegAtom atom => ([],OR)
         | I.Fuse(trm1,trm2) =>
           let 
             val (O1,OR) = get_ordered_right OR trm1
@@ -226,6 +225,7 @@ structure Execute :> EXECUTE = struct
           val (U1,L1,O1) = conc_left evars trm1
           val (U2,L2,O2) = conc_left evars trm2
         in (U1 @ U2, L1 @ L2, O2 @ O1) end
+      | I.One => ([],[],[])
       | I.Atom(perm,a,trms) =>
         let
           val trms = map (pull_term evars) trms
@@ -236,10 +236,12 @@ structure Execute :> EXECUTE = struct
           | I.Linear     => ([],[trm],[])
           | I.Ordered    => ([],[],[trm])
         end
+      | I.NegAtom(a,trms) => raise Err("Negation cannot be used in conclusion")
+
 
 
   (* Right focus *)
-  fun match_atom (perm,a,trms) cont (ctx as (U,L,O), evars) = 
+  fun match_atom (perm,a:string,trms) cont (ctx as (U,L,O), evars) = 
       let 
         fun ordered _ _ evars = cont((U,L,tl O), evars)
         fun linear L1 L2 evars = cont((U,List.revAppend(L1,L2),O), evars)
@@ -270,7 +272,19 @@ structure Execute :> EXECUTE = struct
           I.Exists(_,trm1) => match_pos trm1 (pop cont) (ctx, NONE :: evars) 
         | I.Fuse(trm1,trm2) => match_pos trm1 (match_pos trm2 cont) state
         | I.Esuf(trm1,trm2) => match_pos trm1 (match_pos trm2 cont) state 
+        | I.One => cont state
         | I.Atom atom => match_atom atom cont (ctx,evars)
+        | I.NegAtom (a,trms) =>
+          let
+            val (U,_,_) = ctx
+            val trms = map (pull_term evars) trms
+            val trm = (a,trms)
+            fun a_match (b,trms') =
+              a = b andalso List.all T.eq (ListPair.zip (trms,trms'))
+          in 
+            if List.exists a_match U
+            then raise MatchFail else cont state
+          end
       end
 
   (* Left focus *)

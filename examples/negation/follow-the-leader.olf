@@ -1,0 +1,34 @@
+-- Following the leader with linear modal negation
+-- Robert J. Simmons
+
+{- The idea here is to ensure that at most one vertex in any connected 
+component in an undirected graph will be made the leader of that connected 
+component. For the sake of simplicity, we just track whether a vertex
+has a leader, not who its leader is. 
+
+The nondeterminstic choice implicit in rule v₂ will not change the *number*
+of leaders in the final state: compare this to connect.olf where we the graph
+is directed and this is not the case. -}
+
+{== Persistent rules ==}
+{- We would like to be able to add the extra premise (¬leader Y) to r₂, but we
+don't yet have stratified negation over persistent stuff! -}
+
+r₀ : !edge X Y ->> !edge Y X.
+r₁ : !leader L • !edge L Y ->> !is_led Y.
+r₂ : !is_led X • !edge X Y ->> !is_led Y.
+
+{== Linear rules ==}
+{- If any vertex is truly un-led, it can become the leader -}
+
+v₁ : vertex X • !is_led X ->> 1.
+v₂ : vertex X • ¬is_led X ->> !leader X.
+
+%trace * vertex a • vertex b.
+
+%trace * vertex a • vertex b • !edge a b.
+
+%trace * vertex a • vertex b • !edge b a.
+
+%trace * vertex a • vertex b • vertex c • vertex d • vertex e • vertex f
+     • !edge a c • !edge c b • !edge b a • !edge d d • !edge e f.

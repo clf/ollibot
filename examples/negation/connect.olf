@@ -1,10 +1,33 @@
+-- Leadership calculation
+-- Robert J. Simmons
 
+{- More non-determinstic than follow-the-leader.olf, but only because the
+graph is not symmetric: depending on the state transitions we make with rule
+v₁, there many end up being a whole lot of leaders or very few.
 
-r₁ : !leads Head X • !edge X Y ->> !leads Head Y • !is_led Y.
+Here too, compared to follow-the-leader.olf, we avoid the desire for stratified
+negation among the persistent rules by just defining the leader to be any
+vertex that leads itself. -} 
 
-v₁ : vertex X • !is_led X ->> 1
-v₂ : vertex X • ¬is_led X ->> !leads X X.
+{== Persistent rules ==}
 
-r1 : edge X Y -> edge Y X.
-r2 : start ⊗ vertex X -o !tree source X
-r3 : (∃Y. !tree X Y) ⊗ !edge X Y ⊗ vertex X -o !tree X Y ⊗ !intree Y.
+r₁ : !leads L X ->> !is_led X.
+r₂ : !leads L X • !edge X Y ->> !leads L Y.
+
+{== Linear rules ==}
+
+v₁ : vertex X • !is_led X ->> 1.
+v₂ : vertex X • ¬is_led X ->> !is_leader X • !leads X X.
+
+%trace * vertex a • vertex b.
+
+%trace * vertex a • vertex b • !edge a b.
+
+%trace * vertex a • vertex b • !edge b a.
+
+{- Because of the determinstic operational semantics, this trace will appoint
+"a" the first leader, delete "b", then appoint "f" the second leader. Because
+the edges are undirected, "d" will also be appointed a leader. If "d" had
+been chosen to lead before "f", then both would not have become leaders. -} 
+%trace * vertex a • vertex b • vertex f • vertex c • vertex d • vertex e 
+     • !edge a c • !edge c b • !edge b a • !edge d e • !edge e f.
