@@ -1,51 +1,56 @@
-%% = Call-by-need suspensions with a fixed point =
-%% == Robert J. Simmons ==
+-- Call-by-need suspensions with a fixed point
+-- Robert J. Simmons
 
-%% ''This examples is derived from Figure 3 in [[readme.txt |
-%% Substructural Operational Semantics as Ordered Logic Programming]].''
+{-
+''This examples is derived from Figure 3 in [[readme.txt | Substructural 
+Operational Semantics as Ordered Logic Programming]].''
 
-%% This file describes the stuck behavior from the "black hole" when the
-%% call-by-need specification is straightforwardly extended to a fixed point
-%% operator. Two ways of dealing with this stuckness are
-%% [[cbneed-nonterm.olf | nontermination]] and 
-%% [[cbneed-error.olf   | raising an error]].
+This file describes the stuck behavior from the "black hole" when the 
+call-by-need specification is straightforwardly extended to a fixed point 
+operator. Two ways of dealing with this stuckness are [[cbneed-nonterm.olf |
+nontermination]] and [[cbneed-error.olf | raising an error]].
+-}
 
-%% == Call-by-value functions ==
+{== Call-by-value functions ==}
 
 elam : eval(lam λx. E x) ->> return(lam E).
 eapp₁ : eval(app E₁ E₂) ->> comp(app₁ E₂) • eval(E₁).
 eapp₂ : comp(app₁ E₂) • return(V₁) ->> comp(app₂ V₁) • eval(E₂).
 eapp₃ : comp(app₂ (lam λx.E₀ x)) • return(V₂) ->> eval(E₀ V₂).
 
-
-%% == Fixed point recursion (call-by-need) ==
+{== Fixed point recursion (call-by-need) ==}
 
 efix  : eval(fix λx. E x) ->> ∃D. eval(E D) • ¡susp (E D) D.
 esusp : eval(D) • ¡susp E D ->> comp(bind₁ D) • eval E.
 ebind : comp(bind₁ D) • return(V) ->> return(V) • !bind V D.
 evar  : eval(D) • !bind V D ->> return V.
 
+{== Example traces ==}
 
-%% == Example traces == 
-
-%% This is `fix(x.x)`, which you can't write in ML, but which falls into the
-%% limited set of expressions that "falls into a black hole" - evaluation gets
-%% stuck when a destination is reached that is currently associated with 
-%% neither a `susp` nor a `bind`.
+{-
+This is `fix(x.x)`, which you can't write in ML, but which falls into the 
+limited set of expressions that "falls into a black hole" - evaluation gets 
+stuck when a destination is reached that is currently associated with neither a
+`susp` nor a `bind`.
+-}
 
 %trace * eval(fix λx. x).
 
-%% This is a slightly more complicated expression that you also can't write 
-%% in ML. It also falls into a black hole.
+{-
+This is a slightly more complicated expression that you also can't write in ML.
+It also falls into a black hole.
+-}
 
 %trace * eval(fix λx. app (lam λy. y) x). 
 
-%% This is `fix(f.λx.f x)`, which you can (more or less) write in ML as
-%% `fun f x = f x`, applied to the identity function.
-%%
-%% It goes into an infinite loop instead of triggering the black hole; 
-%% it is easy to see that the last state is identical to the fifth-from-last
-%% state; the trace would go forever if it was not ended by the `18` passed
-%% as an argument to `%trace`.
+{-
+This is `fix(f.λx.f x)`, which you can (more or less) write in ML as
+`fun f x = f x`, applied to the identity function.
+
+It goes into an infinite loop instead of triggering the black hole; 
+it is easy to see that the last state is identical to the fifth-from-last
+state; the trace would go forever if it was not ended by the `18` passed
+as an argument to `%trace`.
+-}
 
 %trace 18 eval(app (fix λf. lam λx. app f x) (lam λz.z)).

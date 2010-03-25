@@ -1,8 +1,12 @@
-%% = 4-state, 2-symbol busy beaver Turing machine =
-%% * See: [[http://en.wikipedia.org/wiki/Busy_beaver]]
-%% * 107 steps, 13 1's total
-%% * Left and right moves are treated symmetrically
-%% * Version where tape is extended dynamically
+-- 4-state, 2-symbol busy beaver Turing machine 
+-- Frank Pfenning
+
+{- 
+ * See: [[http://en.wikipedia.org/wiki/Busy_beaver]]
+ * 107 steps, 13 1's total 
+ * Left and right moves are treated symmetrically
+ * Version where tape is extended dynamically
+-}
 
 a▷0 : a▷ • 0 ->> 1 • b▷.
 0◁a : 0 • ◁a ->> 1 • b▷.

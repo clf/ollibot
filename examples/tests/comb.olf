@@ -1,27 +1,27 @@
-%% Testing application with basic combinators
-%% Robert J. Simmons
+-- Testing application with basic combinators
+-- Robert J. Simmons
 
-%% The basic combinators
+{== The basic combinators ==}
 
-%exec * ci(λx. x).               %% I : i → i
-%exec * ck(λx.λy. x).            %% K : i → i → i
-%exec * cs(λx.λy.λz. x z (y z)). %% S : (i → i) → i → i
+%exec * ci(λx. x).               -- I : i → i
+%exec * ck(λx.λy. x).            -- K : i → i → i
+%exec * cs(λx.λy.λz. x z (y z)). -- S : (i → i) → i → i
 
-%% Composition tests (the constants "c" and "d" should have base type)
+{== Composition tests (the constants "c" and "d" should have base type) ==}
 
-%exec * co((λx. x) c).                                    %% Ic
-%exec * co((λx.λy. x) c d).                               %% Kcd
-%exec * co((λx.λy.λz. x z (y z)) (λx.λy. x) (λx. x) d).   %% SKId
-%exec * ci((λx.λy.λz. x z (y z)) (λx.λy. x) (λx. x)).     %% SKI
-%exec * ck'((λx.λy.λz. x z (y z)) (λx.λy. x)).            %% SK
+%exec * co((λx. x) c).                                    -- Ic
+%exec * co((λx.λy. x) c d).                               -- Kcd
+%exec * co((λx.λy.λz. x z (y z)) (λx.λy. x) (λx. x) d).   -- SKId
+%exec * ci((λx.λy.λz. x z (y z)) (λx.λy. x) (λx. x)).     -- SKI
+%exec * ck'((λx.λy.λz. x z (y z)) (λx.λy. x)).            -- SK
 
-%% Modified eta-expansion 
+{== Modified eta-expansion ==}
 
 %exec * ci(λx. (λx. x) x).  
 %exec * ck(λx.λx. (λx. x) x).
 %exec * ck(λx.λy. (λx. x) x).
-%exec * ck(λx.λy. (λx.λy. x) x y). %% λx.λy.Kxy                         
-%exec * ck(λx.λy. (λx.λy. x) x x). %% λx.λy.Kxx
-%exec * ck(λx.λy. (λx.λy. x) y y). %% λx.λy.Kyy
-%exec * ck(λx.λy. (λx.λy. x) y x). %% λx.λy.Kyx
+%exec * ck(λx.λy. (λx.λy. x) x y). -- λx.λy.Kxy                         
+%exec * ck(λx.λy. (λx.λy. x) x x). -- λx.λy.Kxx
+%exec * ck(λx.λy. (λx.λy. x) y y). -- λx.λy.Kyy
+%exec * ck(λx.λy. (λx.λy. x) y x). -- λx.λy.Kyx
 %exec * cs'(λx.λy.λz. (λx.λy.λz. x z (y z)) z y x).

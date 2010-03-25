@@ -1,7 +1,9 @@
-{= Call-by-need suspensions with a fixed point =}
-{== Robert J. Simmons ==}
-{- ''This example is derived from Figures 3 and 10 in [[readme.txt| 
-Substructural Operational Semantics as Ordered Logic Programming]].''
+-- Call-by-need suspensions with a fixed point 
+-- Robert J. Simmons
+
+{-
+''This example is derived from Figures 3 and 10 in [[readme.txt| Substructural 
+Operational Semantics as Ordered Logic Programming]].''
 
 This is a modification of [[cbneed-fix.olf]] that restores a linear
 `blackhole` when a suspension is forced. If the destination is encountered
@@ -31,7 +33,6 @@ esusp : eval(D) • ¡susp E D ->> comp(bind₁ D) • eval E • ¡blackhole(D)
 ebind : comp(bind₁ D) • return(V) • ¡blackhole(D) ->> return(V) • !bind V D.
 evar  : eval(D) • !bind V D ->> return V.
 ehole : eval(D) • ¡blackhole(D) ->> fail • ¡blackhole(D).
-
 
 {== Example traces ==}
 {- Both examples appeared in [[cbneed-fix.olf]], where they got stuck. Here 

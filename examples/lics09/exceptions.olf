@@ -1,10 +1,12 @@
-%% = Exceptions =
-%% == Robert J. Simmons, Frank Pfenning ==
+-- Exceptions
+-- Robert J. Simmons, Frank Pfenning
 
-%% ''This examples is derived from Figure 10 in [[readme.txt |
-%% Substructural Operational Semantics as Ordered Logic Programming]].''
+{-
+''This examples is derived from Figure 10 in [[readme.txt | Substructural 
+Operational Semantics as Ordered Logic Programming]].''
+-}
 
-%% == Exceptions ==
+{== Exceptions ==}
 
 etry   : eval(try E₁ E₂) ->> catch(E₂) • eval(E₁).
 eraise : eval(raise) ->> fail.
@@ -12,7 +14,6 @@ epop   : comp(F) • fail ->> fail.
 ecatch : catch(E₂) • fail ->> eval(E₂).
 eret   : catch(E₂) • return(V) ->> return(V).
 
-
-%% == Example trace ==
+{== Example trace ==}
 
 %trace * eval(try raise (try raise (try raise raise))).

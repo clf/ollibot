@@ -1,12 +1,13 @@
-%% = DFA determining parity (the number of 1's mod 2) =
-%% No end-of-input marker: we stop in the state
-%% indicating the parity
+-- DFA determining parity (the number of 1's mod 2)
+-- Frank Pfenning
+
+-- No end-of-input marker: we stop in the state indicating the parity
 
 r1 : even • 0 ->> even.
 r2 : even • 1 ->> odd.
 r3 : odd • 0 ->> odd.
 r4 : odd • 1 ->> even.
 
-%% == Example ==
+{== Example ==}
 
 %trace * even • 1 • 0 • 1 • 1.

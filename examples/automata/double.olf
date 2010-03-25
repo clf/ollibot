@@ -1,5 +1,6 @@
-%% = Doubling a number in binary representation =
-%% Least significant bit first; # is end-of-tape marker
+-- Doubling a number in binary representation
+-- Frank Pfenning
+-- Least significant bit first; # is end-of-tape marker
 
 r1 : double • 0 ->> 0 • copy₀.
 r2 : double • 1 ->> 0 • copy₁.

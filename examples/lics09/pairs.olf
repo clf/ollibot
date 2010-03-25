@@ -1,11 +1,12 @@
-%% = Parallel evaluation for pairs =
-%% == Robert J. Simmons, Frank Pfenning ==
+-- Parallel evaluation for pairs 
+-- Robert J. Simmons, Frank Pfenning
 
-%% ''This example is derived from Figure 5 in
-%% [[/lics09/readme.txt |
-%% Substructural Operational Semantics as Ordered Logic Programming]].''
+{-
+''This example is derived from Figure 5 in [[/lics09/readme.txt | Substructural
+Operational Semantics as Ordered Logic Programming]].''
+-}
 
-%% == Parallel evaluation for pairs, plus unit ==
+{== Parallel evaluation for pairs, plus unit ==}
 
 eunit : eval(unit) ->> return unit.
 
@@ -15,17 +16,19 @@ epair₂ : comp(pair₁) • return(V₁) • return(V₂) ->> return(pair V₁ 
 elet₁ : eval(split E (λx₁.λx₂. E' x₁ x₂)) ->> comp(split₁ E') • eval(E).
 elet₂ : eval(split₁ (λx₁.λx₂. E' x₁ x₂)) • return(pair V₁ V₂) ->> eval(E' V₁ V₂).
 
+{== Example traces ==}
 
-%% == Example traces == 
-%% The is no real computation to do in the language fragment described here; 
-%% however, the fact way in which the evaluation of pairs produces 
-%% multiple active `eval` predicates is apparent.
+{- 
+There is no real computation to do in the language fragment described here; 
+however, the way in which the evaluation of pairs produces multiple active 
+`eval` predicates is apparent.
 
-%% These traces also reveal something about the fact that the underlying
-%% operational semantics of the programming language we have implemented works;
-%% the interpreter attempts to apply rules starting at the left-hand side
-%% of the context and working towards the right-hand side. This means that,
-%% in this example, the left half of the pair is always evaluated first.
+These traces also reveal something about the fact that the underlying 
+operational semantics of the programming language we have implemented works;
+the interpreter attempts to apply rules starting at the left-hand side of the 
+context and working towards the right-hand side. This means that, in this 
+example, the left half of the pair is always evaluated first.
+-}
 
 %trace * eval(pair unit (pair unit unit)).
 %trace * eval(pair (pair unit unit) (pair unit unit)).

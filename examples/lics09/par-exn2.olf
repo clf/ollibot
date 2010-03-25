@@ -1,19 +1,18 @@
-%% = Solution for combining parallel evaluation and exceptions =
-%% == Robert J. Simmons, Frank Pfenning ==
+-- Solution for combining parallel evaluation and exceptions 
+-- Robert J. Simmons, Frank Pfenning 
 
-%% ''These examples are derived from Figures 5 and 10 in 
-%% [[/lics09/readme.txt |
-%% Substructural Operational Semantics as Ordered Logic Programming]].''
+{- 
+''These examples are derived from Figures 5 and 10 in [[/lics09/readme.txt |
+Substructural Operational Semantics as Ordered Logic Programming]].''
 
-%% In [[par-exn1.olf]], we describe an issue with the parallel evaluation of 
-%% pairs combined with exceptions. In this example, we modify the computation 
-%% frames to allow exceptions to deal generically with suspended parallel 
-%% computations.
+In [[par-exn1.olf]], we describe an issue with the parallel evaluation of pairs
+combined with exceptions. In this example, we modify the computation frames to 
+allow exceptions to deal generically with suspended parallel computations.
+-}
 
-
-%% == Parallel evaluation for pairs (Figure 5), plus unit ==
-%% Now the suspended computation created by pair evaluation is marked as
-%% a comp₂, to distinguish it from a comp waiting on only one return.
+{== Parallel evaluation for pairs (Figure 5), plus unit ==}
+{- Now the suspended computation created by pair evaluation is marked as a 
+comp₂, to distinguish it from a comp waiting on only one return. -}
 
 eunit : eval(unit) ->> return(unit).
 
@@ -23,18 +22,17 @@ epair₂ : comp₂(pair₁) • return(V₁) • return(V₂) ->> return(pair V�
 elet₁ : eval(split E (λx₁.λx₂. E' x₁ x₂)) ->> comp(split₁ E') • eval(E).
 elet₂ : eval(split₁ (λx₁.λx₂. E' x₁ x₂)) • return(pair V₁ V₂) ->> eval(E' V₁ V₂).
 
+{== Exceptions (Figure 10), including exceptions for comp₂ frames ==}
+{- Because we have generically defined a suspended computation, we can 
+generically define what to do if the left branch, the right branch, or both 
+branches generate failure. 
 
-%% == Exceptions (Figure 10), including exceptions for comp₂ frames ==
-%% Because we have generically defined a suspended computation, we can 
-%% generically define what to do if the left branch, the right branch, or
-%% both branches generate failure. 
-%%
-%% The alternative semantics that raises an exception if one branch raises an
-%% exception and the other fails to terminate is not natural to encode in
-%% this setting; the natural setting for such a thing would seem to be either
-%% linear destination-passing with affine resources or some alternate logic
-%% that can correctly deal with having a single atomic resource to the left
-%% of two ordered contexts.
+The alternative semantics that raises an exception if one branch raises an
+exception and the other fails to terminate is not natural to encode in this 
+setting; the natural setting for such a thing would seem to be either linear 
+destination-passing with affine resources or some alternate logic that can 
+correctly deal with having a single atomic resource to the left of two ordered 
+contexts. -}
 
 etry   : eval(try E₁ E₂) ->> catch(E₂) • eval(E₁).
 eraise : eval(raise) ->> fail.
@@ -46,8 +44,7 @@ epop₁  : comp₂(F) • fail • return(V) ->> fail.
 epop₂  : comp₂(F) • return(V) • fail ->> fail.
 epop₃  : comp₂(F) • fail • fail ->> fail.
 
-
-%% The troublesome examples from before now correctly evaluate to unit.
+{- The troublesome examples from before now correctly evaluate to unit. -}
 
 %trace * eval(try (pair raise (pair unit unit)) unit).
 %trace * eval(try (pair (pair unit unit) raise) unit).

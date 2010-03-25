@@ -6,5 +6,5 @@ v₁ : vertex X • !is_led X ->> 1
 v₂ : vertex X • ¬is_led X ->> !leads X X.
 
 r1 : edge X Y -> edge Y X.
-r2 : !start X ⊗ vertex X -o !intree X
-r3 : !intree X ⊗ !edge X Y ⊗ vertex X -o !tree X Y ⊗ !intree Y.
+r2 : start ⊗ vertex X -o !tree source X
+r3 : (∃Y. !tree X Y) ⊗ !edge X Y ⊗ vertex X -o !tree X Y ⊗ !intree Y.
