@@ -1,4 +1,7 @@
-%% Regular lambda calculus with worlds
+-- Modal lambda calculus ("modular" world information)
+-- Frank Pfenning, Robert J. Simmons
+
+{=== Lambda calculus ===}
 
 e/var  : @ W • eval X • !bind X W V
             ->> @ W • return V.
@@ -12,49 +15,53 @@ e/app3 : @ W • return V • cont (app₂ (lam λx. M x))
             ->> ∃x. !bind x W V' •
                 @ W • eval (M x).
 
-%% Box rules
+{=== Box rules ===}
 
+-- By typing invariant, we already know what's to the right: (@ W)
 e/wlam : eval (wlam W λα. M α)
             ->> return (wlam W λα. M α).
-%% By typing invariant, we already know what's to the right: (@ W)
 
+-- We actually don't even need to store the W on the stack!
 e/wap1 : @ W' • eval (wapp M W ≤ W')
             ->> @ W • eval M • cont (wapp₁ W ≤ W').
-%% We actually don't even need to store the W on the stack!
 
 e/wap2 : @ W • return (wlam W λα. M α) • cont (wapp₁ W ≤ W')
             ->> @ W' • eval (M W').
 
-%% Diamond rules
+{=== Diamond rules ===} 
 
+-- Same point: we don't need to store W' on the stack.
 e/dia1 : @ W • return (dia W ≤ W' M)
             ->> @ W' • eval M • cont (dia₁ W ≤ W').
-%% Same point: we don't need to store W' on the stack.
 
 e/dia2 : @ W' • return V • cont (dia₁ W ≤ W')
             ->> ∃loc. !bind loc V W' • 
                 @ W • eval (dia W ≤ W' loc).
 
+-- And again, no need to store W. But we *DO* have to store W'' somewhere.
 e/let1 : @ W'' • eval (letdia W M λα.λx.N α x)
             ->> @ W • eval M • cont (letdia₁ W'' W λα.λx.N α x).
-%% And again, no need to store W. But we *DO* have to store W'' somewhere.
 
 e/let2 : @ W • return (dia W ≤ W' Loc) • cont (letdia₁ W'' W λα.λx.N α x)
             ->> @ W'' • eval (N W' Loc).      
 
-%% □(A ⊃ B) ⊃ (◇A ⊃ ◇B) @ here
-%% lam λf. lam λx. letdia here x λα. λx'. app f (dia here ≤ α x')
+{- 
 
-%% ◇(A ∨ B) ⊃ (◇A ∨ ◇B) @ here
-%% How doable is this?
+□(A ⊃ B) ⊃ (◇A ⊃ ◇B) @ here 
+lam λf. lam λx. letdia here x λα. λx'. app f (dia here ≤ α x')
 
-%% A ⊃ ◇A @ here 
-%% lam λx. dia here ≤ here x
-%% (requires symmetry)
+◇(A ∨ B) ⊃ (◇A ∨ ◇B) @ here
+How doable is this?
 
-%% □A ⊃ □□A @ here
-%% lam λx. wlam here λα. wlam α λβ. wapp x here ≤ β
-%% (requires transitivity)
+A ⊃ ◇A @ here 
+lam λx. dia here ≤ here x
+(requires symmetry)
 
-%% (◇A ⊃ □B) ⊃ □(A ⊃ B)
-%% lam λf. wlam here λα. lam λx. wapp (app f (dia here ≤ α x)) here ≤ α
+□A ⊃ □□A @ here
+lam λx. wlam here λα. wlam α λβ. wapp x here ≤ β
+(requires transitivity)
+
+(◇A ⊃ □B) ⊃ □(A ⊃ B)
+lam λf. wlam here λα. lam λx. wapp (app f (dia here ≤ α x)) here ≤ α
+
+-}

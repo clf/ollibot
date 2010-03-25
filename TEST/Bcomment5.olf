@@ -1,0 +1,3 @@
+{= A comment 
+-- cannot contain a
+line comment =}

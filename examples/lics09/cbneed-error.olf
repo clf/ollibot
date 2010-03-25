@@ -1,14 +1,13 @@
-%% = Call-by-need suspensions with a fixed point =
-%% == Robert J. Simmons ==
+{= Call-by-need suspensions with a fixed point =}
+{== Robert J. Simmons ==}
+{- ''This example is derived from Figures 3 and 10 in [[readme.txt| 
+Substructural Operational Semantics as Ordered Logic Programming]].''
 
-%% ''This examples is derived from Figure 3 and 10 in [[readme.txt|
-%% Substructural Operational Semantics as Ordered Logic Programming]].''
+This is a modification of [[cbneed-fix.olf]] that restores a linear
+`blackhole` when a suspension is forced. If the destination is encountered
+again, then a catchable error is raised. -}
 
-%% This is a modification of [[cbneed-fix.olf]] that restores a linear
-%% `blackhole` when a suspension is forced. If the destination is encountered
-%% again, then a catchable error is raised.
-
-%% == Call-by-value functions ==
+{== Call-by-value functions ==}
 
 elam : eval(lam λx. E x) ->> return(lam E).
 eapp₁ : eval(app E₁ E₂) ->> comp(app₁ E₂) • eval(E₁).
@@ -16,7 +15,7 @@ eapp₂ : comp(app₁ E₂) • return(V₁) ->> comp(app₂ V₁) • eval(E₂
 eapp₃ : comp(app₂ (lam λx.E₀ x)) • return(V₂) ->> eval(E₀ V₂).
 
 
-%% == Exceptions ==
+{== Exceptions ==}
 
 etry   : eval(try E₁ E₂) ->> catch(E₂) • eval(E₁).
 eraise : eval(raise) ->> fail.
@@ -25,7 +24,7 @@ ecatch : catch(E₂) • fail ->> eval(E₂).
 eret   : catch(E₂) • return(V) ->> return(V).
 
 
-%% == Fixed point recursion (call-by-need) ==
+{== Fixed point recursion (call-by-need) ==}
 
 efix  : eval(fix λx. E x) ->> ∃D. eval(E D) • ¡susp (E D) D.
 esusp : eval(D) • ¡susp E D ->> comp(bind₁ D) • eval E • ¡blackhole(D).
@@ -34,9 +33,9 @@ evar  : eval(D) • !bind V D ->> return V.
 ehole : eval(D) • ¡blackhole(D) ->> fail • ¡blackhole(D).
 
 
-%% == Example traces == 
-%% Both examples appeared in [[cbneed-fix.olf]], where they got stuck. Here
-%% they raise an error.
+{== Example traces ==}
+{- Both examples appeared in [[cbneed-fix.olf]], where they got stuck. Here 
+they raise an error. -}
 
 %trace * eval(fix λx. x).
 %trace * eval(fix λx. app (lam λy. y) x). 

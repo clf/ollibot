@@ -15,13 +15,13 @@ Group is
 
   names.sml
   intsyn.sml
-
   typerecon.sml
 
+  signat.sml
+  morphsignat.sml
   term.sml
   context.sml
-
-  signat.sml
   execute.sml
 
   frontend.sml
+  frontendloop.sml

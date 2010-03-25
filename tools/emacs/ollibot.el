@@ -47,6 +47,7 @@ The purpose of this input method is to edit .olf programs."
  ("\\lefti" ?↣)
  ("\\fuse" ?•)
  ("\\esuf" ?◦)
+ ("\\otimes" ?⊗)
  ("\\r" ?→)
  ("\\l" ?←)
 

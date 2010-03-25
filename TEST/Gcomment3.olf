@@ -1,0 +1,62 @@
+{- COMMENTS {- CAN {- BE -} {= NESTED =} -} -}
+
+{-- The number of dash need not match -} 
+{-- on -} 
+{== the =} 
+{= Sides ==}
+{======== Nor =}
+{= Do =========}
+{-------- They -}
+{- Need --------}
+{--- To -}
+{- Have ---}
+{== Contents ==} 
+{==} 
+{==========} 
+{--} {------------} 
+{---====-} {===}
+{-
+{==} 
+{==========} 
+{--} {------------} 
+{---====-} {===}
+-}
+
+{------- The only place 
+where more than two dashes 
+does not start a linecomment
+is when it open or closes a multiline comment --------}
+
+{-- they can
+--- include
+------ line
+-- comments
+- or
+not
+-}
+
+{= in
+-- both
+---- varieties 
+= = =}
+
+{- A comment 
+-- cannot be closed -} in -} a -}
+line comment -}
+
+{- Nor
+--- {- can it be
+opened -}
+
+{= A comment 
+-- cannot be closed =} in =} a =}
+line comment =}
+
+{= Nor
+--- {= can it be
+opened =}
+
+{=------ Oh this is tricky because now I'm in a line comment =}
+which I will now end =}
+
+r1 : eval ->> eval.

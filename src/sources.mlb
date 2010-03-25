@@ -3,8 +3,6 @@ local
   util/util.mlb
   util/stream.mlb
   parse/parse.mlb
-  algo/toposort-sig.mlb
-  algo/toposort.mlb
 in
   structure ListUtil
   structure Parsing

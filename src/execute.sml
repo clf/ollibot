@@ -316,7 +316,7 @@ structure Execute :> EXECUTE = struct
       end
 
   (* == PART 4: SATURATING PROOF SEARCH == *)
-  
+
   fun immediate_consequence (U, rules) = 
       let 
         val answers : atom list list ref = ref []

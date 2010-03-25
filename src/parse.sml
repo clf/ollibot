@@ -15,24 +15,42 @@ structure Parse :> PARSE = struct
   
   infixr 4 << >>
   infixr 3 &&
-  infix  2 -- ##
+  infix  2 -- ## --! ##!
   infix  2 wth suchthat return guard when
   infixr 1 ||
 
+  fun p ##! s = p ## (fn p => raise ErrPos(p,s))
+
   datatype token = 
-      PERIOD | LPAREN | RPAREN | FUSE 
-    | RIGHTI | LEFTI | BANG | GNAB
+      PERIOD | LPAREN | RPAREN 
+    | BANG | GNAB | COMMA | EQ | NEQ
+    | RIGHTI | LEFTI | FUSE
+    | LOLLI | TENSOR
+    | ARROW | CONJ | NEG
     | LAMBDA of string | FORALL of string | EXISTS of string 
     | ID of string list * string 
     | PERCENT of string | COLON | WS
 
   fun token_to_string token = 
       case token of 
-        PERIOD => "." | LPAREN => "(" | RPAREN => ")" | FUSE => "•"
-      | RIGHTI => "->>" | LEFTI => ">->" | BANG => "!" | GNAB => "¡"
+        PERIOD => "." | LPAREN => "(" | RPAREN => ")" 
+      | BANG => "!" | GNAB => "¡" | COMMA => "," | EQ => "==" | NEQ => "<>"
+      | RIGHTI => "->>" | LEFTI => ">->" | FUSE => "•"
+      | LOLLI => "->>" | TENSOR => "⊗" 
+      | ARROW => "->" | CONJ => "∧" | NEG => "¬" 
       | LAMBDA x => "λ " ^ x | FORALL x => "∀ " ^ x | EXISTS x => "∃ " ^ x
       | ID(path,x) => concat (map (fn x => x ^  ".") path) ^ x 
       | PERCENT x => "%" ^ x | COLON => ":" | WS => ""
+
+  fun err_expected_tok expected = 
+      any --! 
+          (fn (t,p) =>
+              raise ErrPos(p,"Expected '" ^ token_to_string expected ^
+                             "' found '" ^ token_to_string t ^ "'."))
+      || done() --! 
+          (fn ((),p) =>
+              raise ErrPos(p,"Expected '" ^ token_to_string expected ^
+                             "' found end of file."))
 
   (* Literate transform: remove all non-literate parts from a file *)
   val transform_tok0 = 
@@ -61,43 +79,121 @@ structure Parse :> PARSE = struct
             
 
   (* Transform 1: 
-   *** Strip line comments
-   *** Consolidate whitespace
-   *** Consolidate identifiers and separate separators
+   *** Turn comments and whitespace into whitespace; consolidate whitespace
    *)
   val transform_tok1 = 
+    let
+      val nliteral = fn c : string => satisfy (fn x => not (x = c))
+      val rliteral = fn c : string => repeat (literal c) >> succeed c
+      val rliteral1 = fn c : string => repeat1 (literal c) >> succeed c
+      val ws = 
+       fn " " => true | "\t" => true | "\n" => true | _ => false
+
+      (* Does a lot of work to check that it's not ----} *)
+      val linecomment : (string, string) parser = 
+       literal "-" >> rliteral1 "-" >>
+       (alt [done "\n",
+             literal "\n",
+             nliteral "}" >> repeat (nliteral "\n") >> 
+                      (done "\n" || literal "\n")])
+
+      (* {= Equals comments =} are for headings and are limited *)
+      val comment_eq : (string, string) parser = (* Not recursive *)
+       (literal "{" >> literal "=") --! (fn (_,p) => 
+       repeat (alt
+         [literal "}" 
+           --! (fn (_,p2) => 
+            raise ErrPos(p2, "Character '}' not permitted in {= Comment =}")),
+          literal "-" >> literal "-" 
+           --! (fn (_,p2) =>
+            raise ErrPos(p2, "Line comment can't start in {= Comment =}")),
+          rliteral "=" >> (literal "{" 
+           --! (fn (_,p2) => 
+            raise ErrPos(p2, "Character '{' not permitted in {= Comment =}"))),
+          rliteral "=" >> nliteral "}",
+          done "\n"
+           --! (fn _ => raise ErrPos(p, "Unclosed {= Comment =} opened here"))])
+       >> rliteral1 "=" >> literal "}")
+
+      (* {- Minus comments -} are recursive and are supposed to be general *)
+      val comment_minus_special_case = 
+       (literal "{" >> literal "-" >> rliteral1 "-" >> literal "}")
+      val noncomment = 
+       fn "{" => false | "-" => false | "=" => false | _ => true
+      val comment_minus : (string, string) parser = 
+       fix (fn comment_minus => (* Recursive *)
+       (literal "{" >> rliteral1 "-") --! (fn (_,p) => 
+       repeat (alt
+         [satisfy noncomment,
+          (* Case EOF *) 
+          done "\n"
+           --! (fn _ => raise ErrPos(p, "Unclosed {- Comment -} opened here")),
+          (* Case OPEN_BRACKET *)
+          comment_eq, 
+          comment_minus_special_case,
+          comment_minus,
+          literal "{",
+          (* Case EQUALS *)
+          rliteral1 "=" >> done "\n"
+           --! (fn _ => raise ErrPos(p, "Unclosed {- Comment -} opened here")),
+          rliteral1 "=" >> literal "}"
+           --! (fn (_,p) => 
+             raise ErrPos(p,"Comment opened with \"{-\" closed with \"=}\"")),
+          rliteral1 "=", 
+          (* Case MINUS - may not handle *)
+          linecomment,
+          rliteral1 "-" >> done "\n"
+           --! (fn _ => raise ErrPos(p, "Unclosed {- Comment -} opened here")),
+          rliteral1 "-" >> rliteral1 "=" >> literal "}"
+           --! (fn (_,p) => 
+             raise ErrPos(p,"Comment opened with \"{-\" closed with \"=}\"")),
+          rliteral1 "-" >> nliteral "}"])
+       >> rliteral1 "-" >> literal "}"
+           ##! "Some funky error" ))
+      val parser = alt
+         [repeat1 (satisfy ws) >> succeed " ",
+          linecomment >> succeed " ",
+          comment_eq >> succeed " ",
+          comment_minus_special_case >> succeed " ",
+          comment_minus >> succeed " ",
+          literal "{" --! 
+           (fn (_,p) => 
+               raise ErrPos(p, "Character '{' only appears in comments")),
+          literal "}" --! 
+           (fn (_,p) => 
+               raise ErrPos(p, "Character '}' only appears in comments")),
+          any]
+    in transform (!! parser) end
+       
+  (* Transform 2: 
+   *** Consolidate identifiers and separate separators
+   *)
+  val transform_tok2 = 
       let
         val sep = 
-            fn "." => false | "(" => false | ")" => false | "•" => false 
-             | "!" => false | "¡" => false
-             | "λ" => false | "∀" => false | "∃" => false 
-             | "\\" => false | "%" => false | ":" => false
-             | " " => false | "\t" => false | "\n" => false
-             | _ => true
-        val ws = 
-            fn " " => true | "\t" => true | "\n" => true | _ => false
-        val idpart = repeat1 (satisfy sep) wth concat
-        val linecomment = 
-            literal "%" >> literal "%" >> 
-            repeat (satisfy (fn "\n" => false | _ => true)) >> literal "\n" >>
-            succeed " "
-        val tokenparser = 
-            alt [linecomment, 
-                 literal ".", literal "(", literal ")", literal "•",
-                 literal "!", literal "¡",
-                 literal "λ", literal "∀", literal "∃", 
-                 literal "\\", literal "%", literal ":",
-                 repeat1 (satisfy ws) >> succeed " ", idpart]
-      in transform (!! tokenparser) end
+            fn "." => true | "(" => true | ")" => true 
+             | "!" => true | "¡" => true | "," => true 
+             | "↠" => true | "↣" => true | "•" => true
+             | "⊸" => true | "⊗" => true
+             | "→" => true | "∧" => true | "¬" => true
+             | "λ" => true | "∀" => true | "∃" => true 
+             | "\\" => true | "%" => true | ":" => true
+             | " " => true
+             | _ => false
+        val parser = 
+         alt [satisfy sep,
+              repeat1 (satisfy (not o sep)) wth concat]
+      in transform (!! parser)
+      end
 
-  (* Transform 2:
+  (* Transform 3:
    *** Tokenize separators
    *** Read TeX-style characters (XXX not implemented XXX)
    *** Ensure binders are followed by identifiers and periods (XXX this choice
    ***   could be problematic if we need to attach types to binders...)
    *** Resolve identifier paths (XXX not implemented XXX)
    *)
-  val transform_tok2 = 
+  val transform_tok3 = 
       let
         fun not str pos = 
             raise 
@@ -126,8 +222,8 @@ structure Parse :> PARSE = struct
                  any wth (fn x => ID([],x))] 
       in transform (!! tokenparser) end 
 
-  (* Transform 3: Filter whitespace *)
-  val transform_tok3 = 
+  (* Transform 4: Filter whitespace *)
+  val transform_tok4 = 
       let 
         fun filter s () = 
             case Stream.force s of
@@ -271,7 +367,8 @@ structure Parse :> PARSE = struct
         val fs2 = transform_tok1 fs1
         val fs3 = transform_tok2 fs2
         val fs4 = transform_tok3 fs3 
-      in fs4 end
+        val fs5 = transform_tok4 fs4
+      in fs5 end
 
   fun literate_to_tokenstream f fs = 
       let
@@ -280,7 +377,8 @@ structure Parse :> PARSE = struct
         val fs2 = transform_tok1 fs1
         val fs3 = transform_tok2 fs2
         val fs4 = transform_tok3 fs3 
-      in fs4 end
+        val fs5 = transform_tok4 fs4
+      in fs5 end
 
   (* Default is to non-literate code *)
   fun file_to_tokenstream f = 
