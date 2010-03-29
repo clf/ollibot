@@ -348,8 +348,8 @@ structure Execute :> EXECUTE = struct
 
   fun saturate1 (rules, S{persistent=U,linear=L,ordered=O}) = 
       let
-        val _ = print 
-         ("Saturation begin with " ^ Int.toString (length rules) ^ " rules\n")
+        (* val _ = print 
+        ("Saturation begin with " ^ Int.toString (length rules) ^ " rules\n") *)
         fun loop U = 
             let 
               val newfacts = immediate_consequence (U, rules)

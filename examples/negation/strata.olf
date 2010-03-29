@@ -1,4 +1,4 @@
--- Stratification case study
+-- Stratification test case
 -- Robert J. Simmons
 
 edge₁ : !edge A B ->> !path A B.
