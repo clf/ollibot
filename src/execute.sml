@@ -348,6 +348,8 @@ structure Execute :> EXECUTE = struct
 
   fun saturate1 (rules, S{persistent=U,linear=L,ordered=O}) = 
       let
+        val _ = print 
+         ("Saturation begin with " ^ Int.toString (length rules) ^ " rules\n")
         fun loop U = 
             let 
               val newfacts = immediate_consequence (U, rules)
@@ -421,7 +423,7 @@ structure Execute :> EXECUTE = struct
               multiset_insert (map, getval_neg rule, rule)
         in MapI.listItems (foldr add_rule MapI.empty rules) end
   in
-  fun saturate (rules, ctx) = foldr saturate1 ctx (sortrules rules)
+  fun saturate (rules, ctx) = foldl saturate1 ctx (sortrules rules)
   end
 
   (* == PART 5: EXECUTION == *)

@@ -11,7 +11,7 @@ in
   structure StringUtil
   structure Stream
   structure StreamUtil
-  structure TopoSort
+  functor   TopoSort
   structure UTF8Util
 end
 

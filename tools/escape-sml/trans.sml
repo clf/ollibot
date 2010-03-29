@@ -42,6 +42,7 @@ structure Trans = struct
         val dirstream2 = OS.FileSys.openDir "src/parse"
         val dirstream3 = OS.FileSys.openDir "src/util"
         val dirstream4 = OS.FileSys.openDir "src/server"
+        val dirstream5 = OS.FileSys.openDir "src/algo"
       in
         OS.FileSys.mkDir "escape-src";
         translate_dir ("src","escape-src",dirstream1);
@@ -51,6 +52,8 @@ structure Trans = struct
         translate_dir ("src/util","escape-src/util",dirstream3);
         OS.FileSys.mkDir "escape-src/server";
         translate_dir ("src/server","escape-src/server",dirstream4);
+        OS.FileSys.mkDir "escape-src/algo";
+        translate_dir ("src/algo","escape-src/algo",dirstream5);
         ()
       end        
 

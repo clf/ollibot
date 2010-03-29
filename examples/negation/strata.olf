@@ -1,12 +1,11 @@
 -- Stratification case study
--- 
-
+-- Robert J. Simmons
 
 edge₁ : !edge A B ->> !path A B.
 edge₂ : !edge A B • !path B C ->> !path A C.
 vert₁ : !edge A B ->> !vert A • !vert B.
 
-cyc₁ : !vert A • ¬edge A A ->> !nocycle A.
+cyc₁ : !vert A • ¬path A A ->> !nocycle A.
 
 {- Example:
          <- c₂ <- 

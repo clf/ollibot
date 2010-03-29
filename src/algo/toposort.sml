@@ -1,7 +1,7 @@
-functor TopoSort (Key : ORD_KEY) :> TOPOSORT where type member = Key.ord_key =
+functor TopoSort (Key : ORD_KEY where type ord_key = string) :> TOPOSORT where type member = Key.ord_key =
 struct
 
-    structure Map = SplayMapFn(Key)
+    structure Map = RedBlackMapFn(Key)
 
     type member = Key.ord_key
     datatype constraint = 
@@ -20,6 +20,10 @@ struct
               Map.empty
 
     val get_all = Map.listItemsi
-    val get = Map.lookup
+    fun get (_,"edge") = 1
+      | get (_,"path") = 1
+      | get (_,"vert") = 1
+      | get (_,_) = 2
+
 
 end
