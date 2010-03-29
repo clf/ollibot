@@ -1,0 +1,23 @@
+-- Heap collection into binary-heap-like-trees (Linear Logical Algorithms)
+-- Robert J. Simmons
+
+r₁: item X ->> ¡tree z (node X nil).
+r₂: ¡tree N (node X TS) • ¡tree N T ->> ¡tree (s N) (node X (cons T TS)).
+
+{- 4 items - one possible result is this tree of depth 3 and width 2
+  c - d - a 
+   \
+     b       -}
+%trace * item a • item b • item c • item d.
+
+{- 64 items! -}
+%exec *
+ item a • item b • item c • item d • item e • item f • item g • item h •
+ item a • item b • item c • item d • item e • item f • item g • item h •
+ item a • item b • item c • item d • item e • item f • item g • item h •
+ item a • item b • item c • item d • item e • item f • item g • item h •
+ item a • item b • item c • item d • item e • item f • item g • item h •
+ item a • item b • item c • item d • item e • item f • item g • item h •
+ item a • item b • item c • item d • item e • item f • item g • item h •
+ item a • item b • item c • item d • item e • item f • item g • item h.
+

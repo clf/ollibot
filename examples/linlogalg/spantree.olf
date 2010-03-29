@@ -1,13 +1,24 @@
 -- Spanning tree (Linear Logical Algorithms)
 -- Robert J. Simmons
 
-{- r₁ : !edge X Y ->> !edge X Y.
-r₂ : ¡vertex a ->> !intree a.
-r₃ : !edge X Y • !intree X • ¡vertex Y ->> !intree Y • !tree X Y. -}
 r₁ : !edge X Y ->> !edge Y X.
-r₄ : ¡vertex a ->> !intree a.
-r₅ : !edge X Y ->> !intree X ->> ¡vertex Y ->> !intree Y.
+r₂ : vertex a ->> !intree a.
+r₃ : !edge X Y ->> !intree X ->> vertex Y ->> !intree Y.
 
 {== Example trace ==}
 %trace *
-  !edge a b • ¡vertex a • ¡vertex b.
+  !edge a b • vertex a • vertex b.
+
+{-
+  D--------
+  |       |
+  A----B--E
+  |   / 
+  | /   
+  C   
+-}
+
+%trace * 
+  !edge a b • !edge a c • !edge a d • !edge b c • !edge b e • !edge d e •
+  vertex a • vertex b • vertex c • vertex d • vertex e.
+

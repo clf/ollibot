@@ -1,0 +1,18 @@
+-- Stratification case study
+-- 
+
+
+edge₁ : !edge A B ->> !path A B.
+edge₂ : !edge A B • !path B C ->> !path A C.
+vert₁ : !edge A B ->> !vert A • !vert B.
+
+cyc₁ : !vert A • ¬edge A A ->> !nocycle A.
+
+{- Example:
+         <- c₂ <- 
+  a -> b          d -> e
+         -> c₁ ->
+-}
+
+%trace * 
+   !edge a b • !edge b c₁ • !edge c₁ d • !edge d c₂ • !edge c₂ b • !edge d e.

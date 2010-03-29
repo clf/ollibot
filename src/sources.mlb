@@ -2,6 +2,7 @@ local
   util/utf8.mlb
   util/util.mlb
   util/stream.mlb
+  algo/toposort.mlb
   parse/parse.mlb
 in
   structure ListUtil
@@ -10,12 +11,14 @@ in
   structure StringUtil
   structure Stream
   structure StreamUtil
+  structure TopoSort
   structure UTF8Util
 end
 
 local
   $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
 in
+  functor RedBlackSetFn
   functor RedBlackMapFn
 end
 

@@ -18,5 +18,12 @@ structure Global :> GLOBAL = struct
               	  
 end
 
-structure MapS = 
-RedBlackMapFn(struct type ord_key = string val compare = String.compare end)
+structure OrdString = 
+struct type ord_key = string val compare = String.compare end
+structure OrdInt = 
+struct type ord_key = int val compare = Int.compare end
+
+structure SetS = RedBlackSetFn(OrdString)
+structure MapS = RedBlackMapFn(OrdString)
+structure MapI = RedBlackMapFn(OrdInt)
+

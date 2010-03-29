@@ -331,6 +331,8 @@ structure Execute :> EXECUTE = struct
 
   (* == PART 4: SATURATING PROOF SEARCH == *)
 
+  structure Topo = TopoSort(OrdString)
+
   fun immediate_consequence (U, rules) = 
       let 
         val answers : atom list list ref = ref []
@@ -344,7 +346,7 @@ structure Execute :> EXECUTE = struct
             handle MatchFail => loop rules
       in loop rules end
 
-  fun saturate (S{persistent=U,linear=L,ordered=O}, rules) = 
+  fun saturate1 (rules, S{persistent=U,linear=L,ordered=O}) = 
       let
         fun loop U = 
             let 
@@ -353,12 +355,81 @@ structure Execute :> EXECUTE = struct
             in if changed then loop U' else U' end
       in S{persistent=loop U, linear=L, ordered=O} end 
 
+  (* Framework for stratified negation *)
+  local
+    fun sortatoms rules =
+        let 
+          fun getnames trm names = 
+              case trm of
+                I.Exists (_,trm) => getnames trm names
+              | I.Fuse (trm1,trm2) => getnames trm2 (getnames trm1 names)
+              | I.Esuf (trm1,trm2) => getnames trm2 (getnames trm1 names)
+              | I.One => names
+              | I.Atom(I.Persistent,a,_) => SetS.add(names,a)
+              | _ => raise Err "Invariant: saturation with invalid conclusion"
+          fun addcstrs c n1 (cstrs : Topo.constraint list, names : SetS.set) = 
+              (SetS.foldr (fn (n2,cstrs) => c(n1,n2)::cstrs) cstrs names, names)
+          fun cstrs_pos trm stuff = 
+              case trm of 
+                I.Exists (_,trm) => cstrs_pos trm stuff
+              | I.Fuse (trm1,trm2) => 
+                cstrs_pos trm2 (cstrs_pos trm1 stuff)
+              | I.Esuf (trm1,trm2) => 
+                cstrs_pos trm2 (cstrs_pos trm1 stuff)
+              | I.One => stuff
+              | I.Atom(I.Persistent,a,_) => addcstrs Topo.constraint_leq a stuff
+              | I.NegAtom(a,_) => addcstrs Topo.constraint_lt a stuff
+              | I.Atom(_,_,_) => 
+                raise Err "Invariant: saturation with invalid premise"
+          fun cstrs_neg (trm, cstrs) =
+              case trm of 
+                I.Forall (_,trm) => cstrs_neg(trm,cstrs)
+              | I.Righti (trm1,trm2) => cstrs_pos trm1 (cstrs_neg(trm2,cstrs))
+              | I.Lefti (trm1,trm2) => cstrs_pos trm1 (cstrs_neg(trm2,cstrs))
+              | I.Up (trm) => (cstrs, getnames trm SetS.empty)
+        in 
+          Topo.sort (foldr (#1 o cstrs_neg) [] rules)
+          handle Topo.TopoSort(a1,a2) =>
+            raise Err ("Stratified negation forces " ^ a1 ^ " and " ^ a2 ^
+                       "\nto be in different strata, but this is impossible.")
+        end
+        
+    fun sortrules rules = 
+        let
+          val sorter = sortatoms rules
+          fun getval_pos trm = 
+              case trm of 
+                I.Exists (_,trm) => getval_pos trm
+              | I.Fuse (trm1,trm2) => 
+                Int.max (getval_pos trm1, getval_pos trm2)
+              | I.Esuf (trm1,trm2) => 
+                Int.max (getval_pos trm1, getval_pos trm2)
+              | I.One => 0
+              | I.Atom(I.Persistent,a,_) => Topo.get (sorter, a)
+              | _ => raise Err "Invariant: saturation with invalid conclusion"
+          fun getval_neg trm = 
+              case trm of 
+                I.Forall (_,trm) => getval_neg trm
+              | I.Righti (_,trm) => getval_neg trm
+              | I.Lefti (_,trm) => getval_neg trm
+              | I.Up trm => getval_pos trm
+          fun multiset_insert (map, level, rule) =
+              case MapI.find(map, level) of
+                NONE => MapI.insert(map, level, [rule])
+              | SOME rules => MapI.insert(map, level, rule :: rules)
+          fun add_rule (rule, map) = 
+              multiset_insert (map, getval_neg rule, rule)
+        in MapI.listItems (foldr add_rule MapI.empty rules) end
+  in
+  fun saturate (rules, ctx) = foldr saturate1 ctx (sortrules rules)
+  end
+
   (* == PART 5: EXECUTION == *)
   fun trace (pos_prop, st : Signat.state) = 
       let
         val saturating_rules = #saturating_rules st
         val linear_rules = #linear_rules st
-        fun complete ctx = saturate(ctx,saturating_rules)
+        fun complete ctx = saturate(saturating_rules,ctx)
         val (U,L,O) = conc_left [] pos_prop
         val ctx = complete(S{persistent=U, linear=L, ordered=O})
         fun stream ctx () =
@@ -374,7 +445,7 @@ structure Execute :> EXECUTE = struct
   fun execute (pos_prop, st : Signat.state, stop) = 
       let
         val saturating_rules = #saturating_rules st
-        fun complete ctx = saturate(ctx,saturating_rules)
+        fun complete ctx = saturate(saturating_rules,ctx)
         val (U,L,O) = conc_left [] pos_prop
         val ctx = complete(S{persistent=U, linear=L, ordered=O})
 
