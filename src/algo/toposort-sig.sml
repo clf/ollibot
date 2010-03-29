@@ -1,37 +1,21 @@
-
-(* Topological sort algorithm. 
-
-   Given a list of nodes and constraints between them,
-   produce a list that satisfies the constaints, if
-   one exists. The constraints are all of the form,
-   "item a must appear somewhere before item b in
-   the list." If a topological sorting doesn't exist,
-   raise the exception TopoSort.
-   
-   To use this algorithm, map 'node' over your items
-   to create nodes. Then, create a list of constraints
-   (pairs of nodes that must be ordered), and call
-   solve. Finally, use 'get' to retrieve the original
-   elements from the node list returned.
-
-*)
-
 signature TOPOSORT =
 sig
+
+    type member
+    type constraint
+    type result
     
-    exception TopoSort of string
+    exception TopoSort of member * member
 
-    type 'a node
+    (* constraint_lt a b => "a must appear before b" *)
+    val constraint_lt : member * member -> constraint
 
-    type 'a constraint
+    (* constraint_leq a b => "a must appear no later than b" *)
+    val constraint_leq : member * member -> constraint
 
-    (* constraint a b => "a must appear before b" *)
-    val constraint : 'a node * 'a node -> 'a constraint
+    val sort : constraint list -> result
 
-    val node : 'a -> 'a node
-
-    val sort : 'a node list -> 'a constraint list -> 'a node list
-
-    val get : 'a node -> 'a
+    val get_all : result -> (member * int) list
+    val get : result * member -> int
 
 end

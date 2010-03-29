@@ -1,44 +1,25 @@
-
-(* Topological sort algorithm. Naive
-   list version.
-*)
-
-structure TopoSort :> TOPOSORT =
+functor TopoSort (Key : ORD_KEY) :> TOPOSORT where type member = Key.ord_key =
 struct
-    
-    exception TopoSort of string
 
-    type stamp = unit ref
+    structure Map = SplayMapFn(Key)
 
-    type 'a node = 'a * unit ref
+    type member = Key.ord_key
+    datatype constraint = 
+         HARD of member * member
+       | SOFT of member * member    
+    type result = int Map.map
 
-    (* (a, b) => "a must appear before b" *)
-    type 'a constraint = unit ref * unit ref
+    exception TopoSort of member * member
 
-    fun constraint ((_,a), (_,b)) = (a, b)
+    val constraint_lt = HARD
+    val constraint_leq = SOFT
 
-    fun node a = (a, ref())
+    val sort = 
+        foldr (fn (HARD (a,b), map) => Map.insert(Map.insert(map,a,1),b,1)
+                | (SOFT (a,b), map) => Map.insert(Map.insert(map,a,1),b,1))
+              Map.empty
 
-    (* XXX PERF this could be a lot more efficient with better
-       data structures *)
-
-    fun sort nil nil = nil
-      | sort nil _ = raise TopoSort "constraints on non-members"
-      | sort nl cl =
-        case List.partition 
-              (fn (_,x) =>
-               (* must something come before it? *)
-               List.exists (fn (a, b : 'a ref) => b = x) cl) nl of
-              (_, nil) => raise TopoSort "sort impossible"
-            | (wait, ready) =>
-                  ready @ sort wait 
-                  (List.filter
-                   (fn (a, b) =>
-                    not 
-                    (List.exists 
-                     (fn (_, x) => x = a) 
-                     ready)) cl)
-
-    fun get (a, _) = a
+    val get_all = Map.listItemsi
+    val get = Map.lookup
 
 end

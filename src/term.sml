@@ -20,6 +20,7 @@ sig
   val to_string_parens : term -> string
   val to_string_env : string list -> term -> string
   val eq : term * term -> bool
+  val compare : term * term -> order
 end
 
 structure Term :> TERM = 
@@ -139,6 +140,30 @@ struct
       | (Var(i1,trms1), Var(i2,trms2)) =>
         i1 = i2 andalso ListPair.all eq (trms1,trms2)
       | _ => false
+
+  fun compares ([],[]) = EQUAL
+    | compares (trm1 :: trms1, trm2 :: trms2) = 
+      (case compare (trm1, trm2) of
+         EQUAL => compares (trms1, trms2)
+       | ord => ord)
+    | compares _ = raise Err "Typing invariant in comparision function"
+
+  and compare (trm1,trm2) = 
+      case (trm1,trm2) of
+        (Lambda(_,trm1), Lambda(_,trm2)) => compare (trm1, trm2)
+      | (Const(s1,trms1), Const(s2,trms2)) => 
+        (case String.compare(s1,s2) of
+           EQUAL => compares (trms1,trms2)
+         | ord => ord)
+      | (Var(i1,trms1), Var(i2,trms2)) =>
+        (case Int.compare(i1,i2) of
+           EQUAL => compares (trms1,trms2) 
+         | ord => ord)
+      | (Const _, Var _) => LESS
+      | (Var _, Const _) => GREATER
+      | _ => raise Err "Typing invariant in comparison function" 
+             (* Probably shouldn't compare terms at different types... *)
+
 
 end
 

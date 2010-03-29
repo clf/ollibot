@@ -5,6 +5,7 @@ Group is
   util/utf8.cm
   util/util.cm
   util/stream.cm
+  algo/toposort.cm
   parse/parse.cm
 
   global-sig.sml
