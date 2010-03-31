@@ -61,7 +61,7 @@ structure Execute :> EXECUTE = struct
           let
             val arg = valOf(List.nth(evars,u))
                 handle Option => 
-                       raise Err ("Execution error: rule was not range restricted.")
+                  raise Err ("Execution error: rule was not range restricted.")
           in
             T.apply_subst (pull_subst evars subst) (valOf(List.nth(evars,u)))
           end
@@ -242,8 +242,7 @@ structure Execute :> EXECUTE = struct
           I.Linear => check linear L
         | I.Persistent => check persistent U
       end
-
-  fun match_pos trm cont (state as (ctx,evars)) = 
+ (state as (ctx,evars)) = 
       let fun pop cont = fn (ctx,evars) => cont (ctx,tl evars)
       in
         case trm of 
