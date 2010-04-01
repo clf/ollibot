@@ -28,3 +28,8 @@ tree₂ : !edge X Y • !intree X • vertex Y ->> !intree Y • !tree X Y.
   vertex k • vertex l • vertex m • vertex n.
 
 
+-- !tree a b • !intree(b) • !connected(b) • !connected(a) • !intree(a) • !edge b a • !edge a b
+-- Total of 2 steps
+%exec * !edge a b • !edge a c • !edge a d • !edge b c • !edge b e • !edge d e • !edge l j • !edge j k • !edge l k • !edge l n • !edge k n • !edge f g • !edge g h • !edge g i • !edge i m • !edge h m • vertex a • vertex b • vertex c • vertex d • vertex e • vertex f • vertex g • vertex h • vertex i • vertex j • vertex k • vertex l • vertex m • vertex n.
+-- After 14 steps:
+-- !tree l n • !intree(n) • !tree i m • !intree(m) • !tree j l • !intree(l) • !tree j k • !intree(k) • !connected(n) • !connected(l) • !connected(k) • !connected(j) • !intree(j) • !tree g i • !intree(i) • !tree g h • !intree(h) • !tree f g • !intree(g) • !connected(m) • !connected(h) • !connected(i) • !connected(g) • !connected(f) • !intree(f) • !tree b e • !intree(e) • !tree a d • !intree(d) • !tree a c • !intree(c) • !tree a b • !intree(b) • !connected(e) • !connected(b) • !connected(c) • !connected(d) • !connected(a) • !intree(a) • !edge b a • !edge c a • !edge d a • !edge c b • !edge e b • !edge e d • !edge j l • !edge k j • !edge k l • !edge n l • !edge n k • !edge g f • !edge h g • !edge i g • !edge m i • !edge m h • !edge a b • !edge a c • !edge a d • !edge b c • !edge b e • !edge d e • !edge l j • !edge j k • !edge l k • !edge l n • !edge k n • !edge f g • !edge g h • !edge g i • !edge i m • !edge h m
