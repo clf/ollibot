@@ -37,7 +37,7 @@ structure Parse :> PARSE = struct
         PERIOD => "." | LPAREN => "(" | RPAREN => ")" 
       | BANG => "!" | GNAB => "¡" | NEG => "¬" | ONE => "1"
       | COMMA => "," | EQ => "==" | NEQ => "<>"
-      | RIGHTI => "->>" | LEFTI => ">->" | FUSE => "•"
+      | RIGHTI => "->>" | LEFTI => ">->" | FUSE => "·"
       | LOLLI => "->>" | TENSOR => "⊗" 
       | ARROW => "->" | CONJ => "∧" 
       | PERCENT x => "%" ^ x | COLON => ":" | WS => ""
@@ -175,7 +175,8 @@ structure Parse :> PARSE = struct
         val sep = 
             fn "." => true | "(" => true | ")" => true 
              | "!" => true | "¡" => true | "," => true 
-             | "↠" => true | "↣" => true | "•" => true
+             | "↠" => true | "↣" => true 
+             | "·" => true | "•" => true | "*" => true
              | "⊸" => true | "⊗" => true
              | "→" => true | "∧" => true | "¬" => true
              | "λ" => true | "∀" => true | "∃" => true 
@@ -217,6 +218,8 @@ structure Parse :> PARSE = struct
                  literal "->>" >> succeed RIGHTI,
                  literal "↣" >> succeed LEFTI,
                  literal ">->" >> succeed LEFTI,
+                 literal "*" >> succeed FUSE,
+                 literal "·" >> succeed FUSE,
                  literal "•" >> succeed FUSE,
                  literal "-o" >> succeed LOLLI,
                  literal "⊸" >> succeed LOLLI,
@@ -229,13 +232,19 @@ structure Parse :> PARSE = struct
                  literal " " >> succeed WS,
                  literal "->>" >> succeed RIGHTI,
                  literal ">->" >> succeed LEFTI,
+                 literal "\\" >> (white >> any << white << literal "." 
+                                       ## (fn pos => not "λ" pos)) wth LAMBDA,
                  literal "λ" >> (white >> any << white << literal "." 
                                        ## (fn pos => not "λ" pos)) wth LAMBDA,
+                 literal "ALL" >> (white >> any << white << literal "." 
+                                       ## (fn pos => not "∀" pos)) wth FORALL,
                  literal "∀" >> (white >> any << white << literal "." 
                                        ## (fn pos => not "∀" pos)) wth FORALL,
+                 literal "EX" >> (white >> any << white << literal "." 
+                                       ## (fn pos => not "∃" pos)) wth EXISTS,
                  literal "∃" >> (white >> any << white << literal "." 
                                        ## (fn pos => not "∃" pos)) wth EXISTS,
-                 (!! (literal "\\") -- (fn (_,pos) => backslash pos)), 
+                 (* (!! (literal "\\") -- (fn (_,pos) => backslash pos)), *)
                  any wth (fn x => ID([],x))] 
       in transform (!! tokenparser) end 
 

@@ -118,7 +118,7 @@ structure IntSyn = struct
         | Fuse(trm1,trm2) =>
           let 
             val str = 
-                to_string mvars true trm1 ^ " • " ^
+                to_string mvars true trm1 ^ " · " ^
                 to_string mvars false trm2
           in if needs_parens then "(" ^ str ^ ")" else str end
         | Esuf(trm1,trm2) =>
