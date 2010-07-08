@@ -15,6 +15,8 @@ signature GLOBAL = sig
                       
   val print : string -> unit
   val liveprint : string -> unit
+
+  datatype perm = Ordered | Linear | Persistent
                         
 end
 

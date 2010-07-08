@@ -15,6 +15,8 @@ structure Global :> GLOBAL = struct
                       
   val print = print
   val liveprint = ignore
+
+  datatype perm = Ordered | Linear | Persistent
               	  
 end
 

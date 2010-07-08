@@ -35,7 +35,7 @@ structure Parse :> PARSE = struct
   fun token_to_string token = 
       case token of 
         PERIOD => "." | LPAREN => "(" | RPAREN => ")" 
-      | BANG => "!" | GNAB => "¡" | NEG => "¬" | ONE => "1"
+      | BANG => "!" | GNAB => "¡" | NEG => "¬" | ONE => "<1>"
       | COMMA => "," | EQ => "==" | NEQ => "<>"
       | RIGHTI => "->>" | LEFTI => ">->" | FUSE => "·"
       | LOLLI => "->>" | TENSOR => "⊗" 
@@ -210,7 +210,7 @@ structure Parse :> PARSE = struct
                  literal "!" >> succeed BANG,
                  literal "¡" >> succeed GNAB,
                  literal "¬" >> succeed NEG,
-                 literal "1" >> succeed ONE,
+                 literal "<1>" >> succeed ONE,
                  literal "," >> succeed COMMA,
                  literal "==" >> succeed EQ,
                  literal "<>" >> succeed NEQ,
@@ -226,7 +226,7 @@ structure Parse :> PARSE = struct
                  literal "⊗" >> succeed TENSOR,
                  literal "->" >> succeed ARROW,
                  literal "→" >> succeed ARROW,
-                 literal "∧" >> succeed CONJ,
+                 literal "∧" >> succeed CONJ, 
                  literal "%" >> any wth PERCENT,
                  literal ":" >> succeed COLON,
                  literal " " >> succeed WS,
@@ -281,6 +281,15 @@ structure Parse :> PARSE = struct
         fun fuse pos ((trm1,pos1),(trm2,pos2)) =
             let val pos = Pos.union(Pos.union(pos,pos1),pos2)
             in (ExtSyn.Fuse(pos,trm1,trm2),pos) end
+        fun eq pos ((trm1,pos1),(trm2,pos2)) =
+            let val pos = Pos.union(Pos.union(pos,pos1),pos2)
+            in (ExtSyn.Eq(pos,trm1,trm2),pos) end
+        fun neq pos ((trm1,pos1),(trm2,pos2)) =
+            let val pos = Pos.union(Pos.union(pos,pos1),pos2)
+            in (ExtSyn.Neq(pos,trm1,trm2),pos) end
+        fun arrow pos ((trm1,pos1),(trm2,pos2)) =
+            let val pos = Pos.union(Pos.union(pos,pos1),pos2)
+            in (ExtSyn.Arrow(pos,trm1,trm2),pos) end
 
         fun lambda ((x,pos),(trm,pos')) = 
             let val pos = Pos.union(pos,pos') 
@@ -303,6 +312,9 @@ structure Parse :> PARSE = struct
             | NEG => SOME(Opr(Prefix(10, neg pos)))
             | ONE => SOME(Atm(ExtSyn.One pos, pos))
             | ID (path,x) => SOME(Atm(ExtSyn.Id(pos,path,x),pos))
+            | ARROW => SOME(Opr(Infix(Right,4,arrow pos)))
+            | EQ => SOME(Opr(Infix(Right,12,eq pos)))
+            | NEQ => SOME(Opr(Infix(Right,12,neq pos)))
             | LAMBDA _ => NONE
             | FORALL _ => NONE
             | EXISTS _ => NONE

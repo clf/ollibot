@@ -11,6 +11,7 @@ Group is
   global-sig.sml
   global.sml
 
+  unify.sml
   extsyn.sml
   parse.sml
 

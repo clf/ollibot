@@ -11,6 +11,7 @@ end
 
 structure MorphSignat :> MORPH_SIGNAT = struct
 
+  open Global
   open Signat
   infix w'constants w'rules w'linear_rules w'saturating_rules
   structure I = IntSyn
@@ -32,8 +33,8 @@ structure MorphSignat :> MORPH_SIGNAT = struct
       | I.Fuse(prop1,prop2) => allpers_pos prop1 andalso allpers_pos prop2
       | I.Esuf(prop1,prop2) => allpers_pos prop1 andalso allpers_pos prop2
       | I.One => true
-      | I.Atom(I.Persistent,_,_) => true
-      | I.Atom(I.Linear,_,_) => false
+      | I.Atom(Persistent,_,_) => true
+      | I.Atom(Linear,_,_) => false
       | I.Atom(I.Ordered,_,_) => false
       | I.NegAtom(_,_) => true
 

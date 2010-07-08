@@ -45,7 +45,7 @@ structure TypeRecon = struct
                handle ST.Unify => 
                       raise ErrPos(p,"Incompatible types for free variables") 
 
-        (* vars_and_types(trm, bvar) = (fvar, tp) 
+        (* vars_and_types(trm, bvar) = (pos, fvar, tp) 
          ** trm - a term in the external syntax
          ** bvar - a map from bound variables to their inferred types 
          ** fvar - a set of free variables within the term trm
@@ -54,130 +54,133 @@ structure TypeRecon = struct
             case trm of 
               E.App(p,trm1,trm2) =>
               let (* val _ = print "App\n" *)
-                val (fvar1,tp1) = vars_and_types (trm1, bvar)
-                val (fvar2,tp2) = vars_and_types (trm2, bvar)
+                val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
+                val (p1,fvar2,tp2) = vars_and_types (trm2, bvar)
                 val tp = ST.Var'()
                 val fvar = union (p,fvar1,fvar2)
               in 
-                unifypos(p,tp1,ST.Arrow'(tp2,tp)); (fvar, tp)
+                unifypos(p,tp1,ST.Arrow'(tp2,tp)); (p, fvar, tp)
               end
             | E.Forall(p,tp,x,trm0) =>
               let (* val _ = print "Lambda\n" *)
-                val (fvar0,tp0) = vars_and_types (trm0, MapS.insert(bvar,x,tp))
-              in unifypos(p,tp0,ST.Prop'); (fvar0, ST.Prop') end
+                val (p0,fvar0,tp0) 
+                  = vars_and_types (trm0, MapS.insert(bvar,x,tp))
+              in unifypos(p,tp0,ST.Prop'); (p, fvar0, ST.Prop') end
             | E.Exists(p,tp,x,trm0) =>
               let (* val _ = print "Lambda\n" *)
-                val (fvar0,tp0) = vars_and_types (trm0, MapS.insert(bvar,x,tp))
-              in unifypos(p,tp0,ST.Prop'); (fvar0, ST.Prop') end
+                val (p0,fvar0,tp0)
+                  = vars_and_types (trm0, MapS.insert(bvar,x,tp))
+              in unifypos(p,tp0,ST.Prop'); (p, fvar0, ST.Prop') end
             | E.Fuse(p,trm1,trm2) =>
               let (* val _ = print "Fuse\n" *)
-                val (fvar1,tp1) = vars_and_types (trm1, bvar)
-                val (fvar2,tp2) = vars_and_types (trm2, bvar)
+                val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
+                val (p1,fvar2,tp2) = vars_and_types (trm2, bvar)
                 val fvar = union (p,fvar1,fvar2)
               in
                 unifypos(p,tp1,ST.Prop');
                 unifypos(p,tp2,ST.Prop'); 
-                (fvar, ST.Prop')
+                (p, fvar, ST.Prop')
               end
             | E.Esuf(p,trm1,trm2) =>
               let (* val _ = print "Fuse\n" *)
-                val (fvar1,tp1) = vars_and_types (trm1, bvar)
-                val (fvar2,tp2) = vars_and_types (trm2, bvar)
+                val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
+                val (p2,fvar2,tp2) = vars_and_types (trm2, bvar)
                 val fvar = union (p,fvar1,fvar2)
               in
                 unifypos(p,tp1,ST.Prop'); 
                 unifypos(p,tp2, ST.Prop'); 
-                (fvar, ST.Prop')
+                (p, fvar, ST.Prop')
               end
             | E.Righti(p,trm1,trm2) =>
               let (* val _ = print "Righti\n" *)
-                val (fvar1,tp1) = vars_and_types (trm1, bvar)
-                val (fvar2,tp2) = vars_and_types (trm2, bvar)
+                val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
+                val (p2,fvar2,tp2) = vars_and_types (trm2, bvar)
                 val fvar = union (p,fvar1,fvar2)
               in
                 unifypos(p,tp1,ST.Prop'); 
                 unifypos(p,tp2,ST.Prop');
-                (fvar, ST.Prop')
+                (p, fvar, ST.Prop')
               end
             | E.Lefti(p,trm1,trm2) =>
               let (* val _ = print "Lefti\n" *)
-                val (fvar1,tp1) = vars_and_types (trm1, bvar)
-                val (fvar2,tp2) = vars_and_types (trm2, bvar)
+                val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
+                val (p2,fvar2,tp2) = vars_and_types (trm2, bvar)
                 val fvar = union (p,fvar1,fvar2)
               in
                 unifypos(p,tp1,ST.Prop');
                 unifypos(p,tp2,ST.Prop'); 
-                (fvar, ST.Prop')
+                (p, fvar, ST.Prop')
               end
             | E.Lambda(p,tp,x,trm0) =>
               let (* val _ = print "Lambda\n" *)
-                val (fvar0,tp0) = vars_and_types (trm0, MapS.insert(bvar,x,tp))
-              in (fvar0, ST.Arrow'(tp,tp0)) end
+                val (p0,fvar0,tp0)
+                  = vars_and_types (trm0, MapS.insert(bvar,x,tp))
+              in (p, fvar0, ST.Arrow'(tp,tp0)) end
             | E.Id(p,[],x) =>
               let (* val _ = print ("Id " ^ x ^ "\n") *) in
                 case MapS.find(bvar, x) of
                   SOME tp => (* Bound variable, obtain from bvars *)
-                  (MapS.empty, tp)
+                  (p, MapS.empty, tp)
                 | NONE =>
                   if Char.isUpper(String.sub(x,0)) 
                   then (* Free variable, bind locally *)
                     let val tp = ST.Var'() 
-                    in (MapS.singleton(x,tp), tp) end
+                    in (p, MapS.singleton(x,tp), tp) end
                   else (* Constant, get type globally *)
                     let val tp = lookup x
-                    in (MapS.empty, tp) end
+                    in (p, MapS.empty, tp) end
               end
             | E.Id(p,_,x) => raise ErrPos(p,"Paths not yet supported!")
             | E.Bang(p,trm1) =>
               let (* val _ = print "Bang\n" *)
-                val (fvar1,tp1) = vars_and_types (trm1, bvar)
+                val (p1, fvar1,tp1) = vars_and_types (trm1, bvar)
               in
                 unifypos(p,tp1,ST.Prop'); 
-                (fvar1, ST.Prop')
+                (p, fvar1, ST.Prop')
               end
             | E.Gnab(p,trm1) =>
               let (* val _ = print "Gnab\n" *)
-                val (fvar1,tp1) = vars_and_types (trm1, bvar)
+                val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
               in
                 unifypos(p,tp1,ST.Prop');
-                (fvar1, ST.Prop')
+                (p, fvar1, ST.Prop')
               end
             | E.Not(p,trm1) =>
               let (* val _ = print "Bang\n" *)
-                val (fvar1,tp1) = vars_and_types (trm1, bvar)
+                val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
               in
                 unifypos(p,tp1,ST.Prop'); 
-                (fvar1, ST.Prop')
+                (p,fvar1, ST.Prop')
               end
-            | E.One p => (MapS.empty, ST.Prop')
-
+            | E.One p => (p, MapS.empty, ST.Prop')
+            | _ => (print "Error - what's missing??!?!?!"; raise Match)
 
         (* Print a partially inferred type *)
         fun strST tp needs_parens = 
             case ST.prj tp of
               ST.Var ev => "#"
             | ST.Item => "i"
-            | ST.Prop => "o"
+            | ST.Prop _ => "o"
             | ST.Arrow(t1,t2) =>
               let val s = strST t1 true ^ " → " ^ strST t2 false
               in if needs_parens then "(" ^ s ^ ")" else s end 
                                                          
         fun learntypes (E.RULE(p,s,trm)) = 
-            let val (fv, tp) = vars_and_types(trm,MapS.empty)
+            let val (p,fv,tp) = vars_and_types(trm,MapS.empty)
               fun wrap (fv, tp, trm) = E.Forall(p,tp,fv,trm)
             in
               ST.unify tp ST.Prop'; 
               E.RULE(p,s,MapS.foldri wrap trm fv)
             end
           | learntypes (E.EXEC(p,n,trm)) = 
-            let val (fv, tp) = vars_and_types(trm,MapS.empty)
+            let val (p,fv,tp) = vars_and_types(trm,MapS.empty)
             in 
               ST.unify tp ST.Prop'; 
               if MapS.isEmpty fv then E.EXEC(p,n,trm)
               else raise Match (* XXX needs error message *)
             end
           | learntypes (E.TRACE(p,n,trm)) = 
-            let val (fv, tp) = vars_and_types(trm,MapS.empty)
+            let val (p,fv,tp) = vars_and_types(trm,MapS.empty)
             in 
               ST.unify tp ST.Prop'; 
               if MapS.isEmpty fv then E.TRACE(p,n,trm)
@@ -191,7 +194,7 @@ structure TypeRecon = struct
               ST.Var ev => (ST.bind ev ST.Item'; I.Item)
             | ST.Arrow(t1,t2) => I.Arrow(groundST t1, groundST t2)
             | ST.Item => I.Item
-            | ST.Prop => I.Prop  
+            | ST.Prop perm => I.Prop 
 
         val new_signat =
             MapS.unionWith (fn _ => raise Err("Cannot merge signatures"))
@@ -226,7 +229,7 @@ structure TypeRecon = struct
               ST.Var ev => raise CouldNotInferType
             | ST.Arrow(tp1,tp2) => I.Arrow(is_groundST tp1, is_groundST tp2)
             | ST.Item => I.Item
-            | ST.Prop => I.Prop
+            | ST.Prop perm => I.Prop
 
         datatype partial_term_root =
             PT_MVar of int 
@@ -304,14 +307,14 @@ structure TypeRecon = struct
               let in
                 case e2i_term (trm, vars) of
                   ((PT_Root(I.Const a),trms), I.Prop) => 
-                  I.Atom(I.Persistent,a,rev trms)
+                  I.Atom(Persistent,a,rev trms)
                 | _ => raise Err("Banged not positive proposition\n")
               end
             | E.Gnab(p,trm) =>
               let in
                 case e2i_term (trm, vars) of
                   ((PT_Root(I.Const a),trms), I.Prop) => 
-                  I.Atom(I.Linear,a,rev trms)
+                  I.Atom(Linear,a,rev trms)
                 | _ => raise Err("Gnabed not positive proposition\n")
               end
             | E.Not(p,trm) =>
@@ -326,7 +329,7 @@ structure TypeRecon = struct
               let in
                 case e2i_term (trm, vars) of
                   ((PT_Root(I.Const a),trms), I.Prop) => 
-                  I.Atom(I.Ordered,a,rev trms)
+                  I.Atom(Ordered,a,rev trms)
                 | _ => raise Err("Subterm not positive proposition\n")
               end
 

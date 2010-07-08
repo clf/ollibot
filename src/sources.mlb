@@ -28,6 +28,7 @@ $(SML_LIB)/basis/sml-nj.mlb
 global-sig.sml
 global.sml
 
+unify.sml
 extsyn.sml
 parse.sml
 

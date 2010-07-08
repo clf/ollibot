@@ -3,8 +3,6 @@ structure IntSyn = struct
 
   open Global
 
-  datatype perm = Ordered | Linear | Persistent
-
   datatype tp = Prop | Item | Arrow of tp * tp
 
   (* A substitution (front list) (Γ ⊢ Δ) substitutes, for each variable in
