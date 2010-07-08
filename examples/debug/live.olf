@@ -1,0 +1,12 @@
+r0 : !use M X ↠ !live M X.
+r1 : ¬def M X • !succ M N • !live N X ↠ !live M X.
+
+{-
+ 0 : x <- 1
+ 1 : y <- 2
+ 2 : z <- x + y
+
+ 3 : ret z
+-}
+
+%trace * !def 0 x • !def 1 y • !def 2 z • !use 3 z • !use 2 x • !use 2 y • !succ 0 1 • !succ 1 2 • !succ 2 3.
