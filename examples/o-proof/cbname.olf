@@ -1,0 +1,163 @@
+--- Bisimulation of substitution and environment semantics for call-by-name
+--- lambda in a monadic ordered logical framework.
+---
+--- Frank Pfenning and Iliano Cervesato
+--- 6 July 2010
+
+
+--- Call-by-name substitution evaluation in SSOS
+
+- Untyped lambda calculus
+exp1   : type.
+
+lam1   : (exp1 -> exp1) -> exp1.
+app1   : exp1 -> exp1 -> exp1.
+
+- Frames
+frame1 : type.
+
+apAf1  : exp1 -> frame1.
+
+- Substitution semantics
+eval1  : exp1 -> type.
+ret1   : exp1 -> type.
+cont1  : frame1 -> type.
+
+ev1_app : eval1 (app1 E1 E1') ->> { cont1 (apAf E1') * eval1 E1 }.
+ev1_lam : eval1 (lam1 [x1]E1 x1) ->> { ret1 (lam1 [x1]E1 x1) }.
+ct1_apA : cont1 (apAf1 E1') * ret1 (lam [x1]E1 x1) ->> { eval1 (E1 E1') }.
+
+
+--- Call-by-name environment evaluation in SSOS
+
+- Untyped lambda calculus
+exp2   : type.
+dest   : type.
+
+lam2   : (exp2 -> exp2) -> exp2.
+app2   : exp2 -> exp2 -> exp2.
+d2e    : dest -> exp2.
+
+- Frames
+frame2 : type.
+apAf2  : exp2 -> frame2.
+df     : dest -> frame2.
+
+eval2  : exp2 -> type.
+ret2   : exp2 -> type.
+cont2  : frame2 -> type.
+bind   : dest2 -> exp2 -> type.
+
+ev2_app : eval2 (app2 E2 E2') ->> {cont2 (apAf2 E2') * eval2 E2 }.
+ev2_lam : eval2 (lam2 [x2]E2 x2) ->> {ret2 (lam2 [x2]E2 x2) }.
+ct2_apA : cont2 (apAf2 E2') * ret2 (lam2 [x2]E2 x2)
+           ->> { EX d:dest . !bind d E2' * eval2 (E2 (d2e d)) }.
+ct2_dst : eval2 (d2e d) * !bind d E2 -> { eval2 E2 }.
+
+
+--- Expression-level simulation 
+
+re: exp1 -> exp2 -> type.
+
+r_app : re (app1 E1 E1') (app2 E2 E2')
+	 <- re E1 E2
+	 <- re E1' E2'.
+r_lam : re (lam1 [x1]E1 x1) (lam2 [x2]E2 x2)
+	 <- {x1:exp1}{x2:exp2} re x1 x2 -> re (E1 x1) (E2 x2).
+r_dst : re E1 (d2e D)
+	 <- bind D E2
+	 <- re E1 E2.
+
+- Frame simulation
+
+rf : frame1 -> frame2 -> type.
+
+r_apA : rf (apAf2 E1') (apAf1 E2')
+	 <- re E1' E2'.
+
+
+--- Specification of equivalence
+
+eval : {e1:exp1}{e2:exp2}re e1 e2 -> type.
+ret  : {e1:exp1}{e2:exp2}re e1 e2 -> type.
+cont : {f1:frame1}{f2:frame2}rf f1 f2 -> type.
+%mode eval +E1 -E2 +R
+%mode eval -E1 +E2 -R
+%mode ret +E1 -E2 +R
+%mode ret -E1 +E2 -R
+%mode cont +E1 -E2 +R
+%mode cont -E1 +E2 -R
+
+-: eval (app1 E1 E1') (app2 E2 E2')
+        (r_app R R' : re (app1 E1 E1') (app2 E2 E2'))
+    ->> { cont (apAf1 E1') (apAf2 E2')
+          (r_apA R' : rf (apAf2 E1') (apAf1 E2'))
+        * eval E1 E2
+          (R        : re E1 E2)
+	}.
+-: eval (lam1 [x1]E1 x1) (lam1 [x2]E2 x2)
+        ((r_lam [x1:exp1][x2:exp2][r:re x1 x2]R x1 x2 r)
+                    : re (lam1 [x1]E1 x1) (lam2 [x2]E2 x2))
+    ->> { ret (lam1 [x1]E1 x1) (lam1 [x2]E2 x2)
+              ((r_lam [x1:exp1][x2:exp2][r:re x1 x2]R x1 x2 r)
+                    : re (lam1 [x1]E1 x1) (lam2 [x2]E2 x2))
+        }
+-: cont (apAf2 E1') (apAf1 E2')
+        (r_apA R'   : rf (apAf2 E1') (apAf1 E2'))
+ * ret (lam1 [x1]E1 x1) (lam1 [x2]E2 x2)
+       ((r_lam [x1:exp1][x2:exp2][r:re x1 x2]R x1 x2 r)
+                    : re (lam1 [x1]E1 x1) (lam2 [x2]E2 x2))
+    ->> {EX d:dest.
+         EX b:bind d E2'.
+         eval (E1 E1') (E2 (d2e d))
+              (R E1' (d2e d) (r_dst R')
+		    : re (E1 E1') (E2 (d2e d)))
+        }.
+-: !bind D E2
+ * eval E1 (d2e D)
+        (r_dst R D  : re E1 (d2e D))
+    ->> {eval E1 E2
+	      (R    : re E1 E2)}.
+
+{-
+--- Call-by-name substitution evaluation in LDP
+
+-------------- UNFINISHED ----------------------------
+
+- Untyped lambda calculus
+exp3   : type.
+dst3   : type.
+
+lam3   : (exp3 -> exp3) -> exp3.
+app3   : exp3 -> exp3 -> exp3.
+d2e3   : dst3 -> exp3.
+
+- Frames
+frame3 : type.
+apAf3  : dst3 -> exp3 -> frame3.
+
+eval3  : exp3 -> dst3 -> type.
+ret3   : exp3 -> dst3 -> type.
+cont3  : frame3 -> dst3 -> type.
+
+ev3_app : eval3 (app3 E3 E3') D3
+       -o { EX d:dst3.
+            cont3 (apAf3 d E3') D3
+          * eval3 d E3
+          }.
+ev3_lam : eval3 (lam3 [x3]E3 x3) D3 -o {ret3 (lam3 [x3]E3 x3) D3 }.
+ct3_apA : cont3 (apAf3 D3 E3') D3' * ret3 (lam3 [x3]E3 x3) D3
+       -o { eval3 (E3 E3') D3' }.
+
+
+eval' : exp1 -> exp3 -> type.
+ret'  : exp1 -> exp3 -> type.
+cont' : frame1 -> frame3 -> type.
+%mode eval' +E1 -E3
+%mode eval' -E1 +E3
+%mode ret' +E1 -E3
+%mode ret' -E1 +E3
+%mode cont' +E1 -E3
+%mode cont' -E1 +E3
+
+-}
