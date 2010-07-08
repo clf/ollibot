@@ -373,7 +373,7 @@ structure Parse :> PARSE = struct
                 wth (fn ((x,pos),(trm,pos')) => 
                         ExtSyn.RULE(Pos.union(pos,pos'), x, trm))
         val numparser =
-         fn ID([],"*") => SOME(NONE)
+         fn FUSE => SOME(NONE) (* XXX bit of a hack here to read "*" *)
           | ID([],id) => 
             (case Int.fromString id of NONE => NONE | SOME i => SOME(SOME i))
           | _ => NONE
