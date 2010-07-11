@@ -29,7 +29,7 @@ structure Parse :> PARSE = struct
     | LOLLI | TENSOR
     | ARROW | CONJ 
     | PERCENT of string | COLON | WS
-    | LAMBDA of string | FORALL of string | EXISTS of string 
+    | LAMBDA | FORALL | PI | EXISTS
     | ID of string list * string 
 
   fun token_to_string token = 
@@ -41,7 +41,7 @@ structure Parse :> PARSE = struct
       | LOLLI => "->>" | TENSOR => "⊗" 
       | ARROW => "->" | CONJ => "∧" 
       | PERCENT x => "%" ^ x | COLON => ":" | WS => ""
-      | LAMBDA x => "λ " ^ x | FORALL x => "∀ " ^ x | EXISTS x => "∃ " ^ x
+      | LAMBDA => "λ" | FORALL => "∀" | PI => "Π" | EXISTS => "∃"
       | ID(path,x) => concat (map (fn x => x ^  ".") path) ^ x 
 
   fun err_expected_tok expected = 
@@ -232,18 +232,14 @@ structure Parse :> PARSE = struct
                  literal " " >> succeed WS,
                  literal "->>" >> succeed RIGHTI,
                  literal ">->" >> succeed LEFTI,
-                 literal "\\" >> (white >> any << white << literal "." 
-                                       ## (fn pos => not "λ" pos)) wth LAMBDA,
-                 literal "λ" >> (white >> any << white << literal "." 
-                                       ## (fn pos => not "λ" pos)) wth LAMBDA,
-                 literal "ALL" >> (white >> any << white << literal "." 
-                                       ## (fn pos => not "∀" pos)) wth FORALL,
-                 literal "∀" >> (white >> any << white << literal "." 
-                                       ## (fn pos => not "∀" pos)) wth FORALL,
-                 literal "EX" >> (white >> any << white << literal "." 
-                                       ## (fn pos => not "∃" pos)) wth EXISTS,
-                 literal "∃" >> (white >> any << white << literal "." 
-                                       ## (fn pos => not "∃" pos)) wth EXISTS,
+                 literal "\\" >> succeed LAMBDA,
+                 literal "λ" >> succeed LAMBDA,
+                 literal "All" >> succeed FORALL,
+                 literal "∀" >> succeed FORALL,
+                 literal "Pi" >> succeed PI,
+                 literal "Π" >> succeed PI,
+                 literal "Exists" >> succeed EXISTS,
+                 literal "∃" >> succeed EXISTS,
                  (* (!! (literal "\\") -- (fn (_,pos) => backslash pos)), *)
                  any wth (fn x => ID([],x))] 
       in transform (!! tokenparser) end 
@@ -294,6 +290,9 @@ structure Parse :> PARSE = struct
         fun lambda ((x,pos),(trm,pos')) = 
             let val pos = Pos.union(pos,pos') 
             in (ExtSyn.Lambda(pos,SimpleType.Var'(),x,trm),pos) end
+        fun pi ((x,pos),(trm,pos')) = (* XXX NOT DISTINGHUSHED XXX *)
+            let val pos = Pos.union(pos,pos') 
+            in (ExtSyn.Forall(pos,SimpleType.Var'(),x,trm),pos) end 
         fun forall ((x,pos),(trm,pos')) = 
             let val pos = Pos.union(pos,pos') 
             in (ExtSyn.Forall(pos,SimpleType.Var'(),x,trm),pos) end
@@ -315,14 +314,16 @@ structure Parse :> PARSE = struct
             | ARROW => SOME(Opr(Infix(Right,4,arrow pos)))
             | EQ => SOME(Opr(Infix(Right,12,eq pos)))
             | NEQ => SOME(Opr(Infix(Right,12,neq pos)))
-            | LAMBDA _ => NONE
-            | FORALL _ => NONE
-            | EXISTS _ => NONE
+            | LAMBDA => NONE
+            | FORALL => NONE
+            | PI => NONE
+            | EXISTS => NONE
             | PERIOD => NONE
             | LPAREN => NONE
             | RPAREN => NONE
             | tok => 
               raise ErrPos(pos,"Unexpected token: " ^ token_to_string tok)))
+       
         val exp_parser = fix
         (fn exp_parser =>
             let
@@ -335,25 +336,20 @@ structure Parse :> PARSE = struct
                             | tok => raise ErrPos(pos,"Expected ')', found '"
                                                       ^ token_to_string tok)))
                   wth Atm
-              val lambda_parser = 
-                  get (fn pos =>
-                    maybe (fn (LAMBDA x) => SOME (x,pos) | _ => NONE) 
-                        && !! exp_parser wth (Atm o lambda))
-              val forall_parser = 
-                  get (fn pos => 
-                    maybe (fn (FORALL x) => SOME (x,pos) | _ => NONE) 
-                        && !! exp_parser wth (Atm o forall))
-              val exists_parser = 
-                  get (fn pos => 
-                    maybe (fn (EXISTS x) => SOME (x,pos) | _ => NONE) 
-                        && !! exp_parser wth (Atm o exists))
+              val arg_parser = 
+                  maybe (fn ID([],x) => SOME x | _ => NONE) << literal PERIOD
+              val binder_parser = !! arg_parser && !! exp_parser
+              val lambda_parser = literal LAMBDA >> binder_parser wth lambda
+              val forall_parser = literal FORALL >> binder_parser wth forall
+              val pi_parser     = literal PI >> binder_parser wth pi
+              val exists_parser = literal EXISTS >> binder_parser wth exists
             in 
               parsefixityadj
                   (alt [fixityitem_parser,
                         parens_parser,
-                        lambda_parser,
-                        forall_parser,
-                        exists_parser])
+                        lambda_parser wth Atm,
+                        forall_parser wth Atm,
+                        exists_parser wth Atm])
                   Left
                   (fn ((trm1,pos1),(trm2,pos2)) =>
                       let val pos = Pos.union(pos1,pos2) 

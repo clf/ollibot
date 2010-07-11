@@ -19,15 +19,17 @@
 
 -- All variables explicitly quantified 
 r₁ : ∀x.∀y.∀z. a₁ x z · b₁ y z  ↠  ∃w. c₁ x y w.
-r₂ : ALL x. ALL y. ALL z. a₂ x z * b₂ y z ->> EX w. c₂ x y w.
+r₂ : All x. All y. All z. a₂ x z * b₂ y z ->> Exists w. c₂ x y w.
+
+r : a (λx.E x) ->> a (λx.E x).
 
 -- Implicitly quantified variables
 r₃ : a₃ X Z · b₃ Y Z  ↠ ∃w. c₃ X Y w.
-r₄ : a₄ X Z * b₄ Y Z ->> EX w. c₄ X Y w.
-
+r₄ : a₄ X Z * b₄ Y Z ->> Exists w. c₄ X Y w.
+    
 -- Local existential quantification in the premise
-r₅ : ∀x.∀y. (∃z. a₅ x z · b₅ y z)  ↠  ∃w. c₅ x y w.
-r₆ : ALL x. ALL y. (EX z. a₆ x z * b₆ y z) ->> EX w. c₆ x y w.
+r₅ : ∀x.∀y. (∃z. a₅ x z · b₅ y z)  ↠  ∃ w. c₅ x y w.
+r₆ : All x. All y. (Exists z. a₆ x z * b₆ y z) ->> Exists w. c₆ x y w.
 
 
 
