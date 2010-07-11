@@ -7,13 +7,14 @@ structure ExtSyn = struct
 
   datatype term = 
       App of Pos.pos * term * term    
-    | Forall of Pos.pos * SimpleType.styp * string * term
-    | Exists of Pos.pos * SimpleType.styp * string * term
+    | Forall of Pos.pos * SimpleType.styp * decl * term
+    | Pi of Pos.pos * SimpleType.styp * decl * term
+    | Exists of Pos.pos * SimpleType.styp * decl * term
     | Fuse of Pos.pos * term * term
     | Esuf of Pos.pos * term * term
     | Righti of Pos.pos * term * term
     | Lefti of Pos.pos * term * term 
-    | Lambda of Pos.pos * SimpleType.styp * string * term
+    | Lambda of Pos.pos * SimpleType.styp * decl * term
     | Id of Pos.pos * string list * string
     | One of Pos.pos 
     | Not of Pos.pos * term
@@ -23,11 +24,14 @@ structure ExtSyn = struct
     | Eq of Pos.pos * term * term
     | Arrow of Pos.pos * term * term
     | Type of Pos.pos * perm
+  and decl = Decl of Pos.pos * string * term option
+      
 
   fun getpos term = 
       case term of
         App(p,_,_) => p
       | Forall(p,_,_,_) => p    
+      | Pi(p,_,_,_) => p    
       | Exists(p,_,_,_) => p
       | Fuse(p,_,_) => p
       | Esuf(p,_,_) => p

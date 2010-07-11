@@ -337,7 +337,10 @@ structure Parse :> PARSE = struct
                                                       ^ token_to_string tok)))
                   wth Atm
               val arg_parser = 
-                  maybe (fn ID([],x) => SOME x | _ => NONE) << literal PERIOD
+                  !! (maybe (fn ID([],x) => SOME (x,NONE)
+                              | _ => NONE))
+                     << literal PERIOD
+                     wth ExtSyn.Decl o (fn ((y,z),x) => (x,y,z))
               val binder_parser = !! arg_parser && !! exp_parser
               val lambda_parser = literal LAMBDA >> binder_parser wth lambda
               val forall_parser = literal FORALL >> binder_parser wth forall

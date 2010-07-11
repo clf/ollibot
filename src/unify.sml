@@ -4,7 +4,7 @@ structure SimpleType :>
             type styp
             datatype styp_view = 
                      Var of evar 
-                   | Item
+                   | Item 
                    | Prop of Global.perm
                    | Arrow of styp * styp
             exception Unify

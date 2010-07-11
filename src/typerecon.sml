@@ -50,110 +50,89 @@ structure TypeRecon = struct
          ** bvar - a map from bound variables to their inferred types 
          ** fvar - a set of free variables within the term trm
          ** tp - an inferred type for the term trm *)
+
         fun vars_and_types (trm, bvar) = 
-            case trm of 
-              E.App(p,trm1,trm2) =>
-              let (* val _ = print "App\n" *)
-                val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
-                val (p1,fvar2,tp2) = vars_and_types (trm2, bvar)
-                val tp = ST.Var'()
-                val fvar = union (p,fvar1,fvar2)
-              in 
-                unifypos(p,tp1,ST.Arrow'(tp2,tp)); (p, fvar, tp)
-              end
-            | E.Forall(p,tp,x,trm0) =>
-              let (* val _ = print "Lambda\n" *)
-                val (p0,fvar0,tp0) 
-                  = vars_and_types (trm0, MapS.insert(bvar,x,tp))
-              in unifypos(p,tp0,ST.Prop'); (p, fvar0, ST.Prop') end
-            | E.Exists(p,tp,x,trm0) =>
-              let (* val _ = print "Lambda\n" *)
-                val (p0,fvar0,tp0)
-                  = vars_and_types (trm0, MapS.insert(bvar,x,tp))
-              in unifypos(p,tp0,ST.Prop'); (p, fvar0, ST.Prop') end
-            | E.Fuse(p,trm1,trm2) =>
-              let (* val _ = print "Fuse\n" *)
-                val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
-                val (p1,fvar2,tp2) = vars_and_types (trm2, bvar)
-                val fvar = union (p,fvar1,fvar2)
-              in
-                unifypos(p,tp1,ST.Prop');
-                unifypos(p,tp2,ST.Prop'); 
-                (p, fvar, ST.Prop')
-              end
-            | E.Esuf(p,trm1,trm2) =>
-              let (* val _ = print "Fuse\n" *)
-                val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
-                val (p2,fvar2,tp2) = vars_and_types (trm2, bvar)
-                val fvar = union (p,fvar1,fvar2)
-              in
-                unifypos(p,tp1,ST.Prop'); 
-                unifypos(p,tp2, ST.Prop'); 
-                (p, fvar, ST.Prop')
-              end
-            | E.Righti(p,trm1,trm2) =>
-              let (* val _ = print "Righti\n" *)
-                val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
-                val (p2,fvar2,tp2) = vars_and_types (trm2, bvar)
-                val fvar = union (p,fvar1,fvar2)
-              in
-                unifypos(p,tp1,ST.Prop'); 
-                unifypos(p,tp2,ST.Prop');
-                (p, fvar, ST.Prop')
-              end
-            | E.Lefti(p,trm1,trm2) =>
-              let (* val _ = print "Lefti\n" *)
-                val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
-                val (p2,fvar2,tp2) = vars_and_types (trm2, bvar)
-                val fvar = union (p,fvar1,fvar2)
-              in
-                unifypos(p,tp1,ST.Prop');
-                unifypos(p,tp2,ST.Prop'); 
-                (p, fvar, ST.Prop')
-              end
-            | E.Lambda(p,tp,x,trm0) =>
-              let (* val _ = print "Lambda\n" *)
-                val (p0,fvar0,tp0)
-                  = vars_and_types (trm0, MapS.insert(bvar,x,tp))
-              in (p, fvar0, ST.Arrow'(tp,tp0)) end
-            | E.Id(p,[],x) =>
-              let (* val _ = print ("Id " ^ x ^ "\n") *) in
-                case MapS.find(bvar, x) of
-                  SOME tp => (* Bound variable, obtain from bvars *)
-                  (p, MapS.empty, tp)
-                | NONE =>
-                  if Char.isUpper(String.sub(x,0)) 
-                  then (* Free variable, bind locally *)
-                    let val tp = ST.Var'() 
-                    in (p, MapS.singleton(x,tp), tp) end
-                  else (* Constant, get type globally *)
-                    let val tp = lookup x
-                    in (p, MapS.empty, tp) end
-              end
-            | E.Id(p,_,x) => raise ErrPos(p,"Paths not yet supported!")
-            | E.Bang(p,trm1) =>
-              let (* val _ = print "Bang\n" *)
-                val (p1, fvar1,tp1) = vars_and_types (trm1, bvar)
-              in
-                unifypos(p,tp1,ST.Prop'); 
-                (p, fvar1, ST.Prop')
-              end
-            | E.Gnab(p,trm1) =>
-              let (* val _ = print "Gnab\n" *)
-                val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
-              in
-                unifypos(p,tp1,ST.Prop');
-                (p, fvar1, ST.Prop')
-              end
-            | E.Not(p,trm1) =>
-              let (* val _ = print "Bang\n" *)
-                val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
-              in
-                unifypos(p,tp1,ST.Prop'); 
-                (p,fvar1, ST.Prop')
-              end
-            | E.One p => (p, MapS.empty, ST.Prop')
-            | _ => (print "Error - what's missing??!?!?!"; raise Match)
+            let 
+              fun binder_arg (E.Decl(p,x,NONE), bvar) = (p, x, MapS.empty)
+                | binder_arg (E.Decl(p,x,SOME trm), bvar) = 
+                  let 
+                    val (p,fvar,tp) = vars_and_types (trm, bvar)
+                  in unifypos(p,tp,ST.Prop'); (p, x, fvar) end
+
+              fun unary_prop (p,trm1) = 
+                  let
+                    val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
+                  in
+                    unifypos(p,tp1,ST.Prop');
+                    (p, fvar1, ST.Prop')
+                  end
+
+              fun binary_prop (p,trm1,trm2) = 
+                  let 
+                    val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
+                    val (p1,fvar2,tp2) = vars_and_types (trm2, bvar)
+                    val fvar = union (p,fvar1,fvar2)
+                  in
+                    unifypos(p,tp1,ST.Prop');
+                    unifypos(p,tp2,ST.Prop'); 
+                    (p, fvar, ST.Prop')
+                  end
+
+              fun binder_prop (p,tp,decl,trm0) =
+                  let 
+                    val (pD,x,fvarD) = binder_arg (decl, bvar)
+                    val (p0,fvar0,tp0) 
+                      = vars_and_types (trm0, MapS.insert(bvar,x,tp))
+                    val fvar = union (pD,fvar0,fvarD)
+                  in unifypos(pD,tp0,ST.Prop'); (p, fvarD, ST.Prop') end
+                  
+              fun binder_lambda (p,tp,decl,trm0) =
+                  let 
+                    val (pD,x,fvarD) = binder_arg (decl, bvar)
+                    val (p0,fvar0,tp0)
+                      = vars_and_types (trm0, MapS.insert(bvar,x,tp))
+                    val fvar = union (pD,fvar0,fvarD)
+                  in (p, fvar0, ST.Arrow'(tp,tp0)) end
+            in
+              case trm of 
+                E.App(p,trm1,trm2) =>
+                let (* val _ = print "App\n" *)
+                  val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
+                  val (p1,fvar2,tp2) = vars_and_types (trm2, bvar)
+                  val tp = ST.Var'()
+                  val fvar = union (p,fvar1,fvar2)
+                in 
+                  unifypos(p,tp1,ST.Arrow'(tp2,tp)); (p, fvar, tp)
+                end
+              | E.Id(p,[],x) =>
+                let (* val _ = print ("Id " ^ x ^ "\n") *) in
+                  case MapS.find(bvar, x) of
+                    SOME tp => (* Bound variable, obtain from bvars *)
+                    (p, MapS.empty, tp)
+                  | NONE =>
+                    if Char.isUpper(String.sub(x,0)) 
+                    then (* Free variable, bind locally *)
+                      let val tp = ST.Var'() 
+                      in (p, MapS.singleton(x,tp), tp) end
+                    else (* Constant, get type globally *)
+                      let val tp = lookup x
+                      in (p, MapS.empty, tp) end
+                end
+              | E.Id(p,_,x)    => raise ErrPos(p,"Paths not yet supported!")
+              | E.Forall args  => binder_prop args
+              | E.Exists args  => binder_prop args
+              | E.Fuse args    => binary_prop args 
+              | E.Esuf args    => binary_prop args 
+              | E.Righti args  => binary_prop args 
+              | E.Lefti args   => binary_prop args 
+              | E.Bang args    => unary_prop args
+              | E.Gnab args    => unary_prop args
+              | E.Not args     => unary_prop args
+              | E.Lambda args  => binder_lambda args
+              | E.One p        => (p, MapS.empty, ST.Prop')
+                                                                       
+              | _ => (print "Error - what's missing??!?!?!"; raise Match)
+            end
 
         (* Print a partially inferred type *)
         fun strST tp needs_parens = 
@@ -167,7 +146,7 @@ structure TypeRecon = struct
                                                          
         fun learntypes (E.RULE(p,s,trm)) = 
             let val (p,fv,tp) = vars_and_types(trm,MapS.empty)
-              fun wrap (fv, tp, trm) = E.Forall(p,tp,fv,trm)
+              fun wrap (fv, tp, trm) = E.Forall(p,tp,E.Decl(p,fv,NONE),trm)
             in
               ST.unify tp ST.Prop'; 
               E.RULE(p,s,MapS.foldri wrap trm fv)
@@ -263,9 +242,9 @@ structure TypeRecon = struct
               (ptrm, tp)
             end
 
-        fun e2i_neg (trm, vars) = 
+        fun e2i_neg (trm, vars : (var * string * I.tp) list) = 
             case trm of
-              E.Forall(p,tp,x,trm) =>
+              E.Forall(p,tp,E.Decl(_,x,_),trm) =>
               let
                 val tp = is_groundST tp
                     handle CouldNotInferType
@@ -296,7 +275,7 @@ structure TypeRecon = struct
                 val trm1 = e2i_pos(trm1,vars)
                 val trm2 = e2i_pos(trm2,vars)
               in I.Esuf(trm1,trm2) end
-            | E.Exists(p,tp,x,trm) =>
+            | E.Exists(p,tp,E.Decl(_,x,_),trm) =>
               let
                 val tp = is_groundST tp
                     handle CouldNotInferType
@@ -353,7 +332,7 @@ structure TypeRecon = struct
               end
               handle Option => 
                      raise ErrPos(p,"Could not find " ^ x ^ " in signature"))
-            | E.Lambda(p,tp1,x,trm) =>
+            | E.Lambda(p,tp1,E.Decl(_,x,_),trm) =>
               let 
                 val tp1 = is_groundST tp1
                     handle CouldNotInferType
