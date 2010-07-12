@@ -202,7 +202,13 @@ structure Parse :> PARSE = struct
             raise 
               ErrPos(pos, "Binder " ^ " not followed by identifier + period")
         fun backslash pos = raise ErrPos(pos, "Backslash not permitted")
-        val white = repeat (literal " ") >> succeed ()
+        (* *)
+        fun idgrab [] = raise Err "Bad argument to internal parsing function"
+          | idgrab [x] = ([], x)
+          | idgrab (x :: xs) = let val (ys, id) = idgrab xs in (x :: ys, id) end
+        val idparser = 
+            any && repeat (literal "." && maybe (fn " " => NONE | x => SOME X))
+            wth (ID o idgrab o op ::)
         val tokenparser = 
             alt [literal "." >> succeed PERIOD,
                  literal "(" >> succeed LPAREN,
@@ -241,7 +247,7 @@ structure Parse :> PARSE = struct
                  literal "Exists" >> succeed EXISTS,
                  literal "∃" >> succeed EXISTS,
                  (* (!! (literal "\\") -- (fn (_,pos) => backslash pos)), *)
-                 any wth (fn x => ID([],x))] 
+                 idparser] 
       in transform (!! tokenparser) end 
 
   (* Transform 4: Filter whitespace *)
