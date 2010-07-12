@@ -55,7 +55,7 @@ structure IntSyn = struct
       let 
         fun to_string typ needs_parens = 
             case typ of
-              Prop => "o"
+              Prop => "typeop"
             | Item => "i"
             | Arrow(t1,t2) => 
               if needs_parens

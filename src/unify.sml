@@ -4,24 +4,26 @@ structure SimpleType :>
             type styp
             datatype styp_view = 
                      Var of evar 
-                   | Item 
-                   | Prop of Global.perm
-                   | Arrow of styp * styp
+                   | Obj of string
+                   | Arr of styp * styp
             exception Unify
             val unify : styp -> styp -> unit
             val bind : evar -> styp -> unit
             val prj : styp -> styp_view
-            val Var' : unit -> styp
-            val Item' : styp
-            val Prop' : (* Global.perm -> *) styp
-            val Arrow' : styp * styp -> styp
+            val NewVar : unit -> styp
+            val Item : styp
+            val Prop : styp
+            val Arrow : styp * styp -> styp
           end =
 struct
 
   open Global
 
   datatype evar = E of styp_view option ref
-  and styp_view = Var of evar | Item | Prop of perm | Arrow of styp_view * styp_view
+  and styp_view = 
+      Var of evar 
+    | Obj of string
+    | Arr of styp_view * styp_view
 
   type styp = styp_view
               
@@ -34,9 +36,8 @@ struct
           | lookup (v as ref (SOME typ)) = typ
       in
         case typ of
-          Item => Item
-        | Prop p => Prop p
-        | Arrow(t1,t2) => Arrow(t1,t2)
+          Obj x => Obj x
+        | Arr(t1,t2) => Arr(t1,t2)
         | Var(E v) => lookup v
       end
 
@@ -46,26 +47,24 @@ struct
        | _ => v := SOME trm)
     | bind _ _ = raise Match
 
-  val Var' = fn () => Var(E(ref NONE))
-  val Item' = Item
-  val Prop' = Prop Ordered
-  val Arrow' = Arrow
+  val NewVar = fn () => Var(E(ref NONE))
+  val Item = Obj "i"
+  val Prop = Obj "type"
+  val Arrow = Arr
 
   fun occurs_check (e1 : evar) t2 = 
       case t2 of
         Var e2 => if e1 = e2 then raise Err("Cannon assign types; this is a useless error message and I apologize.\nPlease send the code to robsimmons@gmail.com and I will try to make future\nerror messages better.") else ()
-      | Item => ()
-      | Prop perm => ()
-      | Arrow(t1,t2) => (occurs_check e1 t1; occurs_check e1 t2)
+      | Obj x => ()
+      | Arr(t1,t2) => (occurs_check e1 t1; occurs_check e1 t2)
 
   exception Unify
   fun unify t1 t2 = 
       case (prj t1, prj t2) of
         (Var e1, t2) => bind e1 t2
       | (t1, Var e2) => bind e2 t1
-      | (Item, Item) => ()
-      | (Prop perm1, Prop perm2) => if perm1 <> perm2 then raise Unify else ()
-      | (Arrow(t1,s1),Arrow(t2,s2)) => (unify t1 t2; unify s1 s2)
+      | (Obj x, Obj y) => if x <> y then raise Unify else ()
+      | (Arr(t1,s1),Arr(t2,s2)) => (unify t1 t2; unify s1 s2)
       | _ => raise Unify
       
 end

@@ -21,9 +21,9 @@ structure TypeRecon = struct
         val constmap : ST.styp MapS.map ref = ref MapS.empty
         fun ItoST typ = 
             case typ of
-              I.Prop => ST.Prop'
-            | I.Item => ST.Item'
-            | I.Arrow(typ1,typ2) => ST.Arrow'(ItoST typ1, ItoST typ2)
+              I.Prop => ST.Prop
+            | I.Item => ST.Item
+            | I.Arrow(typ1,typ2) => ST.Arrow(ItoST typ1, ItoST typ2)
         fun lookup s = 
             case MapS.find(signat,s) of
               SOME t => ItoST t
@@ -31,7 +31,7 @@ structure TypeRecon = struct
               (case MapS.find(!constmap,s) of
                  SOME t => t
                | NONE => 
-                 let val t = ST.Var'()
+                 let val t = ST.NewVar()
                  in constmap := MapS.insert(!constmap,s,t); t end)
         fun unify (x,y) = ST.unify x y
         fun unifypos (p,x,y) = 
@@ -57,14 +57,14 @@ structure TypeRecon = struct
                 | binder_arg (E.Decl(p,x,SOME trm), bvar) = 
                   let 
                     val (p,fvar,tp) = vars_and_types (trm, bvar)
-                  in unifypos(p,tp,ST.Prop'); (p, x, fvar) end
+                  in unifypos(p,tp,ST.Prop); (p, x, fvar) end
 
               fun unary_prop (p,trm1) = 
                   let
                     val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
                   in
-                    unifypos(p,tp1,ST.Prop');
-                    (p, fvar1, ST.Prop')
+                    unifypos(p,tp1,ST.Prop);
+                    (p, fvar1, ST.Prop)
                   end
 
               fun binary_prop (p,trm1,trm2) = 
@@ -73,9 +73,9 @@ structure TypeRecon = struct
                     val (p1,fvar2,tp2) = vars_and_types (trm2, bvar)
                     val fvar = union (p,fvar1,fvar2)
                   in
-                    unifypos(p,tp1,ST.Prop');
-                    unifypos(p,tp2,ST.Prop'); 
-                    (p, fvar, ST.Prop')
+                    unifypos(p,tp1,ST.Prop);
+                    unifypos(p,tp2,ST.Prop); 
+                    (p, fvar, ST.Prop)
                   end
 
               fun binder_prop (p,tp,decl,trm0) =
@@ -84,7 +84,7 @@ structure TypeRecon = struct
                     val (p0,fvar0,tp0) 
                       = vars_and_types (trm0, MapS.insert(bvar,x,tp))
                     val fvar = union (pD,fvar0,fvarD)
-                  in unifypos(pD,tp0,ST.Prop'); (p, fvarD, ST.Prop') end
+                  in unifypos(pD,tp0,ST.Prop); (p, fvarD, ST.Prop) end
                   
               fun binder_lambda (p,tp,decl,trm0) =
                   let 
@@ -92,17 +92,17 @@ structure TypeRecon = struct
                     val (p0,fvar0,tp0)
                       = vars_and_types (trm0, MapS.insert(bvar,x,tp))
                     val fvar = union (pD,fvar0,fvarD)
-                  in (p, fvar0, ST.Arrow'(tp,tp0)) end
+                  in (p, fvar0, ST.Arrow(tp,tp0)) end
             in
               case trm of 
                 E.App(p,trm1,trm2) =>
                 let (* val _ = print "App\n" *)
                   val (p1,fvar1,tp1) = vars_and_types (trm1, bvar)
                   val (p1,fvar2,tp2) = vars_and_types (trm2, bvar)
-                  val tp = ST.Var'()
+                  val tp = ST.NewVar()
                   val fvar = union (p,fvar1,fvar2)
                 in 
-                  unifypos(p,tp1,ST.Arrow'(tp2,tp)); (p, fvar, tp)
+                  unifypos(p,tp1,ST.Arrow(tp2,tp)); (p, fvar, tp)
                 end
               | E.Id(p,[],x) =>
                 let (* val _ = print ("Id " ^ x ^ "\n") *) in
@@ -112,7 +112,7 @@ structure TypeRecon = struct
                   | NONE =>
                     if Char.isUpper(String.sub(x,0)) 
                     then (* Free variable, bind locally *)
-                      let val tp = ST.Var'() 
+                      let val tp = ST.NewVar() 
                       in (p, MapS.singleton(x,tp), tp) end
                     else (* Constant, get type globally *)
                       let val tp = lookup x
@@ -129,7 +129,7 @@ structure TypeRecon = struct
               | E.Gnab args    => unary_prop args
               | E.Not args     => unary_prop args
               | E.Lambda args  => binder_lambda args
-              | E.One p        => (p, MapS.empty, ST.Prop')
+              | E.One p        => (p, MapS.empty, ST.Prop)
                                                                        
               | _ => (print "Error - what's missing??!?!?!"; raise Match)
             end
@@ -138,9 +138,8 @@ structure TypeRecon = struct
         fun strST tp needs_parens = 
             case ST.prj tp of
               ST.Var ev => "#"
-            | ST.Item => "i"
-            | ST.Prop _ => "o"
-            | ST.Arrow(t1,t2) =>
+            | ST.Obj x => x
+            | ST.Arr(t1,t2) =>
               let val s = strST t1 true ^ " → " ^ strST t2 false
               in if needs_parens then "(" ^ s ^ ")" else s end 
                                                          
@@ -148,20 +147,20 @@ structure TypeRecon = struct
             let val (p,fv,tp) = vars_and_types(trm,MapS.empty)
               fun wrap (fv, tp, trm) = E.Forall(p,tp,E.Decl(p,fv,NONE),trm)
             in
-              ST.unify tp ST.Prop'; 
+              ST.unify tp ST.Prop; 
               E.RULE(p,s,MapS.foldri wrap trm fv)
             end
           | learntypes (E.EXEC(p,n,trm)) = 
             let val (p,fv,tp) = vars_and_types(trm,MapS.empty)
             in 
-              ST.unify tp ST.Prop'; 
+              ST.unify tp ST.Prop; 
               if MapS.isEmpty fv then E.EXEC(p,n,trm)
               else raise Match (* XXX needs error message *)
             end
           | learntypes (E.TRACE(p,n,trm)) = 
             let val (p,fv,tp) = vars_and_types(trm,MapS.empty)
             in 
-              ST.unify tp ST.Prop'; 
+              ST.unify tp ST.Prop; 
               if MapS.isEmpty fv then E.TRACE(p,n,trm)
               else raise Match (* XXX needs error message *)
             end
@@ -170,10 +169,11 @@ structure TypeRecon = struct
 
         fun groundST tp = 
             case ST.prj tp of
-              ST.Var ev => (ST.bind ev ST.Item'; I.Item)
-            | ST.Arrow(t1,t2) => I.Arrow(groundST t1, groundST t2)
-            | ST.Item => I.Item
-            | ST.Prop perm => I.Prop 
+              ST.Var ev => (ST.bind ev ST.Item; I.Item)
+            | ST.Arr(t1,t2) => I.Arrow(groundST t1, groundST t2)
+            | ST.Obj "i" => I.Item
+            | ST.Obj "type" => I.Prop 
+            | ST.Obj x => raise Err ("UNKNOWN: " ^ x)
 
         val new_signat =
             MapS.unionWith (fn _ => raise Err("Cannot merge signatures"))
@@ -206,9 +206,10 @@ structure TypeRecon = struct
         fun is_groundST tp = 
             case ST.prj tp of
               ST.Var ev => raise CouldNotInferType
-            | ST.Arrow(tp1,tp2) => I.Arrow(is_groundST tp1, is_groundST tp2)
-            | ST.Item => I.Item
-            | ST.Prop perm => I.Prop
+            | ST.Arr(tp1,tp2) => I.Arrow(is_groundST tp1, is_groundST tp2)
+            | ST.Obj "i" => I.Item
+            | ST.Obj "type" => I.Prop
+            | ST.Obj x => raise Err ("UNKNOWN: " ^ x)
 
         datatype partial_term_root =
             PT_MVar of int 

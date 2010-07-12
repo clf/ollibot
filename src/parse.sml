@@ -258,47 +258,31 @@ structure Parse :> PARSE = struct
   (* Main parser *)
   val decl_parser =
       let 
-        fun bang pos ((trm1,pos1)) = 
+        fun unop constructor pos (trm1, pos1) = 
             let val pos = Pos.union(pos,pos1)
-            in (ExtSyn.Bang(pos,trm1),pos) end
-        fun gnab pos ((trm1,pos1)) = 
-            let val pos = Pos.union(pos,pos1)
-            in (ExtSyn.Gnab(pos,trm1),pos) end
-        fun neg pos ((trm1,pos1)) = 
-            let val pos = Pos.union(pos,pos1)
-            in (ExtSyn.Not(pos,trm1),pos) end
+            in (constructor (pos,trm1),pos) end
+        val bang = unop ExtSyn.Bang
+        val gnab = unop ExtSyn.Gnab
+        val neg  = unop ExtSyn.Not
 
-        fun righti pos ((trm1,pos1),(trm2,pos2)) =
+        fun binop constructor pos ((trm1,pos1),(trm2,pos2)) = 
             let val pos = Pos.union(Pos.union(pos,pos1),pos2)
-            in (ExtSyn.Righti(pos,trm1,trm2),pos) end
-        fun lefti pos ((trm1,pos1),(trm2,pos2)) =
-            let val pos = Pos.union(Pos.union(pos,pos1),pos2)
-            in (ExtSyn.Lefti(pos,trm1,trm2),pos) end
-        fun fuse pos ((trm1,pos1),(trm2,pos2)) =
-            let val pos = Pos.union(Pos.union(pos,pos1),pos2)
-            in (ExtSyn.Fuse(pos,trm1,trm2),pos) end
-        fun eq pos ((trm1,pos1),(trm2,pos2)) =
-            let val pos = Pos.union(Pos.union(pos,pos1),pos2)
-            in (ExtSyn.Eq(pos,trm1,trm2),pos) end
-        fun neq pos ((trm1,pos1),(trm2,pos2)) =
-            let val pos = Pos.union(Pos.union(pos,pos1),pos2)
-            in (ExtSyn.Neq(pos,trm1,trm2),pos) end
-        fun arrow pos ((trm1,pos1),(trm2,pos2)) =
-            let val pos = Pos.union(Pos.union(pos,pos1),pos2)
-            in (ExtSyn.Arrow(pos,trm1,trm2),pos) end
+            in (constructor (pos,trm1,trm2),pos) end
+        val righti = binop ExtSyn.Righti
+        val lefti  = binop ExtSyn.Lefti
+        val fuse   = binop ExtSyn.Fuse
+        val eq     = binop ExtSyn.Eq
+        val neq    = binop ExtSyn.Neq
+        val arrow  = binop ExtSyn.Arrow
 
-        fun lambda ((x,pos),(trm,pos')) = 
+        fun binder constructor ((x,pos),(trm,pos')) = 
             let val pos = Pos.union(pos,pos') 
-            in (ExtSyn.Lambda(pos,SimpleType.Var'(),x,trm),pos) end
-        fun pi ((x,pos),(trm,pos')) = (* XXX NOT DISTINGHUSHED XXX *)
-            let val pos = Pos.union(pos,pos') 
-            in (ExtSyn.Forall(pos,SimpleType.Var'(),x,trm),pos) end 
-        fun forall ((x,pos),(trm,pos')) = 
-            let val pos = Pos.union(pos,pos') 
-            in (ExtSyn.Forall(pos,SimpleType.Var'(),x,trm),pos) end
-        fun exists ((x,pos),(trm,pos')) = 
-            let val pos = Pos.union(pos,pos') 
-            in (ExtSyn.Exists(pos,SimpleType.Var'(),x,trm),pos) end
+            in (constructor (pos,SimpleType.NewVar(),x,trm),pos) end
+        val lambda = binder ExtSyn.Lambda 
+        val pi     = binder ExtSyn.Forall (* XXX Same as ∀ *)
+        val forall = binder ExtSyn.Forall
+        val exists = binder ExtSyn.Exists
+
         val fixityitem_parser = 
         get (fn pos => 
           maybe (fn tok =>
