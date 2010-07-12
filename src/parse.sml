@@ -207,7 +207,7 @@ structure Parse :> PARSE = struct
           | idgrab [x] = ([], x)
           | idgrab (x :: xs) = let val (ys, id) = idgrab xs in (x :: ys, id) end
         val idparser = 
-            any && repeat (literal "." && maybe (fn " " => NONE | x => SOME X))
+            any && repeat (literal "." >> maybe (fn " " => NONE | x => SOME x))
             wth (ID o idgrab o op ::)
         val tokenparser = 
             alt [literal "." >> succeed PERIOD,
