@@ -6,13 +6,13 @@
 e/var  : @ W • eval X • !bind X W V
             ->> @ W • return V.
 e/lam  : eval (lam λx. M x)
-            ->> return (lam λx.M x).
+            ->> return (lam λx. M x).
 e/app1 : eval (app M N)
             ->> eval M • cont (app₁ N).
 e/app2 : return V • cont (app₁ N)
             ->> eval N • cont (app₂ V).
 e/app3 : @ W • return V • cont (app₂ (lam λx. M x)) 
-            ->> ∃x. !bind x W V' •
+            ->> ∃x. !bind x W V •
                 @ W • eval (M x).
 
 {=== Box rules ===}
@@ -39,10 +39,10 @@ e/dia2 : @ W' • return V • cont (dia₁ W ≤ W')
                 @ W • eval (dia W ≤ W' loc).
 
 -- And again, no need to store W. But we *DO* have to store W'' somewhere.
-e/let1 : @ W'' • eval (letdia W M λα.λx.N α x)
-            ->> @ W • eval M • cont (letdia₁ W'' W λα.λx.N α x).
+e/let1 : @ W'' • eval (letdia W M λα. λx. N α x)
+            ->> @ W • eval M • cont (letdia₁ W'' W λα. λx. N α x).
 
-e/let2 : @ W • return (dia W ≤ W' Loc) • cont (letdia₁ W'' W λα.λx.N α x)
+e/let2 : @ W • return (dia W ≤ W' Loc) • cont (letdia₁ W'' W λα. λx. N α x)
             ->> @ W'' • eval (N W' Loc).      
 
 {- 

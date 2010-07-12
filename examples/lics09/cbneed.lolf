@@ -36,7 +36,7 @@ Call-by-need has a particular interesting behavior: some non-termination
 that happens due to recursion can be detected at runtime! The particular
 type of non-termination 
 
-> %trace * eval (app (lam λx. app x x) (app (lam λy.y) (lam λz.z))).
+> %trace * eval (app (lam λx. app x x) (app (lam λy. y) (lam λz. z))).
 
 > %trace 10 eval(
 >   app (app 

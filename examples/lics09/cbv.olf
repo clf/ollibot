@@ -11,8 +11,8 @@ Operational Semantics as Ordered Logic Programming]].''
 r₁ : eval(lam λx. E x) ->> return(lam E).
 r₂ : eval(app E₁ E₂) ->> comp(app₁ E₂) • eval(E₁).
 r₃ : comp(app₁ E₂) • return(V₁) ->> comp(app₂ V₁) • eval(E₂).
-r₄ : comp(app₂ (lam λx.E₀ x)) • return(V₂) ->> eval(E₀ V₂).
+r₄ : comp(app₂ (lam λx. E₀ x)) • return(V₂) ->> eval(E₀ V₂).
 
 {== Example trace ==}
 
-%trace * eval(app (lam λx.x) (app (lam λy.y) (lam λz.c))).
+%trace * eval(app (lam λx. x) (app (lam λy. y) (lam λz. c))).

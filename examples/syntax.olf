@@ -28,7 +28,7 @@ r₃ : a₃ X Z · b₃ Y Z  ↠ ∃w. c₃ X Y w.
 r₄ : a₄ X Z * b₄ Y Z ->> Exists w. c₄ X Y w.
     
 -- Local existential quantification in the premise
-r₅ : ∀x. ∀y. (∃z. a₅ x z · b₅ y z)  ↠  ∃w. c₅ x y w.
+r₅ : ∀x. ∀y. (∃z. a₅ x z · b₅ y z)  ↠  ∃*w. c₅ x y w.
 r₆ : All x. All y. (Exists z. a₆ x z * b₆ y z) ->> Exists w. c₆ x y w.
 
 

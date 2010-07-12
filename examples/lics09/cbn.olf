@@ -14,6 +14,6 @@ r₃ : comp(app₁ E₂) • return(lam (λx. E₁' x)) ->> eval(E₁' E₂).
 
 {== Example trace ==}
 
-%trace * eval(app (lam λx.x) (app (lam λy.y) (lam λz.c))).
+%trace * eval(app (lam λx. x) (app (lam λy. y) (lam λz. c))).
 
 

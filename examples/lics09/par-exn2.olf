@@ -19,8 +19,8 @@ eunit : eval(unit) ->> return(unit).
 epair₁ : eval(pair E₁ E₂) ->> comp₂(pair₁) • eval(E₁) • eval(E₂).
 epair₂ : comp₂(pair₁) • return(V₁) • return(V₂) ->> return(pair V₁ V₂).
 
-elet₁ : eval(split E (λx₁.λx₂. E' x₁ x₂)) ->> comp(split₁ E') • eval(E).
-elet₂ : eval(split₁ (λx₁.λx₂. E' x₁ x₂)) • return(pair V₁ V₂) ->> eval(E' V₁ V₂).
+elet₁ : eval(split E (λx₁. λx₂. E' x₁ x₂)) ->> comp(split₁ E') • eval(E).
+elet₂ : eval(split₁ (λx₁. λx₂. E' x₁ x₂)) • return(pair V₁ V₂) ->> eval(E' V₁ V₂).
 
 {== Exceptions (Figure 10), including exceptions for comp₂ frames ==}
 {- Because we have generically defined a suspended computation, we can 

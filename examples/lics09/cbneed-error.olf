@@ -14,7 +14,7 @@ again, then a catchable error is raised. -}
 elam : eval(lam λx. E x) ->> return(lam E).
 eapp₁ : eval(app E₁ E₂) ->> comp(app₁ E₂) • eval(E₁).
 eapp₂ : comp(app₁ E₂) • return(V₁) ->> comp(app₂ V₁) • eval(E₂).
-eapp₃ : comp(app₂ (lam λx.E₀ x)) • return(V₂) ->> eval(E₀ V₂).
+eapp₃ : comp(app₂ (lam λx. E₀ x)) • return(V₂) ->> eval(E₀ V₂).
 
 
 {== Exceptions ==}

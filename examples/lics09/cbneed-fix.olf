@@ -16,7 +16,7 @@ nontermination]] and [[cbneed-error.olf | raising an error]].
 elam : eval(lam λx. E x) ->> return(lam E).
 eapp₁ : eval(app E₁ E₂) ->> comp(app₁ E₂) • eval(E₁).
 eapp₂ : comp(app₁ E₂) • return(V₁) ->> comp(app₂ V₁) • eval(E₂).
-eapp₃ : comp(app₂ (lam λx.E₀ x)) • return(V₂) ->> eval(E₀ V₂).
+eapp₃ : comp(app₂ (lam λx. E₀ x)) • return(V₂) ->> eval(E₀ V₂).
 
 {== Fixed point recursion (call-by-need) ==}
 
@@ -53,4 +53,4 @@ state; the trace would go forever if it was not ended by the `18` passed
 as an argument to `%trace`.
 -}
 
-%trace 18 eval(app (fix λf. lam λx. app f x) (lam λz.z)).
+%trace 18 eval(app (fix λf. lam λx. app f x) (lam λz. z)).
