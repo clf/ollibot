@@ -25,7 +25,7 @@ cont1  : frame1 -> type.
 
 ev1_app : eval1 (app1 E1 E1') ->> { cont1 (apAf E1') * eval1 E1 }.
 ev1_lam : eval1 (lam1 [x1]E1 x1) ->> { ret1 (lam1 [x1]E1 x1) }.
-ct1_apA : cont1 (apAf1 E1') * ret1 (lam [x1]E1 x1) ->> { eval1 (E1 E1') }.
+ct1_apA : cont1 (apAf1 E1') * ret1 (lam \x1. E1 x1) ->> { eval1 (E1 E1') }.
 
 
 --- Call-by-name environment evaluation in SSOS
@@ -63,7 +63,7 @@ r_app : re (app1 E1 E1') (app2 E2 E2')
 	 <- re E1 E2
 	 <- re E1' E2'.
 r_lam : re (lam1 [x1]E1 x1) (lam2 [x2]E2 x2)
-	 <- {x1:exp1}{x2:exp2} re x1 x2 -> re (E1 x1) (E2 x2).
+	 <- ∀x1:exp1. ∀x2:exp2. re x1 x2 -> re (E1 x1) (E2 x2).
 r_dst : re E1 (d2e D)
 	 <- bind D E2
 	 <- re E1 E2.
@@ -78,9 +78,9 @@ r_apA : rf (apAf2 E1') (apAf1 E2')
 
 --- Specification of equivalence
 
-eval : {e1:exp1}{e2:exp2}re e1 e2 -> type.
-ret  : {e1:exp1}{e2:exp2}re e1 e2 -> type.
-cont : {f1:frame1}{f2:frame2}rf f1 f2 -> type.
+eval : {e1:exp1}{e2:exp2}re e1 e2 -> typeo.
+ret  : {e1:exp1}{e2:exp2}re e1 e2 -> typeo.
+cont : {f1:frame1}{f2:frame2}rf f1 f2 -> typeo.
 %mode eval +E1 -E2 +R
 %mode eval -E1 +E2 -R
 %mode ret +E1 -E2 +R
