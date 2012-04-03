@@ -170,24 +170,15 @@ structure Parse :> PARSE = struct
   (* Transform 2: 
    *** Consolidate identifiers and separate separators
    *)
-  val transform_tok2 = 
-      let
-        val sep = 
-            fn "." => true | "(" => true | ")" => true 
-             | "!" => true | "¡" => true | "," => true 
-             | "↠" => true | "↣" => true 
-             | "·" => true | "•" => true | "*" => true
-             | "⊸" => true | "⊗" => true
-             | "→" => true | "∧" => true | "¬" => true
-             | "λ" => true | "∀" => true | "∃" => true 
-             | "\\" => true | "%" => true | ":" => true
-             | " " => true
-             | _ => false
-        val parser = 
-         alt [satisfy sep,
-              repeat1 (satisfy (not o sep)) wth concat]
-      in transform (!! parser)
-      end
+  val transform_tok2 = let val sep = fn "." => true | "(" => true |
+      ")" => true | "!" => true | "$" => true | 
+      "¡" => true | "," => true | "↠" =>
+      true | "↣" => true | "·" => true | "•" => true | "*" => true |
+      "⊸" => true | "⊗" => true | "→" => true | "∧" => true | "¬" =>
+      true | "λ" => true | "∀" => true | "∃" => true | "\\" => true |
+      "%" => true | ":" => true | " " => true | _ => false val parser
+      = alt [satisfy sep, repeat1 (satisfy (not o sep)) wth concat] in
+      transform (!! parser) end
 
   (* Transform 3:
    *** Tokenize separators
@@ -214,6 +205,7 @@ structure Parse :> PARSE = struct
                  literal "(" >> succeed LPAREN,
                  literal ")" >> succeed RPAREN,
                  literal "!" >> succeed BANG,
+                 literal "$" >> succeed GNAB,
                  literal "¡" >> succeed GNAB,
                  literal "¬" >> succeed NEG,
                  literal "<1>" >> succeed ONE,

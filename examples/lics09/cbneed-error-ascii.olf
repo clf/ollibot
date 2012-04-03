@@ -1,0 +1,43 @@
+-- Call-by-need suspensions with a fixed point 
+-- Robert J. Simmons
+
+{-
+''This example is derived from Figures 3 and 10 in [[readme.txt| Substructural 
+Operational Semantics as Ordered Logic Programming]].''
+
+This is a modification of [[cbneed-fix.olf]] that restores a linear
+`blackhole` when a suspension is forced. If the destination is encountered
+again, then a catchable error is raised. -}
+
+{== Call-by-value functions ==}
+
+elam : eval(lam \x. E x) ->> return(lam E).
+eapp1 : eval(app E1 E2) ->> comp(app1 E2) * eval(E1).
+eapp2 : comp(app1 E2) * return(V1) ->> comp(app2 V1) * eval(E2).
+eapp3 : comp(app2 (lam λx. E0 x)) * return(V2) ->> eval(E0 V2).
+
+
+{== Exceptions ==}
+
+etry   : eval(try E1 E2) ->> catch(E2) * eval(E1).
+eraise : eval(raise) ->> fail.
+epop   : comp(F) * fail ->> fail.
+ecatch : catch(E2) * fail ->> eval(E2).
+eret   : catch(E2) * return(V) ->> return(V).
+
+
+{== Fixed point recursion (call-by-need) ==}
+
+efix  : eval(fix \x. E x) ->> ∃D. eval(E D) * $susp (E D) D.
+esusp : eval(D) * $susp E D ->> comp(bind1 D) * eval E * $blackhole(D).
+ebind : comp(bind1 D) * return(V) * $blackhole(D) ->> return(V) * !bind V D.
+evar  : eval(D) * !bind V D ->> return V.
+ehole : eval(D) * $blackhole(D) ->> fail * $blackhole(D).
+
+{== Example traces ==}
+{- Both examples appeared in [[cbneed-fix.olf]], where they got stuck. Here 
+they raise an error. -}
+
+%trace * eval(fix \x. x).
+%trace * eval(fix \x. app (lam \y. y) x). 
+
