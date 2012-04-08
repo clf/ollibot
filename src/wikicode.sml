@@ -127,26 +127,52 @@ structure WikiCode = struct
 
   fun wikify_olf (send : string -> unit) content = 
       let 
+        (* XXX: assumes braces at start and end of line *)
+        (* XXX: comments that are *interleaved* inside of individual
+         * declarations are just fucked *)
+        (* XXX: we don't handle nesting *)
+
         val lines =
             String.fields (fn #"\n" => true | _ => false) content
 
+        val trim = StringUtil.trim
+
         fun collect_code lines =
             ListUtil.partitionaslongas 
-            (fn line => not (StringUtil.matchhead "%" (StringUtil.trim line)))
+            (fn line =>
+                let val s = trim line
+                in not (StringUtil.matchhead "%" s)
+                   andalso not (StringUtil.matchhead "--" s)
+                   andalso not (StringUtil.matchhead "{" s)
+                end)
             lines
 
-        fun collect_text lines = 
-            ListUtil.partitionaslongas
-            (fn line => 
-                StringUtil.matchhead "%%" (StringUtil.trim line)
-                orelse StringUtil.trim line = "") 
-            lines
+        fun add_line s (xs, ys) = (s::xs, ys)
 
+        fun starts_comment s =
+            StringUtil.matchhead "{-" s orelse StringUtil.matchhead "{=" s
+        fun ends_comment s =
+            StringUtil.matchtail "-}" s orelse StringUtil.matchtail "=}" s
+
+        (* aw, fuck it. nesting is not handled properly. *)
+        fun collect_header_comment [] = (* this is bad *) ([], [])
+          | collect_header_comment (line::lines) =
+            if ends_comment (trim line) then add_line line (collect_text lines)
+            else add_line line (collect_header_comment lines)
+        and collect_text [] = ([], [])
+          | collect_text (line::lines) =
+            if StringUtil.matchhead "--" (trim line) orelse trim line = ""
+            then add_line line (collect_text lines)
+            else if starts_comment (trim line)
+            then collect_header_comment (line::lines)
+            else ([], line::lines)
+
+        (* This isn't actually correct, since dots occur in lambdas. *)
         fun collect_percentdecl lines = 
             let val (decl,rest) = 
                 ListUtil.partitionaslongas 
                     (fn line =>
-                        not (StringUtil.matchtail "." (StringUtil.trim line)))
+                        not (StringUtil.matchtail "." (trim line)))
                     lines
             in 
               case rest of 
@@ -156,13 +182,17 @@ structure WikiCode = struct
 
         fun run st [] = ()
           | run st (lines as line :: _) =
-            if StringUtil.matchhead "%" (StringUtil.trim line)
-            then (if StringUtil.matchhead "%%" (StringUtil.trim line)
-                  then run_text st lines
-                  else run_percentdecl st lines)
-            else if StringUtil.trim line = ""
-            then run_text st lines
-            else run_code st lines
+            let val line = trim line
+            in
+                if StringUtil.matchhead "%" line
+                then run_percentdecl st lines
+                else if StringUtil.matchhead "--" line
+                        orelse StringUtil.matchhead "{" line
+                then run_text st lines
+                else if StringUtil.trim line = ""
+                then run_text st lines
+                else run_code st lines
+            end
 
         and run_code st lines = 
             let
@@ -174,10 +204,14 @@ structure WikiCode = struct
         and run_text st lines = 
             let
               val (text,lines) = collect_text lines
-              val trimpercent =
-                  StringUtil.losespecl 
-                      (fn c => StringUtil.whitespec c orelse c = #"%") 
-              val text = concatlines (map trimpercent text)
+              val trimgarbage =
+                  StringUtil.losespecl
+                      (fn c => StringUtil.whitespec c orelse c = #"-"
+                               orelse c = #"{") o
+                  StringUtil.losespecr
+                      (fn c => StringUtil.whitespec c orelse c = #"-"
+                               orelse c = #"}")
+              val text = concatlines (map trimgarbage text)
             in send (wikify_content text); run st lines end
 
         and run_percentdecl st lines = 
