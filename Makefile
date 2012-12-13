@@ -11,7 +11,7 @@ copy-mlton:
 	mkdir -p bin
 
 bin/ollibot: copy-mlton
-        -mlton -default-ann 'sequenceNonUnit warn' -output bin/ollibot escape-src/commandline.mlb
+	-mlton -default-ann 'sequenceNonUnit warn' -output bin/ollibot escape-src/commandline.mlb
 
 bin/olliserver: copy-mlton
 	-mlton -default-ann 'allowFFI true' -default-ann 'sequenceNonUnit warn' -output bin/olliserver escape-src/server.mlb src/server/raw-network.c
