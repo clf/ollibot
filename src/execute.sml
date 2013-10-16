@@ -242,7 +242,7 @@ structure Execute :> EXECUTE = struct
           I.Linear => check linear L
         | I.Persistent => check persistent U
       end
- (state as (ctx,evars)) = 
+  fun match_pos trm cont (state as (ctx,evars)) = 
       let fun pop cont = fn (ctx,evars) => cont (ctx,tl evars)
       in
         case trm of 

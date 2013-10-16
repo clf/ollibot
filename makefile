@@ -7,5 +7,8 @@ copy-mlton:
 	rm -Rf escape-src
 	sml -m tools/escape-sml/sources.cm < /dev/null
 
-commandline-mlton:
+bin:
+	mkdir bin
+
+commandline-mlton: bin
 	-mlton -default-ann 'sequenceNonUnit warn' -output bin/lollibot escape-src/commandline.mlb 
